@@ -5,7 +5,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { SupabaseAuthProvider } from "@/contexts/SupabaseAuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 
 const geistSans = Geist({
@@ -103,17 +103,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <LanguageProvider>
-          <FavoritesProvider>
-            <AuthProvider>
-              <NotificationProvider>
+            <LanguageProvider>
+              <FavoritesProvider>
+                <SupabaseAuthProvider>
+                  <NotificationProvider>
                     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                       <TooltipProvider>
                         {children}
                       </TooltipProvider>
                     </ThemeProvider>
                   </NotificationProvider>
-                </AuthProvider>
+                </SupabaseAuthProvider>
               </FavoritesProvider>
             </LanguageProvider>
       </body>
