@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase, userService } from '@/lib/supabase-service';
+import { supabase } from '@/lib/supabase';
+import { userService } from '@/lib/supabase-service';
 import type { User } from '@/lib/supabase';
 
 interface AuthContextType {
@@ -27,6 +28,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   // Check for existing session on mount
   useEffect(() => {
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -65,6 +71,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    if (!supabase) {
+      console.error('Supabase not configured');
+      return false;
+    }
+
     try {
       setIsLoading(true);
       const { data, error } = await userService.signIn(email, password);
@@ -90,6 +101,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const register = async (userData: RegisterData): Promise<boolean> => {
+    if (!supabase) {
+      console.error('Supabase not configured');
+      return false;
+    }
+
     try {
       setIsLoading(true);
       const { data, error } = await userService.signUp(
@@ -118,6 +134,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const logout = async (): Promise<void> => {
+    if (!supabase) {
+      console.error('Supabase not configured');
+      return;
+    }
+
     try {
       await userService.signOut();
       setUser(null);
@@ -127,6 +148,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
+    if (!supabase) {
+      console.error('Supabase not configured');
+      return false;
+    }
+
     try {
       if (!user) return false;
       
