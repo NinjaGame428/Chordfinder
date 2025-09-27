@@ -13,7 +13,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Chord Finder - Gospel Music Chords & Resources",
+  title: "Chords Finder - Gospel Music Chords & Resources",
   description:
     "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
   keywords: [
@@ -28,14 +28,14 @@ export const metadata: Metadata = {
     "Gospel Resources",
     "Music Ministry",
     "Heavenkeys Ltd",
-    "Chord Finder",
+    "Chords Finder",
   ],
   openGraph: {
     type: "website",
-    siteName: "Chord Finder",
+    siteName: "Chords Finder",
     locale: "en_US",
     url: "https://chord-finder.vercel.app",
-    title: "Chord Finder - Gospel Music Chords & Resources",
+    title: "Chords Finder - Gospel Music Chords & Resources",
     description:
       "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
     images: [
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Chord Finder Preview",
+        alt: "Chords Finder Preview",
       },
     ],
   },

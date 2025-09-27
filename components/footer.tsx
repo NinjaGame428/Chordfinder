@@ -53,7 +53,7 @@ const Footer = () => {
               <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
                 <Music className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold">Chord Finder</span>
+              <span className="text-xl font-bold">Chords Finder</span>
             </Link>
 
             <ul className="mt-6 flex items-center gap-4 flex-wrap">
@@ -85,7 +85,7 @@ const Footer = () => {
           <span className="text-muted-foreground text-center sm:text-start">
             &copy; {new Date().getFullYear()}{" "}
             <Link href="/" target="_blank">
-              Chord Finder
+              Chords Finder
             </Link>
             . All rights reserved. Powered by{" "}
                 <Link href="https://heavenkeys.ca" target="_blank" className="hover:text-primary">

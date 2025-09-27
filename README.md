@@ -1,66 +1,139 @@
-# PureLanding - Beautiful Shadcn UI Landing Page
+# Chords Finder 🎵
 
-A modern, responsive landing page template built with Next.js, Tailwind CSS, and Shadcn UI, and Shadcn UI Blocks.
+A comprehensive gospel music application for finding chords, lyrics, and resources for worship ministry.
 
-## Demo
+## 🌟 Features
 
-[Live Demo](https://pure-landing-shadcnui-template.vercel.app/)
+- **🎵 Song Library**: Browse and search through gospel songs with chord charts
+- **👥 Artist Profiles**: Discover gospel artists and their popular songs
+- **📚 Resources**: Download music resources, guides, and educational materials
+- **🔐 User Authentication**: Create accounts, save favorites, and manage profiles
+- **⭐ Rating System**: Rate songs and resources, read reviews
+- **🌐 Multilingual Support**: Available in English and French
+- **📱 Responsive Design**: Works perfectly on all devices
+- **🛠️ Admin Panel**: Full content management system for administrators
 
-## Preview
+## 🚀 Getting Started
 
-![Preview](./public/preview.png)
+### Prerequisites
 
-## Features
+- Node.js 18+ 
+- npm or yarn
 
-- 🎨 Modern and clean design
-- 📱 Fully responsive layout
-- 🎯 Built with Next.js 15
-- 💅 Styled with Tailwind CSS `3.4` & `4.0`
-- 🧩 Built with [Shadcn UI](https://ui.shadcn.com) and [Shadcn UI Blocks](https://shadcnui-blocks.com)
-- 🌙 Dark mode support
-
-## Getting Started
+### Installation
 
 1. Clone the repository:
-
 ```bash
-git clone https://github.com/akash3444/pure-landing-shadcnui-template.git
-cd pure-landing-shadcnui-template
+git clone <repository-url>
+cd chords-finder
 ```
 
-2. To use Tailwind CSS v4.0:
-
-- Ensure you’re using Node.js 20 or higher.
-- Switch to the tailwind-v4 branch:
-
-```bash
-git checkout tailwind-v4
-```
-
-3. Install dependencies:
-
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-4. Start the development server:
-
+3. Run the development server:
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Customization
+## 🛠️ Tech Stack
 
-1. Replace the placeholder images with your own content.
-2. Modify the text and styles in the components to match your brand and messaging.
-3. Add your own features and sections as needed.
+- **Framework**: Next.js 15.1.7
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn/UI + Radix UI
+- **Icons**: Lucide React
+- **State Management**: React Context API
+- **Deployment**: Vercel
 
-## Why this template?
+## 📁 Project Structure
 
-This project is a base template for a landing page. It is built with Next.js, Tailwind CSS, Shadcn UI, and Shadcn UI Blocks. It is a great starting point for a landing page. You can customized the content and media files as per your needs. It is not intended to be a complete solution for a landing page. It is intended to be a starting point for a landing page.
+```
+chords-finder/
+├── app/                    # Next.js app directory
+│   ├── admin/             # Admin dashboard
+│   ├── artists/           # Artist pages
+│   ├── songs/             # Song pages
+│   ├── resources/         # Resource pages
+│   └── ...
+├── components/            # Reusable components
+│   ├── ui/               # Shadcn/UI components
+│   ├── navbar/           # Navigation components
+│   └── ...
+├── contexts/             # React contexts
+├── lib/                  # Utility functions
+└── public/               # Static assets
+```
 
-## Contributing
+## 🎯 Key Pages
 
-If you have any suggestions or improvements, please create an issue or submit a pull request.
+- **Homepage** (`/`): Welcome page with search and featured content
+- **Songs** (`/songs`): Browse and search gospel songs
+- **Artists** (`/artists`): Discover gospel artists
+- **Resources** (`/resources`): Download music resources
+- **Dashboard** (`/dashboard`): User profile and favorites
+- **Admin** (`/admin`): Content management (admin only)
+
+## 🔧 Development
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+
+### Environment Variables
+
+Create a `.env.local` file for environment variables:
+
+```env
+# Add your environment variables here
+```
+
+## 🚀 Deployment
+
+The application is deployed on Vercel:
+
+**Live URL**: [https://chords-finder.vercel.app](https://chords-finder.vercel.app)
+
+### Deploy to Vercel
+
+1. Install Vercel CLI:
+```bash
+npm install -g vercel
+```
+
+2. Deploy:
+```bash
+vercel --prod
+```
+
+## 👥 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Credits
+
+- **Powered by**: [Heavenkeys Ltd](https://heavenkeys.ca)
+- **UI Components**: [Shadcn/UI](https://ui.shadcn.com)
+- **Icons**: [Lucide](https://lucide.dev)
+
+## 📞 Support
+
+For support, email support@heavenkeys.ca or visit our [contact page](https://chords-finder.vercel.app/contact).
+
+---
+
+Made with ❤️ for the gospel music community
