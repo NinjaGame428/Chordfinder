@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Music, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {

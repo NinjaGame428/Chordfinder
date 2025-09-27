@@ -7,7 +7,7 @@ import { NavigationSheet } from "./navigation-sheet";
 import LanguageSwitcher from "../language-switcher";
 import { UserMenu } from "./user-menu";
 import { NotificationsIcon } from "../notifications-icon";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/SupabaseAuthContext";
 import Link from "next/link";
 
 const Navbar = () => {

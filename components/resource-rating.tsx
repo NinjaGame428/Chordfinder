@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MessageCircle, Heart } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/SupabaseAuthContext";
 
 interface ResourceRatingProps {
   resourceId: string;
