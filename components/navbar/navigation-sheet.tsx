@@ -12,15 +12,23 @@ export const NavigationSheet = () => {
           <Menu />
         </Button>
       </SheetTrigger>
-      <SheetContent>
-        <Logo />
-        <NavMenu orientation="vertical" className="mt-12" />
-
-        <div className="mt-8 space-y-4">
-          <Button variant="outline" className="w-full sm:hidden">
-            Sign In
-          </Button>
-          <Button className="w-full xs:hidden">Get Started</Button>
+      <SheetContent className="w-full">
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-center py-4 border-b">
+            <Logo />
+          </div>
+          <div className="flex-1 py-6">
+            <NavMenu orientation="vertical" className="space-y-2" />
+          </div>
+          
+          <div className="mt-auto pt-4 border-t space-y-4">
+            <Button variant="outline" className="w-full">
+              Sign In
+            </Button>
+            <Button className="w-full">
+              Get Started
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>

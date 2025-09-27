@@ -1,11 +1,8 @@
-import CTABanner from "@/components/cta-banner";
-import FAQ from "@/components/faq";
-import Features from "@/components/features";
 import Footer from "@/components/footer";
 import Hero from "@/components/hero";
 import { Navbar } from "@/components/navbar";
-import Pricing from "@/components/pricing";
-import Testimonials from "@/components/testimonials";
+import SongList from "@/components/song-list";
+import TipsSection from "@/components/tips-section";
 
 export default function Home() {
   return (
@@ -13,11 +10,8 @@ export default function Home() {
       <Navbar />
       <main className="pt-16 xs:pt-20 sm:pt-24">
         <Hero />
-        <Features />
-        <Pricing />
-        <FAQ />
-        <Testimonials />
-        <CTABanner />
+        <SongList />
+        <TipsSection />
         <Footer />
       </main>
     </>

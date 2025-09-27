@@ -3,55 +3,57 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationProvider } from "@/contexts/NotificationContext";
 
 const geistSans = Geist({
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "PureLanding - Beautiful Shadcn UI Landing Page",
+  title: "Chord Finder - Gospel Music Chords & Resources",
   description:
-    "A beautiful landing page built with Shadcn UI, Next.js 15, Tailwind CSS, and Shadcn UI Blocks.",
+    "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
   keywords: [
-    "PureLanding",
-    "PureLanding Landing Page",
-    "PureLanding Landing Page Template",
-    "PureLanding Page",
-    "Shadcn UI Landing Page",
-    "Shadcn UI Blocks",
-    "Shadcn UI",
-    "Landing Page",
-    "Tailwind CSS Landing Page",
-    "Beautiful Shadcn UI Landing Page",
-    "Next.js 15 Landing Page",
-    "Simple Landing Page",
-    "Landing Page Template",
-    "Landing Page Design",
+    "Gospel Music",
+    "Chord Charts",
+    "Worship Music",
+    "Gospel Chords",
+    "Christian Music",
+    "Church Music",
+    "Praise Songs",
+    "Worship Songs",
+    "Gospel Resources",
+    "Music Ministry",
+    "Heavenkeys Ltd",
+    "Chord Finder",
   ],
   openGraph: {
     type: "website",
-    siteName: "PureLanding",
+    siteName: "Chord Finder",
     locale: "en_US",
-    url: "https://shadcn-landing-page.vercel.app",
-    title: "PureLanding - Beautiful Shadcn UI Landing Page",
+    url: "https://chord-finder.vercel.app",
+    title: "Chord Finder - Gospel Music Chords & Resources",
     description:
-      "A beautiful landing page built with Shadcn UI, Next.js 15, Tailwind CSS, and Shadcn UI Blocks.",
+      "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "PureLanding Preview",
+        alt: "Chord Finder Preview",
       },
     ],
   },
   authors: [
     {
-      name: "Akash Moradiya",
-      url: "https://shadcnui-blocks.com",
+      name: "Heavenkeys Ltd",
+      url: "https://heavenkeys.ca",
     },
   ],
-  creator: "Akash Moradiya",
+  creator: "Heavenkeys Ltd",
   icons: [
     {
       rel: "icon",
@@ -101,9 +103,19 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TooltipProvider>{children}</TooltipProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <FavoritesProvider>
+            <AuthProvider>
+              <NotificationProvider>
+                    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                      <TooltipProvider>
+                        {children}
+                      </TooltipProvider>
+                    </ThemeProvider>
+                  </NotificationProvider>
+                </AuthProvider>
+              </FavoritesProvider>
+            </LanguageProvider>
       </body>
     </html>
   );
