@@ -37,8 +37,23 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          const userData = await userService.getCurrentUser();
-          setUser(userData);
+          try {
+            const userData = await userService.getCurrentUser();
+            if (userData) {
+              setUser(userData);
+            }
+          } catch (userError) {
+            console.error('Error fetching user data:', userError);
+            // If user data fetch fails, still set basic user info
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              full_name: session.user.user_metadata?.full_name || '',
+              role: 'user',
+              created_at: session.user.created_at,
+              updated_at: session.user.updated_at || session.user.created_at,
+            });
+          }
         }
       } catch (error) {
         console.error('Error getting initial session:', error);
@@ -55,10 +70,30 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         if (session?.user) {
           try {
             const userData = await userService.getCurrentUser();
-            setUser(userData);
+            if (userData) {
+              setUser(userData);
+            } else {
+              // Fallback to basic user info if userService fails
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                full_name: session.user.user_metadata?.full_name || '',
+                role: 'user',
+                created_at: session.user.created_at,
+                updated_at: session.user.updated_at || session.user.created_at,
+              });
+            }
           } catch (error) {
             console.error('Error fetching user data:', error);
-            setUser(null);
+            // Fallback to basic user info
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              full_name: session.user.user_metadata?.full_name || '',
+              role: 'user',
+              created_at: session.user.created_at,
+              updated_at: session.user.updated_at || session.user.created_at,
+            });
           }
         } else {
           setUser(null);

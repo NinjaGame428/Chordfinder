@@ -13,10 +13,25 @@ export interface User {
   id: string
   email: string
   full_name?: string
+  firstName?: string
+  lastName?: string
   avatar_url?: string
+  avatar?: string
   role: 'user' | 'moderator' | 'admin'
   created_at: string
   updated_at: string
+  joinDate?: string
+  preferences?: {
+    language: string
+    theme: string
+    notifications: boolean
+  }
+  stats?: {
+    favoriteSongs: number
+    downloadedResources: number
+    ratingsGiven: number
+    lastActive: string
+  }
 }
 
 export interface Song {
