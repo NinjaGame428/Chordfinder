@@ -60,16 +60,20 @@ export default function RegisterPage() {
       return;
     }
 
+    console.log('Attempting registration...');
     const success = await register({
       fullName: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
       password: formData.password
     });
     
+    console.log('Registration result:', success);
+    
     if (success) {
+      console.log('Registration successful, redirecting to dashboard');
       router.push("/dashboard");
     } else {
-      setError("Registration failed. Please try again.");
+      setError("Registration failed. Please check your information and try again.");
     }
   };
 

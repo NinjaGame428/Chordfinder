@@ -28,7 +28,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
 
   // Debug logging
   useEffect(() => {
-    console.log('Auth state changed:', { user: !!user, isLoading });
+    console.log('Auth state changed:', { user: !!user, isLoading, userId: user?.id });
   }, [user, isLoading]);
 
   // Check for existing session on mount
@@ -142,7 +142,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     }
 
     try {
+      console.log('Attempting login for:', email);
       setIsLoading(true);
+      
       const { data, error } = await userService.signIn(email, password);
       
       if (error) {
@@ -151,8 +153,36 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       }
 
       if (data.user) {
-        const userData = await userService.getCurrentUser();
-        setUser(userData);
+        console.log('Login successful, fetching user data...');
+        try {
+          const userData = await userService.getCurrentUser();
+          if (userData) {
+            console.log('User data fetched:', userData);
+            setUser(userData);
+          } else {
+            console.log('No user data, using session data');
+            // Use session data as fallback
+            setUser({
+              id: data.user.id,
+              email: data.user.email || '',
+              full_name: data.user.user_metadata?.full_name || '',
+              role: 'user',
+              created_at: data.user.created_at,
+              updated_at: data.user.updated_at || data.user.created_at,
+            });
+          }
+        } catch (userError) {
+          console.error('Error fetching user data:', userError);
+          // Use session data as fallback
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            full_name: data.user.user_metadata?.full_name || '',
+            role: 'user',
+            created_at: data.user.created_at,
+            updated_at: data.user.updated_at || data.user.created_at,
+          });
+        }
         return true;
       }
       
@@ -172,7 +202,9 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     }
 
     try {
+      console.log('Attempting registration for:', userData.email);
       setIsLoading(true);
+      
       const { data, error } = await userService.signUp(
         userData.email,
         userData.password,
@@ -185,7 +217,16 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       }
 
       if (data.user) {
-        // User will be automatically created in the database via the trigger
+        console.log('Registration successful, user created:', data.user.id);
+        // Set user immediately with session data
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          full_name: data.user.user_metadata?.full_name || '',
+          role: 'user',
+          created_at: data.user.created_at,
+          updated_at: data.user.updated_at || data.user.created_at,
+        });
         return true;
       }
       

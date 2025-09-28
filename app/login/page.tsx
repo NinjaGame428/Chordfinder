@@ -34,11 +34,15 @@ export default function LoginPage() {
       return;
     }
 
+    console.log('Attempting login...');
     const success = await login(email, password);
+    console.log('Login result:', success);
+    
     if (success) {
+      console.log('Login successful, redirecting to dashboard');
       router.push("/dashboard");
     } else {
-      setError("Invalid email or password");
+      setError("Login failed. Please check your credentials and try again.");
     }
   };
 
