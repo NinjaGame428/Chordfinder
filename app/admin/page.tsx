@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { 
   Users, 
   Music, 
+  FileText,
   Download, 
   Star, 
   Settings, 
