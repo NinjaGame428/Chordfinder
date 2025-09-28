@@ -830,7 +830,7 @@ export default function AdminDashboardPage() {
                                   <div className="space-y-4">
                                     <div className="flex items-center space-x-4">
                                       <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
-                                        {resource.icon}
+                                        <FileText className="h-8 w-8 text-primary" />
                                       </div>
                                       <div>
                                         <h3 className="text-xl font-semibold">{resource.title}</h3>
