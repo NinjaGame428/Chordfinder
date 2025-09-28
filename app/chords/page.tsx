@@ -394,8 +394,9 @@ const ChordDisplayPage = () => {
     }
   ];
 
-  // Piano Chords Data
+  // Piano Chords Data - All Keys with Inversions
   const pianoChords: Chord[] = [
+    // C Major Chords
     {
       name: "C Major",
       key: "C",
@@ -403,18 +404,24 @@ const ChordDisplayPage = () => {
       diagrams: [
         {
           name: "Root Position",
-          frets: [0, 0, 0, 0, 0, 0], // Piano doesn't use frets, but keeping structure
+          frets: [0, 0, 0, 0, 0, 0],
           fingers: [1, 3, 5], // C-E-G
           description: "C-E-G (Root position)"
         },
         {
           name: "First Inversion",
           frets: [0, 0, 0, 0, 0, 0],
-          fingers: [1, 3, 5], // E-G-C
+          fingers: [1, 2, 5], // E-G-C
           description: "E-G-C (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G-C-E
+          description: "G-C-E (Second inversion)"
         }
       ],
-      description: "The C major chord on piano is one of the most fundamental chords. It consists of C, E, and G notes.",
+      description: "The C major chord is one of the most fundamental chords in music. It's bright, happy, and forms the foundation for many songs.",
       commonUses: ["I chord in C major", "V chord in F major", "IV chord in G major"],
       alternativeNames: ["C", "C Major", "C Maj"]
     },
@@ -428,9 +435,21 @@ const ChordDisplayPage = () => {
           frets: [0, 0, 0, 0, 0, 0],
           fingers: [1, 3, 5], // C-Eb-G
           description: "C-Eb-G (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // Eb-G-C
+          description: "Eb-G-C (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G-C-Eb
+          description: "G-C-Eb (Second inversion)"
         }
       ],
-      description: "The C minor chord has a more somber, introspective quality. It uses C, Eb, and G notes.",
+      description: "The C minor chord has a more somber, introspective quality compared to its major counterpart.",
       commonUses: ["i chord in C minor", "ii chord in Bb major"],
       alternativeNames: ["Cm", "C Minor", "C Min"]
     },
@@ -443,13 +462,85 @@ const ChordDisplayPage = () => {
           name: "Root Position",
           frets: [0, 0, 0, 0, 0, 0],
           fingers: [1, 2, 3, 5], // C-E-G-Bb
-          description: "C-E-G-Bb (Dominant 7th)"
+          description: "C-E-G-Bb (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 3, 5], // E-G-Bb-C
+          description: "E-G-Bb-C (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 3, 5], // G-Bb-C-E
+          description: "G-Bb-C-E (Second inversion)"
         }
       ],
       description: "The C7 chord adds tension and movement, commonly used in blues and jazz.",
       commonUses: ["V7 chord in F major", "I7 chord in C blues"],
       alternativeNames: ["C7", "C Dominant 7", "C Dom7"]
     },
+
+    // C# Major Chords
+    {
+      name: "C# Major",
+      key: "C#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // C#-F-G#
+          description: "C#-F-G# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // F-G#-C#
+          description: "F-G#-C# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G#-C#-F
+          description: "G#-C#-F (Second inversion)"
+        }
+      ],
+      description: "The C# major chord is bright and uplifting, commonly used in jazz and contemporary music.",
+      commonUses: ["I chord in C# major", "V chord in F# major", "IV chord in G# major"],
+      alternativeNames: ["C#", "C# Major", "C# Maj", "Db Major"]
+    },
+    {
+      name: "C# Minor",
+      key: "C#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // C#-E-G#
+          description: "C#-E-G# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // E-G#-C#
+          description: "E-G#-C# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G#-C#-E
+          description: "G#-C#-E (Second inversion)"
+        }
+      ],
+      description: "The C# minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in C# minor", "ii chord in B major"],
+      alternativeNames: ["C#m", "C# Minor", "C# Min", "Db Minor"]
+    },
+
+    // D Major Chords
     {
       name: "D Major",
       key: "D",
@@ -460,6 +551,18 @@ const ChordDisplayPage = () => {
           frets: [0, 0, 0, 0, 0, 0],
           fingers: [1, 3, 5], // D-F#-A
           description: "D-F#-A (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // F#-A-D
+          description: "F#-A-D (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A-D-F#
+          description: "A-D-F# (Second inversion)"
         }
       ],
       description: "The D major chord is bright and uplifting, perfect for folk and country music.",
@@ -467,21 +570,267 @@ const ChordDisplayPage = () => {
       alternativeNames: ["D", "D Major", "D Maj"]
     },
     {
+      name: "D Minor",
+      key: "D",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D-F-A
+          description: "D-F-A (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // F-A-D
+          description: "F-A-D (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A-D-F
+          description: "A-D-F (Second inversion)"
+        }
+      ],
+      description: "The D minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in D minor", "ii chord in C major"],
+      alternativeNames: ["Dm", "D Minor", "D Min"]
+    },
+
+    // D# Major Chords
+    {
+      name: "D# Major",
+      key: "D#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D#-G-A#
+          description: "D#-G-A# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // G-A#-D#
+          description: "G-A#-D# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A#-D#-G
+          description: "A#-D#-G (Second inversion)"
+        }
+      ],
+      description: "The D# major chord is bright and uplifting, commonly used in jazz and contemporary music.",
+      commonUses: ["I chord in D# major", "V chord in G# major", "IV chord in A# major"],
+      alternativeNames: ["D#", "D# Major", "D# Maj", "Eb Major"]
+    },
+    {
+      name: "D# Minor",
+      key: "D#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D#-F#-A#
+          description: "D#-F#-A# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // F#-A#-D#
+          description: "F#-A#-D# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A#-D#-F#
+          description: "A#-D#-F# (Second inversion)"
+        }
+      ],
+      description: "The D# minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in D# minor", "ii chord in C# major"],
+      alternativeNames: ["D#m", "D# Minor", "D# Min", "Eb Minor"]
+    },
+
+    // E Major Chords
+    {
+      name: "E Major",
+      key: "E",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // E-G#-B
+          description: "E-G#-B (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // G#-B-E
+          description: "G#-B-E (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // B-E-G#
+          description: "B-E-G# (Second inversion)"
+        }
+      ],
+      description: "The E major chord is bright and uplifting, perfect for rock and pop music.",
+      commonUses: ["I chord in E major", "V chord in A major", "IV chord in B major"],
+      alternativeNames: ["E", "E Major", "E Maj"]
+    },
+    {
+      name: "E Minor",
+      key: "E",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // E-G-B
+          description: "E-G-B (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // G-B-E
+          description: "G-B-E (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // B-E-G
+          description: "B-E-G (Second inversion)"
+        }
+      ],
+      description: "The E minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in E minor", "ii chord in D major"],
+      alternativeNames: ["Em", "E Minor", "E Min"]
+    },
+
+    // F Major Chords
+    {
       name: "F Major",
       key: "F",
-      difficulty: "Medium",
+      difficulty: "Easy",
       diagrams: [
         {
           name: "Root Position",
           frets: [0, 0, 0, 0, 0, 0],
           fingers: [1, 2, 5], // F-A-C
           description: "F-A-C (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A-C-F
+          description: "A-C-F (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // C-F-A
+          description: "C-F-A (Second inversion)"
         }
       ],
       description: "The F major chord is essential for many progressions and songs.",
       commonUses: ["I chord in F major", "IV chord in C major"],
       alternativeNames: ["F", "F Major", "F Maj"]
     },
+    {
+      name: "F Minor",
+      key: "F",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // F-Ab-C
+          description: "F-Ab-C (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // Ab-C-F
+          description: "Ab-C-F (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // C-F-Ab
+          description: "C-F-Ab (Second inversion)"
+        }
+      ],
+      description: "The F minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in F minor", "ii chord in Eb major"],
+      alternativeNames: ["Fm", "F Minor", "F Min"]
+    },
+
+    // F# Major Chords
+    {
+      name: "F# Major",
+      key: "F#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // F#-A#-C#
+          description: "F#-A#-C# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // A#-C#-F#
+          description: "A#-C#-F# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // C#-F#-A#
+          description: "C#-F#-A# (Second inversion)"
+        }
+      ],
+      description: "The F# major chord is bright and uplifting, commonly used in jazz and contemporary music.",
+      commonUses: ["I chord in F# major", "V chord in B major", "IV chord in C# major"],
+      alternativeNames: ["F#", "F# Major", "F# Maj", "Gb Major"]
+    },
+    {
+      name: "F# Minor",
+      key: "F#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // F#-A-C#
+          description: "F#-A-C# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // A-C#-F#
+          description: "A-C#-F# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // C#-F#-A
+          description: "C#-F#-A (Second inversion)"
+        }
+      ],
+      description: "The F# minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in F# minor", "ii chord in E major"],
+      alternativeNames: ["F#m", "F# Minor", "F# Min", "Gb Minor"]
+    },
+
+    // G Major Chords
     {
       name: "G Major",
       key: "G",
@@ -492,11 +841,283 @@ const ChordDisplayPage = () => {
           frets: [0, 0, 0, 0, 0, 0],
           fingers: [1, 3, 5], // G-B-D
           description: "G-B-D (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // B-D-G
+          description: "B-D-G (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D-G-B
+          description: "D-G-B (Second inversion)"
         }
       ],
       description: "The G major chord is another essential chord, frequently paired with C and D.",
       commonUses: ["I chord in G major", "V chord in C major", "IV chord in D major"],
       alternativeNames: ["G", "G Major", "G Maj"]
+    },
+    {
+      name: "G Minor",
+      key: "G",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G-Bb-D
+          description: "G-Bb-D (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // Bb-D-G
+          description: "Bb-D-G (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D-G-Bb
+          description: "D-G-Bb (Second inversion)"
+        }
+      ],
+      description: "The G minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in G minor", "ii chord in F major"],
+      alternativeNames: ["Gm", "G Minor", "G Min"]
+    },
+
+    // G# Major Chords
+    {
+      name: "G# Major",
+      key: "G#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G#-C-D#
+          description: "G#-C-D# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // C-D#-G#
+          description: "C-D#-G# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D#-G#-C
+          description: "D#-G#-C (Second inversion)"
+        }
+      ],
+      description: "The G# major chord is bright and uplifting, commonly used in jazz and contemporary music.",
+      commonUses: ["I chord in G# major", "V chord in C# major", "IV chord in D# major"],
+      alternativeNames: ["G#", "G# Major", "G# Maj", "Ab Major"]
+    },
+    {
+      name: "G# Minor",
+      key: "G#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // G#-B-D#
+          description: "G#-B-D# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // B-D#-G#
+          description: "B-D#-G# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // D#-G#-B
+          description: "D#-G#-B (Second inversion)"
+        }
+      ],
+      description: "The G# minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in G# minor", "ii chord in F# major"],
+      alternativeNames: ["G#m", "G# Minor", "G# Min", "Ab Minor"]
+    },
+
+    // A Major Chords
+    {
+      name: "A Major",
+      key: "A",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A-C#-E
+          description: "A-C#-E (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // C#-E-A
+          description: "C#-E-A (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // E-A-C#
+          description: "E-A-C# (Second inversion)"
+        }
+      ],
+      description: "The A major chord is bright and uplifting, perfect for folk and country music.",
+      commonUses: ["I chord in A major", "V chord in D major", "IV chord in E major"],
+      alternativeNames: ["A", "A Major", "A Maj"]
+    },
+    {
+      name: "A Minor",
+      key: "A",
+      difficulty: "Easy",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A-C-E
+          description: "A-C-E (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // C-E-A
+          description: "C-E-A (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // E-A-C
+          description: "E-A-C (Second inversion)"
+        }
+      ],
+      description: "The A minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in A minor", "ii chord in G major"],
+      alternativeNames: ["Am", "A Minor", "A Min"]
+    },
+
+    // A# Major Chords
+    {
+      name: "A# Major",
+      key: "A#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A#-D-F
+          description: "A#-D-F (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // D-F-A#
+          description: "D-F-A# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // F-A#-D
+          description: "F-A#-D (Second inversion)"
+        }
+      ],
+      description: "The A# major chord is bright and uplifting, commonly used in jazz and contemporary music.",
+      commonUses: ["I chord in A# major", "V chord in D# major", "IV chord in F major"],
+      alternativeNames: ["A#", "A# Major", "A# Maj", "Bb Major"]
+    },
+    {
+      name: "A# Minor",
+      key: "A#",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // A#-C#-F
+          description: "A#-C#-F (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // C#-F-A#
+          description: "C#-F-A# (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // F-A#-C#
+          description: "F-A#-C# (Second inversion)"
+        }
+      ],
+      description: "The A# minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in A# minor", "ii chord in G# major"],
+      alternativeNames: ["A#m", "A# Minor", "A# Min", "Bb Minor"]
+    },
+
+    // B Major Chords
+    {
+      name: "B Major",
+      key: "B",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // B-D#-F#
+          description: "B-D#-F# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // D#-F#-B
+          description: "D#-F#-B (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // F#-B-D#
+          description: "F#-B-D# (Second inversion)"
+        }
+      ],
+      description: "The B major chord is bright and uplifting, commonly used in jazz and contemporary music.",
+      commonUses: ["I chord in B major", "V chord in E major", "IV chord in F# major"],
+      alternativeNames: ["B", "B Major", "B Maj"]
+    },
+    {
+      name: "B Minor",
+      key: "B",
+      difficulty: "Medium",
+      diagrams: [
+        {
+          name: "Root Position",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // B-D-F#
+          description: "B-D-F# (Root position)"
+        },
+        {
+          name: "First Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 2, 5], // D-F#-B
+          description: "D-F#-B (First inversion)"
+        },
+        {
+          name: "Second Inversion",
+          frets: [0, 0, 0, 0, 0, 0],
+          fingers: [1, 3, 5], // F#-B-D
+          description: "F#-B-D (Second inversion)"
+        }
+      ],
+      description: "The B minor chord has a melancholic, introspective quality.",
+      commonUses: ["i chord in B minor", "ii chord in A major"],
+      alternativeNames: ["Bm", "B Minor", "B Min"]
     }
   ];
 
@@ -646,6 +1267,10 @@ const ChordDisplayPage = () => {
 
   const renderChordDiagram = (diagram: ChordDiagram) => {
     if (activeTab === "piano") {
+      // Piano octave layout: C-D-E-F-G-A-B-C (next octave)
+      const pianoKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C'];
+      const isBlackKey = (key: string) => key.includes('#');
+      
       return (
         <div className="bg-muted p-4 rounded-lg">
           <div className="text-center mb-2">
@@ -654,22 +1279,56 @@ const ChordDisplayPage = () => {
           </div>
           
           <div className="flex justify-center">
-            <div className="relative w-48 h-32 bg-white border border-gray-300 rounded-md flex items-center justify-center">
+            <div className="relative w-96 h-24 bg-white border border-gray-300 rounded-md">
               {/* Piano Keys Representation */}
-              <div className="flex items-center gap-1">
-                {diagram.fingers.map((finger, index) => (
+              <div className="flex items-center h-full">
+                {pianoKeys.map((key, index) => (
                   <div
                     key={index}
-                    className={`w-8 h-16 rounded-sm border flex items-center justify-center text-xs font-bold ${
-                      finger === 1 ? 'bg-gray-800 text-white' : 'bg-white text-gray-400'
+                    className={`h-20 flex items-center justify-center text-xs font-bold border-r border-gray-300 ${
+                      isBlackKey(key) 
+                        ? 'bg-gray-800 text-white w-6 -ml-3 z-10 relative' 
+                        : 'bg-white text-gray-800 w-8'
                     }`}
+                    style={{
+                      marginLeft: isBlackKey(key) ? '-12px' : '0',
+                      zIndex: isBlackKey(key) ? 10 : 1
+                    }}
                   >
-                    {finger}
+                    {key}
                   </div>
                 ))}
               </div>
-              <div className="absolute bottom-2 text-xs text-gray-500">
-                Piano Keys
+              
+              {/* Highlighted Keys for Chord */}
+              <div className="absolute top-0 left-0 w-full h-full flex items-center">
+                {diagram.fingers.map((finger, index) => {
+                  if (finger === 0) return null;
+                  
+                  // Map finger positions to piano keys (simplified mapping)
+                  const keyIndex = Math.min(index * 2, pianoKeys.length - 1);
+                  const key = pianoKeys[keyIndex];
+                  const isBlack = isBlackKey(key);
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`absolute h-16 w-6 bg-blue-500 text-white rounded-sm flex items-center justify-center text-xs font-bold ${
+                        isBlack ? 'bg-blue-600' : 'bg-blue-500'
+                      }`}
+                      style={{
+                        left: `${(keyIndex * 32) - (isBlack ? 12 : 0)}px`,
+                        zIndex: 20
+                      }}
+                    >
+                      {finger}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <div className="absolute bottom-1 left-2 text-xs text-gray-500">
+                Piano Octave
               </div>
             </div>
           </div>
