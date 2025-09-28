@@ -28,6 +28,7 @@ interface ChordDiagram {
   fingers: number[];
   barre?: number;
   capo?: number;
+  description: string;
 }
 
 interface Chord {
@@ -1122,118 +1123,12 @@ const ChordDisplayPage = () => {
   ];
 
   // Bass Guitar Chords Data
-  const bassChords: Chord[] = [
-    {
-      name: "C Major",
-      key: "C",
-      difficulty: "Easy",
-      diagrams: [
-        {
-          name: "Root Position",
-          frets: [3, 2, 0, 1], // C-E-G-C (4-string bass)
-          fingers: [3, 2, 0, 1],
-          description: "C-E-G-C (Root position on 4-string bass)"
-        },
-        {
-          name: "First Inversion",
-          frets: [0, 0, 0, 1], // E-G-C-E
-          fingers: [0, 0, 0, 1],
-          description: "E-G-C-E (First inversion)"
-        }
-      ],
-      description: "The C major chord on bass provides a solid foundation with the root note in the bass.",
-      commonUses: ["I chord in C major", "V chord in F major", "IV chord in G major"],
-      alternativeNames: ["C", "C Major", "C Maj"]
-    },
-    {
-      name: "C Minor",
-      key: "C",
-      difficulty: "Easy",
-      diagrams: [
-        {
-          name: "Root Position",
-          frets: [3, 1, 0, 1], // C-Eb-G-C
-          fingers: [3, 1, 0, 1],
-          description: "C-Eb-G-C (Root position)"
-        }
-      ],
-      description: "The C minor chord on bass has a darker, more introspective quality.",
-      commonUses: ["i chord in C minor", "ii chord in Bb major"],
-      alternativeNames: ["Cm", "C Minor", "C Min"]
-    },
-    {
-      name: "C7",
-      key: "C",
-      difficulty: "Easy",
-      diagrams: [
-        {
-          name: "Root Position",
-          frets: [3, 2, 0, 1], // C-E-G-Bb
-          fingers: [3, 2, 0, 1],
-          description: "C-E-G-Bb (Dominant 7th)"
-        }
-      ],
-      description: "The C7 chord on bass adds tension and movement, commonly used in blues and jazz.",
-      commonUses: ["V7 chord in F major", "I7 chord in C blues"],
-      alternativeNames: ["C7", "C Dominant 7", "C Dom7"]
-    },
-    {
-      name: "D Major",
-      key: "D",
-      difficulty: "Easy",
-      diagrams: [
-        {
-          name: "Root Position",
-          frets: [0, 0, 0, 0], // D-F#-A-D
-          fingers: [1, 2, 3, 4],
-          description: "D-F#-A-D (Root position)"
-        }
-      ],
-      description: "The D major chord on bass is bright and uplifting, perfect for folk and country music.",
-      commonUses: ["I chord in D major", "V chord in G major", "IV chord in A major"],
-      alternativeNames: ["D", "D Major", "D Maj"]
-    },
-    {
-      name: "F Major",
-      key: "F",
-      difficulty: "Medium",
-      diagrams: [
-        {
-          name: "Root Position",
-          frets: [1, 0, 0, 1], // F-A-C-F
-          fingers: [1, 0, 0, 1],
-          description: "F-A-C-F (Root position)"
-        }
-      ],
-      description: "The F major chord on bass is essential for many progressions and songs.",
-      commonUses: ["I chord in F major", "IV chord in C major"],
-      alternativeNames: ["F", "F Major", "F Maj"]
-    },
-    {
-      name: "G Major",
-      key: "G",
-      difficulty: "Easy",
-      diagrams: [
-        {
-          name: "Root Position",
-          frets: [3, 0, 0, 0], // G-B-D-G
-          fingers: [3, 0, 0, 0],
-          description: "G-B-D-G (Root position)"
-        }
-      ],
-      description: "The G major chord on bass is another essential chord, frequently paired with C and D.",
-      commonUses: ["I chord in G major", "V chord in C major", "IV chord in D major"],
-      alternativeNames: ["G", "G Major", "G Maj"]
-    }
-  ];
 
   // Get the appropriate chord array based on active tab
   const getCurrentChords = () => {
     switch (activeTab) {
       case "piano":
         return pianoChords;
-      case "bass":
-        return bassChords;
       default:
         return chords; // guitar chords
     }
@@ -1267,169 +1162,221 @@ const ChordDisplayPage = () => {
 
   const renderChordDiagram = (diagram: ChordDiagram) => {
     if (activeTab === "piano") {
-      // Piano octave layout: C-D-E-F-G-A-B-C (next octave)
-      const pianoKeys = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C'];
-      const isBlackKey = (key: string) => key.includes('#');
+      // Beautiful piano keyboard layout with proper key positioning
+      const pianoKeys = [
+        { note: 'C', isBlack: false, width: 'w-12' },
+        { note: 'C#', isBlack: true, width: 'w-8' },
+        { note: 'D', isBlack: false, width: 'w-12' },
+        { note: 'D#', isBlack: true, width: 'w-8' },
+        { note: 'E', isBlack: false, width: 'w-12' },
+        { note: 'F', isBlack: false, width: 'w-12' },
+        { note: 'F#', isBlack: true, width: 'w-8' },
+        { note: 'G', isBlack: false, width: 'w-12' },
+        { note: 'G#', isBlack: true, width: 'w-8' },
+        { note: 'A', isBlack: false, width: 'w-12' },
+        { note: 'A#', isBlack: true, width: 'w-8' },
+        { note: 'B', isBlack: false, width: 'w-12' },
+        { note: 'C', isBlack: false, width: 'w-12' }
+      ];
+      
+      // Map chord notes to piano keys based on the chord name
+      const getChordNotes = (chordName: string) => {
+        const chordMap: { [key: string]: string[] } = {
+          'C Major': ['C', 'E', 'G'],
+          'C Minor': ['C', 'Eb', 'G'],
+          'C7': ['C', 'E', 'G', 'Bb'],
+          'C# Major': ['C#', 'F', 'G#'],
+          'C# Minor': ['C#', 'E', 'G#'],
+          'D Major': ['D', 'F#', 'A'],
+          'D Minor': ['D', 'F', 'A'],
+          'D# Major': ['D#', 'G', 'A#'],
+          'D# Minor': ['D#', 'F#', 'A#'],
+          'E Major': ['E', 'G#', 'B'],
+          'E Minor': ['E', 'G', 'B'],
+          'F Major': ['F', 'A', 'C'],
+          'F Minor': ['F', 'Ab', 'C'],
+          'F# Major': ['F#', 'A#', 'C#'],
+          'F# Minor': ['F#', 'A', 'C#'],
+          'G Major': ['G', 'B', 'D'],
+          'G Minor': ['G', 'Bb', 'D'],
+          'G# Major': ['G#', 'C', 'D#'],
+          'G# Minor': ['G#', 'B', 'D#'],
+          'A Major': ['A', 'C#', 'E'],
+          'A Minor': ['A', 'C', 'E'],
+          'A# Major': ['A#', 'D', 'F'],
+          'A# Minor': ['A#', 'C#', 'F'],
+          'B Major': ['B', 'D#', 'F#'],
+          'B Minor': ['B', 'D', 'F#']
+        };
+        
+        return chordMap[chordName] || ['C', 'E', 'G'];
+      };
+      
+      const chordNotes = getChordNotes(diagram.name);
       
       return (
-        <div className="bg-muted p-4 rounded-lg">
-          <div className="text-center mb-2">
-            <h4 className="font-semibold">{diagram.name}</h4>
-            <p className="text-sm text-muted-foreground">{diagram.description}</p>
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6 rounded-xl shadow-lg border border-slate-200">
+          <div className="text-center mb-4">
+            <h4 className="font-bold text-lg text-slate-800">{diagram.name}</h4>
+            <p className="text-sm text-slate-600 mt-1">{diagram.description}</p>
+            <div className="mt-2">
+              <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                {chordNotes.join(' - ')}
+              </span>
+            </div>
           </div>
           
           <div className="flex justify-center">
-            <div className="relative w-96 h-24 bg-white border border-gray-300 rounded-md">
-              {/* Piano Keys Representation */}
-              <div className="flex items-center h-full">
-                {pianoKeys.map((key, index) => (
-                  <div
-                    key={index}
-                    className={`h-20 flex items-center justify-center text-xs font-bold border-r border-gray-300 ${
-                      isBlackKey(key) 
-                        ? 'bg-gray-800 text-white w-6 -ml-3 z-10 relative' 
-                        : 'bg-white text-gray-800 w-8'
-                    }`}
-                    style={{
-                      marginLeft: isBlackKey(key) ? '-12px' : '0',
-                      zIndex: isBlackKey(key) ? 10 : 1
-                    }}
-                  >
-                    {key}
-                  </div>
-                ))}
-              </div>
-              
-              {/* Highlighted Keys for Chord */}
-              <div className="absolute top-0 left-0 w-full h-full flex items-center">
-                {diagram.fingers.map((finger, index) => {
-                  if (finger === 0) return null;
-                  
-                  // Map finger positions to piano keys (simplified mapping)
-                  const keyIndex = Math.min(index * 2, pianoKeys.length - 1);
-                  const key = pianoKeys[keyIndex];
-                  const isBlack = isBlackKey(key);
-                  
+            <div className="relative bg-gradient-to-b from-slate-100 to-slate-200 p-4 rounded-xl shadow-inner border-2 border-slate-300">
+              {/* Piano Keys */}
+              <div className="flex items-end h-24 relative">
+                {/* White Keys */}
+                {pianoKeys.filter(key => !key.isBlack).map((key, index) => {
+                  const isPressed = chordNotes.includes(key.note);
                   return (
                     <div
-                      key={index}
-                      className={`absolute h-16 w-6 bg-blue-500 text-white rounded-sm flex items-center justify-center text-xs font-bold ${
-                        isBlack ? 'bg-blue-600' : 'bg-blue-500'
+                      key={`white-${index}`}
+                      className={`h-20 w-12 border-2 border-slate-400 rounded-b-lg flex items-end justify-center pb-2 text-xs font-bold transition-all duration-200 ${
+                        isPressed 
+                          ? 'bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-lg transform -translate-y-1' 
+                          : 'bg-gradient-to-b from-white to-slate-100 text-slate-700 hover:from-slate-50 hover:to-slate-100'
+                      }`}
+                    >
+                      {key.note}
+                    </div>
+                  );
+                })}
+                
+                {/* Black Keys */}
+                {pianoKeys.filter(key => key.isBlack).map((key, index) => {
+                  const isPressed = chordNotes.includes(key.note);
+                  return (
+                    <div
+                      key={`black-${index}`}
+                      className={`absolute h-12 w-8 rounded-b-lg flex items-end justify-center pb-1 text-xs font-bold transition-all duration-200 ${
+                        isPressed 
+                          ? 'bg-gradient-to-b from-blue-600 to-blue-800 text-white shadow-lg transform -translate-y-1' 
+                          : 'bg-gradient-to-b from-slate-800 to-slate-900 text-white hover:from-slate-700 hover:to-slate-800'
                       }`}
                       style={{
-                        left: `${(keyIndex * 32) - (isBlack ? 12 : 0)}px`,
-                        zIndex: 20
+                        left: `${(index + 1) * 48 - 16}px`,
+                        zIndex: 10
                       }}
                     >
-                      {finger}
+                      {key.note}
                     </div>
                   );
                 })}
               </div>
               
-              <div className="absolute bottom-1 left-2 text-xs text-gray-500">
-                Piano Octave
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    } else if (activeTab === "bass") {
-      const strings = [4, 3, 2, 1]; // Bass strings from low E to high G
-      const frets = [0, 1, 2, 3, 4]; // First 5 frets
-      
-      return (
-        <div className="bg-muted p-4 rounded-lg">
-          <div className="text-center mb-2">
-            <h4 className="font-semibold">{diagram.name}</h4>
-            <p className="text-sm text-muted-foreground">{diagram.description}</p>
-          </div>
-          
-          <div className="flex justify-center">
-            <div className="relative">
-              {/* Bass Fretboard */}
-              <div className="grid grid-cols-4 gap-1">
-                {strings.map((string, stringIndex) => (
-                  <div key={string} className="flex flex-col">
-                    {/* String number */}
-                    <div className="text-xs text-center mb-1 font-mono">
-                      {string}
-                    </div>
-                    
-                    {/* Frets */}
-                    {frets.map((fret, fretIndex) => (
-                      <div
-                        key={`${string}-${fret}`}
-                        className={`w-6 h-6 border border-gray-300 rounded-full flex items-center justify-center text-xs font-bold ${
-                          diagram.frets[stringIndex] === fret
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-background'
-                        }`}
-                      >
-                        {diagram.frets[stringIndex] === fret && diagram.fingers[stringIndex] > 0
-                          ? diagram.fingers[stringIndex]
-                          : ''
-                        }
+              {/* Hand Position Guide */}
+              <div className="mt-4 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <h5 className="font-semibold text-blue-800 text-sm mb-2">Hand Position</h5>
+                  <div className="text-xs text-blue-700 space-y-1">
+                    {diagram.fingers.map((finger, index) => (
+                      <div key={index} className="flex items-center justify-center gap-2">
+                        <span className="font-medium">Finger {finger}:</span>
+                        <span>{chordNotes[index] || 'Note'}</span>
                       </div>
                     ))}
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
       );
     } else {
-      // Guitar chords (original logic)
+      // Guitar chords with improved fretboard design
       const strings = [6, 5, 4, 3, 2, 1]; // Guitar strings from low E to high E
       const frets = [0, 1, 2, 3, 4]; // First 5 frets
+      const stringNames = ['E', 'A', 'D', 'G', 'B', 'e']; // String note names
       
       return (
-        <div className="bg-muted p-4 rounded-lg">
-          <div className="text-center mb-2">
-            <h4 className="font-semibold">{diagram.name}</h4>
-            <p className="text-sm text-muted-foreground">{diagram.description}</p>
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl shadow-lg border border-amber-200">
+          <div className="text-center mb-4">
+            <h4 className="font-bold text-lg text-amber-800">{diagram.name}</h4>
+            <p className="text-sm text-amber-700 mt-1">{diagram.description}</p>
           </div>
           
           <div className="flex justify-center">
-            <div className="relative">
-              {/* Fretboard */}
-              <div className="grid grid-cols-6 gap-1">
+            <div className="relative bg-gradient-to-b from-amber-100 to-amber-200 p-4 rounded-xl shadow-inner border-2 border-amber-300">
+              {/* Fretboard with lines */}
+              <div className="space-y-1">
+                {/* String lines */}
                 {strings.map((string, stringIndex) => (
-                  <div key={string} className="flex flex-col">
-                    {/* String number */}
-                    <div className="text-xs text-center mb-1 font-mono">
-                      {string}
+                  <div key={string} className="relative">
+                    {/* String line */}
+                    <div className="h-0.5 bg-gradient-to-r from-amber-600 to-amber-700 w-full relative">
+                      {/* Fret markers on the line */}
+                      {frets.map((fret, fretIndex) => (
+                        <div
+                          key={`fret-${fret}`}
+                          className="absolute w-0.5 h-3 bg-amber-800 -top-1"
+                          style={{ left: `${fret * 20}px` }}
+                        />
+                      ))}
+                      
+                      {/* Finger positions on the line */}
+                      {diagram.frets[stringIndex] !== -1 && (
+                        <div
+                          className="absolute w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transform -translate-y-2.5"
+                          style={{ left: `${diagram.frets[stringIndex] * 20 - 12}px` }}
+                        >
+                          {diagram.fingers[stringIndex]}
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Frets */}
-                    {frets.map((fret, fretIndex) => (
-                      <div
-                        key={`${string}-${fret}`}
-                        className={`w-8 h-8 border border-gray-300 rounded-full flex items-center justify-center text-xs font-bold ${
-                          diagram.frets[stringIndex] === fret
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-background'
-                        }`}
-                      >
-                        {diagram.frets[stringIndex] === fret && diagram.fingers[stringIndex] > 0
-                          ? diagram.fingers[stringIndex]
-                          : ''
-                        }
-                      </div>
-                    ))}
+                    {/* String name */}
+                    <div className="absolute -left-8 top-0 text-xs font-bold text-amber-800">
+                      {stringNames[stringIndex]}
+                    </div>
                   </div>
                 ))}
+                
+                {/* Fret numbers */}
+                <div className="flex justify-between mt-2">
+                  {frets.map((fret) => (
+                    <div key={fret} className="text-xs text-amber-700 font-medium w-5 text-center">
+                      {fret}
+                    </div>
+                  ))}
+                </div>
               </div>
               
               {/* Capo indicator */}
               {diagram.capo && (
-                <div className="absolute -top-6 left-0 right-0 text-center">
-                  <span className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded">
+                <div className="absolute -top-8 left-0 right-0 text-center">
+                  <span className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium shadow-md">
                     Capo {diagram.capo}
                   </span>
                 </div>
               )}
+              
+              {/* Hand Position Guide */}
+              <div className="mt-6 text-center">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h5 className="font-semibold text-blue-800 text-sm mb-3">Hand Position & Technique</h5>
+                  <div className="text-xs text-blue-700 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {diagram.fingers.map((finger, index) => {
+                        if (finger === 0) return null;
+                        return (
+                          <div key={index} className="flex items-center justify-center gap-2 bg-blue-100 rounded px-2 py-1">
+                            <span className="font-medium">Finger {finger}:</span>
+                            <span>String {strings[index]}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 p-2 bg-blue-100 rounded text-xs">
+                      <strong>Tips:</strong> Keep your thumb behind the neck, press firmly behind the fret, and maintain a relaxed wrist position.
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1490,7 +1437,7 @@ const ChordDisplayPage = () => {
             {/* Instrument Tabs */}
             <div className="max-w-4xl mx-auto">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-8">
+                <TabsList className="grid w-full grid-cols-2 mb-8">
                   <TabsTrigger value="guitar" className="flex items-center gap-2">
                     <Guitar className="h-4 w-4" />
                     Guitar
@@ -1498,10 +1445,6 @@ const ChordDisplayPage = () => {
                   <TabsTrigger value="piano" className="flex items-center gap-2">
                     <Piano className="h-4 w-4" />
                     Piano
-                  </TabsTrigger>
-                  <TabsTrigger value="bass" className="flex items-center gap-2">
-                    <Volume2 className="h-4 w-4" />
-                    Bass
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
