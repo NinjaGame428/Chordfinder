@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music, User, Clock, Key, ArrowLeft, Download, Share2, Heart, Play } from "lucide-react";
+import { Music, User, Clock, Key, ArrowLeft, Download, Share2, Heart, Play, RotateCcw } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import AdvancedTransposeButton from "@/components/advanced-transpose-button";
@@ -12,168 +12,86 @@ import SongRating from "@/components/song-rating";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useState } from "react";
+import { getSongBySlug } from "@/lib/song-data";
 
 const SongPage = () => {
   const params = useParams();
   const songSlug = params.id as string;
-  const [activeTab, setActiveTab] = useState("chords");
+  const [activeTab, setActiveTab] = useState("lyrics");
   const [currentKey, setCurrentKey] = useState("");
 
-  const songs = {
-    1: {
-      id: 1,
-      title: "What A Beautiful Name",
-      artist: "Hillsong Worship",
-      key: "E Major",
-      difficulty: "Medium",
-      year: "2016",
-      tempo: "75 BPM",
-      timeSignature: "4/4",
-      genre: "Contemporary Worship",
-      chords: ["E", "C#m", "A", "B"],
-      chordProgression: "E - C#m - A - B",
-      lyrics: `You were the Word at the beginning
-One with God the Lord Most High
-Your hidden glory in creation
-Now revealed in You our Christ
+  // Find song by title slug
+  const song = getSongBySlug(songSlug);
 
-What a beautiful Name it is
-What a beautiful Name it is
-The Name of Jesus Christ my King
-
-What a beautiful Name it is
-Nothing compares to this
-What a beautiful Name it is
-The Name of Jesus
-
-You didn't want heaven without us
-So Jesus You brought heaven down
-My sin was great, Your love was greater
-What could separate us now
-
-What a wonderful Name it is
-What a wonderful Name it is
-The Name of Jesus Christ my King
-
-What a wonderful Name it is
-Nothing compares to this
-What a wonderful Name it is
-The Name of Jesus
-
-Death could not hold You
-The veil tore before You
-You silenced the boast of sin and grave
-The heavens are roaring
-The praise of Your glory
-For You are raised to life again
-
-You have no rival
-You have no equal
-Now and forever God You reign
-Yours is the Kingdom
-Yours is the glory
-Yours is the Name above all names
-
-What a powerful Name it is
-What a powerful Name it is
-The Name of Jesus Christ my King
-
-What a powerful Name it is
-Nothing can stand against
-What a powerful Name it is
-The Name of Jesus`,
-      chordChart: `E           C#m         A           B
-You were the Word at the beginning
-E           C#m         A           B
-One with God the Lord Most High
-E           C#m         A           B
-Your hidden glory in creation
-E           C#m         A           B
-Now revealed in You our Christ
-
-E           C#m         A           B
-What a beautiful Name it is
-E           C#m         A           B
-What a beautiful Name it is
-E           C#m         A           B
-The Name of Jesus Christ my King`,
-      capo: "No capo needed",
-      strummingPattern: "Down, Down, Up, Down, Up, Down",
-      tags: ["Worship", "Contemporary", "Popular"],
-      downloads: 15420,
-      rating: 4.8
-    },
-    2: {
-      id: 2,
-      title: "Cornerstone",
-      artist: "Hillsong Worship",
-      key: "G Major",
-      difficulty: "Easy",
-      year: "2012",
-      tempo: "80 BPM",
-      timeSignature: "4/4",
-      genre: "Contemporary Worship",
-      chords: ["G", "C", "D", "Em"],
-      chordProgression: "G - C - D - Em",
-      lyrics: `My hope is built on nothing less
-Than Jesus' blood and righteousness
-I dare not trust the sweetest frame
-But wholly trust in Jesus' name
-
-Christ alone, cornerstone
-Weak made strong in the Savior's love
-Through the storm, He is Lord
-Lord of all
-
-When darkness seems to hide His face
-I rest on His unchanging grace
-In every high and stormy gale
-My anchor holds within the veil
-My anchor holds within the veil
-
-Christ alone, cornerstone
-Weak made strong in the Savior's love
-Through the storm, He is Lord
-Lord of all
-
-When He shall come with trumpet sound
-Oh, may I then in Him be found
-Dressed in His righteousness alone
-Faultless stand before the throne
-
-Christ alone, cornerstone
-Weak made strong in the Savior's love
-Through the storm, He is Lord
-Lord of all`,
-      chordChart: `G           C           D           Em
-My hope is built on nothing less
-G           C           D           Em
-Than Jesus' blood and righteousness
-G           C           D           Em
-I dare not trust the sweetest frame
-G           C           D           Em
-But wholly trust in Jesus' name
-
-G           C           D           Em
-Christ alone, cornerstone
-G           C           D           Em
-Weak made strong in the Savior's love
-G           C           D           Em
-Through the storm, He is Lord
-G           C           D           Em
-Lord of all`,
-      capo: "No capo needed",
-      strummingPattern: "Down, Down, Up, Down, Up, Down",
-      tags: ["Worship", "Contemporary", "Classic"],
-      downloads: 12350,
-      rating: 4.7
+  // Transpose chord function
+  const transposeChord = (chord: string, fromKey: string, toKey: string) => {
+    const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const flatScale = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    
+    // Extract the base chord (without extensions)
+    const chordMatch = chord.match(/^([A-G][b#]?)(.*)$/);
+    if (!chordMatch) return chord;
+    
+    const [, baseChord, extensions] = chordMatch;
+    
+    // Find the index of the base chord
+    let fromIndex = chromatic.indexOf(baseChord);
+    if (fromIndex === -1) {
+      fromIndex = flatScale.indexOf(baseChord);
     }
+    if (fromIndex === -1) return chord;
+    
+    // Find the index of the target key
+    let toIndex = chromatic.indexOf(toKey);
+    if (toIndex === -1) {
+      toIndex = flatScale.indexOf(toKey);
+    }
+    if (toIndex === -1) return chord;
+    
+    // Calculate the transposition interval
+    const fromKeyIndex = chromatic.indexOf(fromKey);
+    if (fromKeyIndex === -1) return chord;
+    
+    const semitones = (toIndex - fromKeyIndex + 12) % 12;
+    const newChordIndex = (fromIndex + semitones) % 12;
+    
+    // Return the transposed chord with extensions
+    return chromatic[newChordIndex] + extensions;
   };
 
-  // Find song by title slug
-  const song = Object.values(songs).find(s => 
-    s.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === songSlug
-  );
+  // Transpose chord chart
+  const getTransposedChordChart = () => {
+    if (!currentKey || currentKey === song?.key) {
+      return song?.chordChart || '';
+    }
+    
+    // Simple chord transposition for the chart
+    return song?.chordChart.replace(/\[([^\]]+)\]/g, (match, chord) => {
+      return `[${transposeChord(chord, song.key, currentKey)}]`;
+    }) || '';
+  };
+
+  // Transpose chord progression
+  const getTransposedChordProgression = () => {
+    if (!currentKey || currentKey === song?.key) {
+      return song?.chordProgression || '';
+    }
+    
+    return song?.chordProgression.split(' - ').map(chord => 
+      transposeChord(chord.trim(), song.key, currentKey)
+    ).join(' - ') || '';
+  };
+
+  // Transpose chords array
+  const getTransposedChords = () => {
+    if (!currentKey || currentKey === song?.key) {
+      return song?.chords || [];
+    }
+    
+    return song?.chords.map(chord => 
+      transposeChord(chord, song.key, currentKey)
+    ) || [];
+  };
 
   if (!song) {
     return (

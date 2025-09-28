@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, Heart, Users, Award, Globe, Mail, Phone, MapPin } from "lucide-react";
+import { Music, Heart, Users, Award, Globe } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import Link from "next/link";
@@ -183,52 +183,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* Contact Section */}
-        <section className="pt-20 pb-0 px-6 bg-muted/30 mb-[-70px]">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl xs:text-4xl font-bold tracking-tight mb-4">
-                Get in Touch
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Have questions or suggestions? We'd love to hear from you.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="p-6 text-center">
-                <Mail className="h-8 w-8 mx-auto mb-4 text-primary" />
-                <h3 className="text-lg font-semibold mb-2">Email Us</h3>
-                <p className="text-muted-foreground mb-4">
-                  support@heavenkeys.com
-                </p>
-                <Button variant="outline" size="sm">
-                  Send Email
-                </Button>
-              </Card>
-              <Card className="p-6 text-center">
-                <Phone className="h-8 w-8 mx-auto mb-4 text-primary" />
-                <h3 className="text-lg font-semibold mb-2">Call Us</h3>
-                <p className="text-muted-foreground mb-4">
-                  +1 (555) 123-4567
-                </p>
-                <Button variant="outline" size="sm">
-                  Call Now
-                </Button>
-              </Card>
-              <Card className="p-6 text-center">
-                <MapPin className="h-8 w-8 mx-auto mb-4 text-primary" />
-                <h3 className="text-lg font-semibold mb-2">Visit Us</h3>
-                <p className="text-muted-foreground mb-4">
-                  Heavenkeys Ltd<br />
-                  Music Ministry Solutions
-                </p>
-                <Button variant="outline" size="sm">
-                  Get Directions
-                </Button>
-              </Card>
-            </div>
-          </div>
-        </section>
       </main>
       <Footer />
     </>

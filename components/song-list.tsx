@@ -3,150 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music, User, ExternalLink, Clock, Star, Heart, Calendar, Tag } from "lucide-react";
 import Link from "next/link";
+import { songs } from "@/lib/song-data";
 
 const SongList = () => {
-  const popularSongs = [
-    {
-      id: 1,
-      title: "Amazing Grace",
-      artist: "John Newton",
-      key: "G Major",
-      difficulty: "Easy",
-      category: "Classic Hymn",
-      year: "1779",
-      tempo: "72 BPM",
-      rating: 4.9,
-      downloads: 15420,
-      description: "One of the most beloved hymns of all time, written by John Newton after his conversion from slave trading to Christianity.",
-      tags: ["Traditional", "Worship", "Popular"]
-    },
-    {
-      id: 2,
-      title: "How Great Thou Art",
-      artist: "Stuart Hine",
-      key: "C Major",
-      difficulty: "Medium",
-      category: "Classic Hymn",
-      year: "1949",
-      tempo: "68 BPM",
-      rating: 4.8,
-      downloads: 12300,
-      description: "A powerful hymn celebrating God's creation and majesty, originally a Swedish folk song.",
-      tags: ["Traditional", "Worship", "Majestic"]
-    },
-    {
-      id: 3,
-      title: "Great Is Thy Faithfulness",
-      artist: "Thomas Chisholm",
-      key: "F Major",
-      difficulty: "Easy",
-      category: "Classic Hymn",
-      year: "1923",
-      tempo: "76 BPM",
-      rating: 4.7,
-      downloads: 9800,
-      description: "A timeless hymn about God's unchanging faithfulness and love.",
-      tags: ["Traditional", "Faith", "Trust"]
-    },
-    {
-      id: 4,
-      title: "Blessed Be Your Name",
-      artist: "Matt Redman",
-      key: "G Major",
-      difficulty: "Medium",
-      category: "Contemporary",
-      year: "2002",
-      tempo: "120 BPM",
-      rating: 4.6,
-      downloads: 11200,
-      description: "A modern worship song about praising God in all circumstances of life.",
-      tags: ["Contemporary", "Worship", "Praise"]
-    },
-    {
-      id: 5,
-      title: "How Great Is Our God",
-      artist: "Chris Tomlin",
-      key: "C Major",
-      difficulty: "Easy",
-      category: "Contemporary",
-      year: "2004",
-      tempo: "140 BPM",
-      rating: 4.9,
-      downloads: 18700,
-      description: "A powerful declaration of God's greatness and majesty in contemporary worship style.",
-      tags: ["Contemporary", "Worship", "Majesty"]
-    },
-    {
-      id: 6,
-      title: "10,000 Reasons",
-      artist: "Matt Redman",
-      key: "D Major",
-      difficulty: "Medium",
-      category: "Contemporary",
-      year: "2011",
-      tempo: "132 BPM",
-      rating: 4.8,
-      downloads: 16500,
-      description: "A beautiful song of gratitude and praise, encouraging believers to bless the Lord.",
-      tags: ["Contemporary", "Gratitude", "Praise"]
-    },
-    {
-      id: 7,
-      title: "What A Beautiful Name",
-      artist: "Hillsong Worship",
-      key: "E Major",
-      difficulty: "Medium",
-      category: "Contemporary",
-      year: "2016",
-      tempo: "68 BPM",
-      rating: 4.9,
-      downloads: 22100,
-      description: "A modern worship anthem celebrating the name and power of Jesus Christ.",
-      tags: ["Contemporary", "Jesus", "Worship"]
-    },
-    {
-      id: 8,
-      title: "Good Good Father",
-      artist: "Chris Tomlin",
-      key: "G Major",
-      difficulty: "Easy",
-      category: "Contemporary",
-      year: "2015",
-      tempo: "76 BPM",
-      rating: 4.7,
-      downloads: 14300,
-      description: "A heartfelt song about God's perfect fatherly love and care.",
-      tags: ["Contemporary", "Father", "Love"]
-    },
-    {
-      id: 9,
-      title: "In Christ Alone",
-      artist: "Keith Getty",
-      key: "C Major",
-      difficulty: "Medium",
-      category: "Modern Hymn",
-      year: "2001",
-      tempo: "72 BPM",
-      rating: 4.8,
-      downloads: 12800,
-      description: "A modern hymn celebrating the sufficiency and supremacy of Christ.",
-      tags: ["Modern Hymn", "Christ", "Faith"]
-    },
-    {
-      id: 10,
-      title: "Cornerstone",
-      artist: "Hillsong Worship",
-      key: "G Major",
-      difficulty: "Easy",
-      category: "Contemporary",
-      year: "2012",
-      tempo: "80 BPM",
-      rating: 4.6,
-      downloads: 15200,
-      description: "A contemporary worship song based on the hymn 'My Hope Is Built'.",
-      tags: ["Contemporary", "Foundation", "Hope"]
-    }
-  ];
+  // Get the first 10 songs for the homepage
+  const popularSongs = songs.slice(0, 10);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -204,10 +65,13 @@ const SongList = () => {
                 <Button 
                   className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                   variant="outline"
+                  asChild
                 >
-                  <Music className="mr-2 h-4 w-4" />
-                  View Chords
-                  <ExternalLink className="ml-2 h-4 w-4" />
+                  <Link href={`/songs/${song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                    <Music className="mr-2 h-4 w-4" />
+                    View Chords
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

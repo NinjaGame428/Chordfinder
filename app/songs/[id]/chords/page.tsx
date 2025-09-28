@@ -22,59 +22,7 @@ import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import AdvancedTransposeButton from "@/components/advanced-transpose-button";
 import SongRating from "@/components/song-rating";
-
-// Mock song data - in a real app, this would come from an API
-const mockSongs = [
-  {
-    id: "amazing-grace",
-    title: "Amazing Grace",
-    artist: "John Newton",
-    originalKey: "G Major",
-    tempo: "60 BPM",
-    difficulty: "Easy",
-    year: "1779",
-    category: "Classic Hymn",
-    description: "One of the most beloved hymns of all time, 'Amazing Grace' has been sung by millions around the world.",
-    chords: {
-      original: {
-        verse1: [
-          { chord: "G", lyric: "A" },
-          { chord: "C", lyric: "ma" },
-          { chord: "G", lyric: "zing" },
-          { chord: "D", lyric: "grace" },
-          { chord: "G", lyric: "how" },
-          { chord: "C", lyric: "sweet" },
-          { chord: "G", lyric: "the" },
-          { chord: "D", lyric: "sound" }
-        ],
-        verse2: [
-          { chord: "G", lyric: "That" },
-          { chord: "C", lyric: "saved" },
-          { chord: "G", lyric: "a" },
-          { chord: "D", lyric: "wretch" },
-          { chord: "G", lyric: "like" },
-          { chord: "C", lyric: "me" },
-          { chord: "G", lyric: "I" },
-          { chord: "D", lyric: "once" }
-        ],
-        chorus: [
-          { chord: "G", lyric: "I" },
-          { chord: "C", lyric: "was" },
-          { chord: "G", lyric: "blind" },
-          { chord: "D", lyric: "but" },
-          { chord: "G", lyric: "now" },
-          { chord: "C", lyric: "I" },
-          { chord: "G", lyric: "see" }
-        ]
-      }
-    },
-    lyrics: {
-      verse1: "Amazing grace how sweet the sound\nThat saved a wretch like me\nI once was lost but now I'm found\nWas blind but now I see",
-      verse2: "T'was grace that taught my heart to fear\nAnd grace my fears relieved\nHow precious did that grace appear\nThe hour I first believed",
-      chorus: "I was blind but now I see"
-    }
-  }
-];
+import { getSongBySlug } from "@/lib/song-data";
 
 export default function ChordDisplayPage() {
   const params = useParams();
@@ -82,7 +30,7 @@ export default function ChordDisplayPage() {
   const [currentKey, setCurrentKey] = useState("G Major");
   
   // Find the song by slug
-  const song = mockSongs.find(s => s.id === songSlug);
+  const song = getSongBySlug(songSlug);
   
   if (!song) {
     return (
@@ -143,49 +91,43 @@ export default function ChordDisplayPage() {
     }
   };
 
-  const renderChordLine = (chordLine: any[]) => {
-    return (
-      <div className="flex flex-wrap items-center gap-1 mb-2 font-mono text-lg">
-        {chordLine.map((item, index) => (
-          <span key={index} className={item.chord ? "font-bold text-primary" : ""}>
-            {item.chord ? `[${item.chord}]` : item.lyric}
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  const renderTransposedChords = () => {
-    const transposedVerse1 = song.chords.original.verse1.map(item => ({
-      ...item,
-      chord: item.chord ? transposeChord(item.chord, song.originalKey, currentKey) : item.chord
-    }));
+  const renderChordChart = () => {
+    // Transpose the chord chart based on current key
+    let transposedChart = song.chordChart;
     
-    const transposedVerse2 = song.chords.original.verse2.map(item => ({
-      ...item,
-      chord: item.chord ? transposeChord(item.chord, song.originalKey, currentKey) : item.chord
-    }));
-    
-    const transposedChorus = song.chords.original.chorus.map(item => ({
-      ...item,
-      chord: item.chord ? transposeChord(item.chord, song.originalKey, currentKey) : item.chord
-    }));
+    // Simple chord transposition for the chart
+    if (currentKey !== song.key) {
+      // This is a simplified version - in a real app you'd want more sophisticated transposition
+      transposedChart = song.chordChart.replace(/\[([^\]]+)\]/g, (match, chord) => {
+        return `[${transposeChord(chord, song.key, currentKey)}]`;
+      });
+    }
 
     return (
       <div className="space-y-8">
         <div>
-          <h3 className="text-xl font-semibold mb-4 text-primary">Verse 1</h3>
-          {renderChordLine(transposedVerse1)}
+          <h3 className="text-xl font-semibold mb-4 text-primary">Chord Chart</h3>
+          <div className="bg-muted p-6 rounded-lg">
+            <pre className="text-sm font-mono whitespace-pre-wrap">{transposedChart}</pre>
+          </div>
         </div>
         
         <div>
-          <h3 className="text-xl font-semibold mb-4 text-primary">Verse 2</h3>
-          {renderChordLine(transposedVerse2)}
+          <h3 className="text-xl font-semibold mb-4 text-primary">Chord Progression</h3>
+          <div className="bg-muted p-4 rounded-lg">
+            <p className="text-lg font-mono">{song.chordProgression}</p>
+          </div>
         </div>
         
         <div>
-          <h3 className="text-xl font-semibold mb-4 text-primary">Chorus</h3>
-          {renderChordLine(transposedChorus)}
+          <h3 className="text-xl font-semibold mb-4 text-primary">Chords Used</h3>
+          <div className="flex flex-wrap gap-2">
+            {song.chords.map((chord, index) => (
+              <Badge key={index} variant="outline" className="text-lg px-3 py-1">
+                {transposeChord(chord, song.key, currentKey)}
+              </Badge>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -246,7 +188,7 @@ export default function ChordDisplayPage() {
                 <AdvancedTransposeButton
                   currentKey={currentKey}
                   onKeyChange={setCurrentKey}
-                  originalKey={song.originalKey}
+                  originalKey={song.key}
                 />
               </CardContent>
             </Card>
@@ -260,7 +202,7 @@ export default function ChordDisplayPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {renderTransposedChords()}
+                {renderChordChart()}
               </CardContent>
             </Card>
 
@@ -292,7 +234,7 @@ export default function ChordDisplayPage() {
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Original Key:</span>
-                    <span className="font-medium">{song.originalKey}</span>
+                    <span className="font-medium">{song.key}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Current Key:</span>

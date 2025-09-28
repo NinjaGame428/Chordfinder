@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, ThumbsUp, ThumbsDown, MessageCircle, Heart } from "lucide-react";
+import { Star, ThumbsUp, ThumbsDown, MessageCircle, Heart, LogIn } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
+import { useAuth } from "@/contexts/SupabaseAuthContext";
+import Link from "next/link";
 
 interface SongRatingProps {
   songId: number;
@@ -37,6 +39,7 @@ const SongRating: React.FC<SongRatingProps> = ({
   const [averageRating, setAverageRating] = useState(0);
   const [totalRatings, setTotalRatings] = useState(0);
   const { isSongFavorite, addSongToFavorites, removeSongFromFavorites } = useFavorites();
+  const { user } = useAuth();
 
   // Load ratings from localStorage
   useEffect(() => {
@@ -136,40 +139,105 @@ const SongRating: React.FC<SongRatingProps> = ({
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Current Rating Display */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`h-6 w-6 cursor-pointer transition-colors ${
-                    star <= (hoverRating || userRating)
-                      ? 'fill-current text-yellow-500'
-                      : 'text-gray-300'
-                  }`}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  onClick={() => handleRatingClick(star)}
-                />
-              ))}
+        {/* Login Required Message */}
+        {!user ? (
+          <div className="text-center py-8 bg-muted/50 rounded-lg">
+            <LogIn className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Login Required</h3>
+            <p className="text-muted-foreground mb-4">
+              You need to be logged in to rate songs and add them to your favorites.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button asChild className="rounded-full">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href="/register">Sign Up</Link>
+              </Button>
             </div>
-            <span className="text-sm font-medium">
-              {userRating > 0 ? getRatingText(userRating) : 'Rate this song'}
-            </span>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-full"
-              onClick={handleToggleFavorite}
-            >
-              <Heart className={`h-4 w-4 ${isSongFavorite(songId) ? 'fill-current text-red-500' : ''}`} />
-            </Button>
-          </div>
-        </div>
+        ) : (
+          <>
+            {/* Current Rating Display */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`h-6 w-6 cursor-pointer transition-colors ${
+                        star <= (hoverRating || userRating)
+                          ? 'fill-current text-yellow-500'
+                          : 'text-gray-300'
+                      }`}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => handleRatingClick(star)}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-medium">
+                  {userRating > 0 ? getRatingText(userRating) : 'Rate this song'}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={handleToggleFavorite}
+                >
+                  <Heart className={`h-4 w-4 ${isSongFavorite(songId) ? 'fill-current text-red-500' : ''}`} />
+                </Button>
+              </div>
+            </div>
+
+            {/* Comment Form */}
+            {userRating > 0 && (
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setShowCommentForm(!showCommentForm)}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  {showCommentForm ? 'Hide Comment' : 'Add Comment'}
+                </Button>
+                
+                {showCommentForm && (
+                  <div className="space-y-3">
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Share your thoughts about this song's chord progression, difficulty, or any tips for other musicians..."
+                      className="w-full p-3 border rounded-lg resize-none"
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleRatingClick(userRating)}
+                        className="rounded-full"
+                      >
+                        Save Comment
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowCommentForm(false)}
+                        className="rounded-full"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
 
         {/* Average Rating */}
         {totalRatings > 0 && (
@@ -192,50 +260,6 @@ const SongRating: React.FC<SongRatingProps> = ({
             <Badge variant="secondary">
               {totalRatings} rating{totalRatings !== 1 ? 's' : ''}
             </Badge>
-          </div>
-        )}
-
-        {/* Comment Form */}
-        {userRating > 0 && (
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full"
-              onClick={() => setShowCommentForm(!showCommentForm)}
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              {showCommentForm ? 'Hide Comment' : 'Add Comment'}
-            </Button>
-            
-            {showCommentForm && (
-              <div className="space-y-3">
-                <textarea
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Share your thoughts about this song's chord progression, difficulty, or any tips for other musicians..."
-                  className="w-full p-3 border rounded-lg resize-none"
-                  rows={3}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => handleRatingClick(userRating)}
-                    className="rounded-full"
-                  >
-                    Save Comment
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowCommentForm(false)}
-                    className="rounded-full"
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
