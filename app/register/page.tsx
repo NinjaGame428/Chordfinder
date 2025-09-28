@@ -61,8 +61,7 @@ export default function RegisterPage() {
     }
 
     const success = await register({
-      firstName: formData.firstName,
-      lastName: formData.lastName,
+      fullName: `${formData.firstName} ${formData.lastName}`,
       email: formData.email,
       password: formData.password
     });

@@ -29,7 +29,7 @@ import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 
 export default function DashboardPage() {
-  const { user, logout, updateProfile, updatePreferences, isLoading } = useAuth();
+  const { user, logout, updateProfile, isLoading } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -47,9 +47,9 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       setEditData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
+        firstName: user.firstName || user.full_name?.split(' ')[0] || '',
+        lastName: user.lastName || user.full_name?.split(' ')[1] || '',
+        email: user.email || '',
       });
     }
   }, [user]);
@@ -71,9 +71,9 @@ export default function DashboardPage() {
   const handleCancelEdit = () => {
     if (user) {
       setEditData({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
+        firstName: user.firstName || user.full_name?.split(' ')[0] || '',
+        lastName: user.lastName || user.full_name?.split(' ')[1] || '',
+        email: user.email || '',
       });
     }
     setIsEditing(false);
@@ -81,7 +81,8 @@ export default function DashboardPage() {
 
   const handlePreferenceChange = async (key: string, value: any) => {
     if (user) {
-      await updatePreferences({ [key]: value });
+      // TODO: Implement preference updates when backend is ready
+      console.log('Preference change:', key, value);
     }
   };
 
@@ -109,7 +110,7 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user.firstName}!</h1>
+            <h1 className="text-3xl font-bold mb-2">Welcome back, {user.firstName || user.full_name || 'User'}!</h1>
             <p className="text-muted-foreground">
               Manage your profile, view your activity, and access your saved content.
             </p>
@@ -132,7 +133,7 @@ export default function DashboardPage() {
                     <Heart className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{user.stats.favoriteSongs}</div>
+                    <div className="text-2xl font-bold">{user.stats?.favoriteSongs || 0}</div>
                     <p className="text-xs text-muted-foreground">
                       Songs you've saved
                     </p>
@@ -145,7 +146,7 @@ export default function DashboardPage() {
                     <Download className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{user.stats.downloadedResources}</div>
+                    <div className="text-2xl font-bold">{user.stats?.downloadedResources || 0}</div>
                     <p className="text-xs text-muted-foreground">
                       Resources downloaded
                     </p>
@@ -158,7 +159,7 @@ export default function DashboardPage() {
                     <Star className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{user.stats.ratingsGiven}</div>
+                    <div className="text-2xl font-bold">{user.stats?.ratingsGiven || 0}</div>
                     <p className="text-xs text-muted-foreground">
                       Songs you've rated
                     </p>
@@ -172,13 +173,13 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {new Date(user.joinDate).toLocaleDateString('en-US', { 
+                      {new Date(user.joinDate || user.created_at).toLocaleDateString('en-US', { 
                         month: 'short', 
                         year: 'numeric' 
                       })}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {Math.floor((Date.now() - new Date(user.joinDate).getTime()) / (1000 * 60 * 60 * 24))} days ago
+                      {Math.floor((Date.now() - new Date(user.joinDate || user.created_at).getTime()) / (1000 * 60 * 60 * 24))} days ago
                     </p>
                   </CardContent>
                 </Card>
@@ -275,16 +276,16 @@ export default function DashboardPage() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center space-x-6">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
+                      <AvatarImage src={user.avatar || user.avatar_url} alt={`${user.firstName || user.full_name} ${user.lastName}`} />
                       <AvatarFallback className="text-lg">
-                        {user.firstName[0]}{user.lastName[0]}
+                        {(user.firstName || user.full_name?.split(' ')[0] || 'U')[0]}{(user.lastName || user.full_name?.split(' ')[1] || 'U')[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-semibold">{user.firstName} {user.lastName}</h3>
+                      <h3 className="text-lg font-semibold">{user.firstName || user.full_name} {user.lastName}</h3>
                       <p className="text-muted-foreground">{user.email}</p>
                       <Badge variant="secondary" className="mt-1">
-                        Member since {new Date(user.joinDate).toLocaleDateString()}
+                        Member since {new Date(user.joinDate || user.created_at).toLocaleDateString()}
                       </Badge>
                     </div>
                   </div>
@@ -392,7 +393,7 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">Choose your preferred language</p>
                       </div>
                       <select 
-                        value={user.preferences.language}
+                        value={user.preferences?.language || 'en'}
                         onChange={(e) => handlePreferenceChange('language', e.target.value)}
                         className="px-3 py-2 border rounded-md"
                       >
@@ -407,7 +408,7 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
                       </div>
                       <select 
-                        value={user.preferences.theme}
+                        value={user.preferences?.theme || 'system'}
                         onChange={(e) => handlePreferenceChange('theme', e.target.value)}
                         className="px-3 py-2 border rounded-md"
                       >
@@ -424,7 +425,7 @@ export default function DashboardPage() {
                       </div>
                       <input
                         type="checkbox"
-                        checked={user.preferences.notifications}
+                        checked={user.preferences?.notifications || false}
                         onChange={(e) => handlePreferenceChange('notifications', e.target.checked)}
                         className="h-4 w-4"
                       />
