@@ -866,7 +866,7 @@ export default function AdminDashboardPage() {
                                     </div>
                                     <div>
                                       <span className="font-medium">Description:</span>
-                                      <p className="text-sm text-muted-foreground mt-1">{resource.description}</p>
+                                      <p className="text-sm text-muted-foreground mt-1">A useful resource for musicians and worship leaders.</p>
                                     </div>
                                   </div>
                                 </DialogContent>
