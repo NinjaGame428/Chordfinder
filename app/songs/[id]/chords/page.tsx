@@ -209,7 +209,7 @@ export default function ChordDisplayPage() {
             {/* Song Rating */}
             <Card className="mb-8">
               <CardContent className="pt-6">
-                <SongRating songId={song.id} songTitle={song.title} />
+                <SongRating songId={song.id} songTitle={song.title} songArtist={song.artist} />
               </CardContent>
             </Card>
 
