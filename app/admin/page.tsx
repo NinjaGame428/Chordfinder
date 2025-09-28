@@ -849,7 +849,7 @@ export default function AdminDashboardPage() {
                                       </div>
                                       <div>
                                         <span className="font-medium">Size:</span>
-                                        <span className="ml-2">{resource.size}</span>
+                                        <span className="ml-2">2.5 MB</span>
                                       </div>
                                       <div>
                                         <span className="font-medium">Status:</span>
