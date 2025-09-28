@@ -16,7 +16,9 @@ import {
   Piano,
   Volume2,
   BookOpen,
-  Star
+  Star,
+  Share2,
+  Tag
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
@@ -1162,7 +1164,7 @@ const ChordDisplayPage = () => {
 
   const renderChordDiagram = (diagram: ChordDiagram) => {
     if (activeTab === "piano") {
-      // Beautiful piano keyboard layout with proper key positioning
+      // Modern piano keyboard with Shadcn UI components
       const pianoKeys = [
         { note: 'C', isBlack: false, width: 'w-12' },
         { note: 'C#', isBlack: true, width: 'w-8' },
@@ -1215,171 +1217,211 @@ const ChordDisplayPage = () => {
       const chordNotes = getChordNotes(diagram.name);
       
       return (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6 rounded-xl shadow-lg border border-slate-200">
-          <div className="text-center mb-4">
-            <h4 className="font-bold text-lg text-slate-800">{diagram.name}</h4>
-            <p className="text-sm text-slate-600 mt-1">{diagram.description}</p>
-            <div className="mt-2">
-              <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                {chordNotes.join(' - ')}
-              </span>
-            </div>
-          </div>
-          
-          <div className="flex justify-center">
-            <div className="relative bg-gradient-to-b from-slate-100 to-slate-200 p-4 rounded-xl shadow-inner border-2 border-slate-300">
-              {/* Piano Keys */}
-              <div className="flex items-end h-24 relative">
-                {/* White Keys */}
-                {pianoKeys.filter(key => !key.isBlack).map((key, index) => {
-                  const isPressed = chordNotes.includes(key.note);
-                  return (
-                    <div
-                      key={`white-${index}`}
-                      className={`h-20 w-12 border-2 border-slate-400 rounded-b-lg flex items-end justify-center pb-2 text-xs font-bold transition-all duration-200 ${
-                        isPressed 
-                          ? 'bg-gradient-to-b from-blue-400 to-blue-600 text-white shadow-lg transform -translate-y-1' 
-                          : 'bg-gradient-to-b from-white to-slate-100 text-slate-700 hover:from-slate-50 hover:to-slate-100'
-                      }`}
-                    >
-                      {key.note}
-                    </div>
-                  );
-                })}
-                
-                {/* Black Keys */}
-                {pianoKeys.filter(key => key.isBlack).map((key, index) => {
-                  const isPressed = chordNotes.includes(key.note);
-                  return (
-                    <div
-                      key={`black-${index}`}
-                      className={`absolute h-12 w-8 rounded-b-lg flex items-end justify-center pb-1 text-xs font-bold transition-all duration-200 ${
-                        isPressed 
-                          ? 'bg-gradient-to-b from-blue-600 to-blue-800 text-white shadow-lg transform -translate-y-1' 
-                          : 'bg-gradient-to-b from-slate-800 to-slate-900 text-white hover:from-slate-700 hover:to-slate-800'
-                      }`}
-                      style={{
-                        left: `${(index + 1) * 48 - 16}px`,
-                        zIndex: 10
-                      }}
-                    >
-                      {key.note}
-                    </div>
-                  );
-                })}
+        <Card className="overflow-hidden border-2 border-primary/20 shadow-lg">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-primary">{diagram.name}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">{diagram.description}</p>
               </div>
-              
-              {/* Hand Position Guide */}
-              <div className="mt-4 text-center">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <h5 className="font-semibold text-blue-800 text-sm mb-2">Hand Position</h5>
-                  <div className="text-xs text-blue-700 space-y-1">
-                    {diagram.fingers.map((finger, index) => (
-                      <div key={index} className="flex items-center justify-center gap-2">
-                        <span className="font-medium">Finger {finger}:</span>
-                        <span>{chordNotes[index] || 'Note'}</span>
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                {chordNotes.join(' - ')}
+              </Badge>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="pt-0">
+            <div className="flex justify-center mb-6">
+              <div className="relative bg-gradient-to-b from-muted/50 to-muted/80 p-6 rounded-2xl shadow-inner border-2 border-border">
+                {/* Piano Keys */}
+                <div className="flex items-end h-28 relative">
+                  {/* White Keys */}
+                  {pianoKeys.filter(key => !key.isBlack).map((key, index) => {
+                    const isPressed = chordNotes.includes(key.note);
+                    return (
+                      <div
+                        key={`white-${index}`}
+                        className={`h-24 w-12 border-2 border-border rounded-b-xl flex items-end justify-center pb-3 text-xs font-bold transition-all duration-300 cursor-pointer ${
+                          isPressed 
+                            ? 'bg-primary text-primary-foreground shadow-lg transform -translate-y-2 border-primary' 
+                            : 'bg-background text-foreground hover:bg-muted hover:shadow-md'
+                        }`}
+                      >
+                        {key.note}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
+                  
+                  {/* Black Keys */}
+                  {pianoKeys.filter(key => key.isBlack).map((key, index) => {
+                    const isPressed = chordNotes.includes(key.note);
+                    return (
+                      <div
+                        key={`black-${index}`}
+                        className={`absolute h-14 w-8 rounded-b-xl flex items-end justify-center pb-2 text-xs font-bold transition-all duration-300 cursor-pointer ${
+                          isPressed 
+                            ? 'bg-primary text-primary-foreground shadow-lg transform -translate-y-2 border-primary border-2' 
+                            : 'bg-foreground text-background hover:bg-foreground/80 hover:shadow-md'
+                        }`}
+                        style={{
+                          left: `${(index + 1) * 48 - 16}px`,
+                          zIndex: 10
+                        }}
+                      >
+                        {key.note}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+            
+            {/* Hand Position Guide */}
+            <Card className="bg-primary/5 border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <Piano className="h-4 w-4" />
+                  Hand Position Guide
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {diagram.fingers.map((finger, index) => (
+                    <div key={index} className="flex items-center justify-center gap-2 bg-primary/10 rounded-lg p-2">
+                      <Badge variant="outline" className="text-xs">
+                        Finger {finger}
+                      </Badge>
+                      <span className="text-sm font-medium">{chordNotes[index] || 'Note'}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Technique:</strong> Keep your fingers curved, press keys firmly but not tensely, and maintain a relaxed wrist position.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
       );
     } else {
-      // Guitar chords with improved fretboard design
+      // Modern guitar fretboard with Shadcn UI components
       const strings = [6, 5, 4, 3, 2, 1]; // Guitar strings from low E to high E
       const frets = [0, 1, 2, 3, 4]; // First 5 frets
       const stringNames = ['E', 'A', 'D', 'G', 'B', 'e']; // String note names
       
       return (
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl shadow-lg border border-amber-200">
-          <div className="text-center mb-4">
-            <h4 className="font-bold text-lg text-amber-800">{diagram.name}</h4>
-            <p className="text-sm text-amber-700 mt-1">{diagram.description}</p>
-          </div>
+        <Card className="overflow-hidden border-2 border-amber-200 shadow-lg">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-xl font-bold text-amber-800">{diagram.name}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">{diagram.description}</p>
+              </div>
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                <Guitar className="h-3 w-3 mr-1" />
+                Guitar
+              </Badge>
+            </div>
+          </CardHeader>
           
-          <div className="flex justify-center">
-            <div className="relative bg-gradient-to-b from-amber-100 to-amber-200 p-4 rounded-xl shadow-inner border-2 border-amber-300">
-              {/* Fretboard with lines */}
-              <div className="space-y-1">
-                {/* String lines */}
-                {strings.map((string, stringIndex) => (
-                  <div key={string} className="relative">
-                    {/* String line */}
-                    <div className="h-0.5 bg-gradient-to-r from-amber-600 to-amber-700 w-full relative">
-                      {/* Fret markers on the line */}
-                      {frets.map((fret, fretIndex) => (
-                        <div
-                          key={`fret-${fret}`}
-                          className="absolute w-0.5 h-3 bg-amber-800 -top-1"
-                          style={{ left: `${fret * 20}px` }}
-                        />
-                      ))}
+          <CardContent className="pt-0">
+            <div className="flex justify-center mb-6">
+              <div className="relative bg-gradient-to-b from-amber-50 to-amber-100 p-6 rounded-2xl shadow-inner border-2 border-amber-200">
+                {/* Fretboard with modern design */}
+                <div className="space-y-2">
+                  {/* String lines */}
+                  {strings.map((string, stringIndex) => (
+                    <div key={string} className="relative">
+                      {/* String line */}
+                      <div className="h-1 bg-gradient-to-r from-amber-600 to-amber-700 w-full relative rounded-full">
+                        {/* Fret markers on the line */}
+                        {frets.map((fret, fretIndex) => (
+                          <div
+                            key={`fret-${fret}`}
+                            className="absolute w-1 h-4 bg-amber-800 -top-1.5 rounded-full"
+                            style={{ left: `${fret * 24}px` }}
+                          />
+                        ))}
+                        
+                        {/* Finger positions on the line */}
+                        {diagram.frets[stringIndex] !== -1 && (
+                          <div
+                            className="absolute w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold shadow-lg transform -translate-y-3 border-2 border-background"
+                            style={{ left: `${diagram.frets[stringIndex] * 24 - 14}px` }}
+                          >
+                            {diagram.fingers[stringIndex]}
+                          </div>
+                        )}
+                      </div>
                       
-                      {/* Finger positions on the line */}
-                      {diagram.frets[stringIndex] !== -1 && (
-                        <div
-                          className="absolute w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transform -translate-y-2.5"
-                          style={{ left: `${diagram.frets[stringIndex] * 20 - 12}px` }}
-                        >
-                          {diagram.fingers[stringIndex]}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* String name */}
-                    <div className="absolute -left-8 top-0 text-xs font-bold text-amber-800">
-                      {stringNames[stringIndex]}
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Fret numbers */}
-                <div className="flex justify-between mt-2">
-                  {frets.map((fret) => (
-                    <div key={fret} className="text-xs text-amber-700 font-medium w-5 text-center">
-                      {fret}
+                      {/* String name */}
+                      <div className="absolute -left-10 top-0 text-sm font-bold text-amber-800 bg-amber-100 rounded-full w-6 h-6 flex items-center justify-center">
+                        {stringNames[stringIndex]}
+                      </div>
                     </div>
                   ))}
-                </div>
-              </div>
-              
-              {/* Capo indicator */}
-              {diagram.capo && (
-                <div className="absolute -top-8 left-0 right-0 text-center">
-                  <span className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full font-medium shadow-md">
-                    Capo {diagram.capo}
-                  </span>
-                </div>
-              )}
-              
-              {/* Hand Position Guide */}
-              <div className="mt-6 text-center">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h5 className="font-semibold text-blue-800 text-sm mb-3">Hand Position & Technique</h5>
-                  <div className="text-xs text-blue-700 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      {diagram.fingers.map((finger, index) => {
-                        if (finger === 0) return null;
-                        return (
-                          <div key={index} className="flex items-center justify-center gap-2 bg-blue-100 rounded px-2 py-1">
-                            <span className="font-medium">Finger {finger}:</span>
-                            <span>String {strings[index]}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-3 p-2 bg-blue-100 rounded text-xs">
-                      <strong>Tips:</strong> Keep your thumb behind the neck, press firmly behind the fret, and maintain a relaxed wrist position.
-                    </div>
+                  
+                  {/* Fret numbers */}
+                  <div className="flex justify-between mt-3">
+                    {frets.map((fret) => (
+                      <div key={fret} className="text-sm text-amber-700 font-medium w-6 text-center">
+                        {fret}
+                      </div>
+                    ))}
                   </div>
                 </div>
+                
+                {/* Capo indicator */}
+                {diagram.capo && (
+                  <div className="absolute -top-10 left-0 right-0 text-center">
+                    <Badge className="bg-primary text-primary-foreground shadow-md">
+                      Capo {diagram.capo}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </div>
+            
+            {/* Hand Position Guide */}
+            <Card className="bg-amber-50 border-amber-200">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-amber-800 flex items-center gap-2">
+                  <Guitar className="h-4 w-4" />
+                  Hand Position & Technique
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {diagram.fingers.map((finger, index) => {
+                    if (finger === 0) return null;
+                    return (
+                      <div key={index} className="flex items-center justify-center gap-2 bg-amber-100 rounded-lg p-2">
+                        <Badge variant="outline" className="text-xs">
+                          Finger {finger}
+                        </Badge>
+                        <span className="text-sm font-medium">String {strings[index]}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="p-3 bg-amber-100 rounded-lg">
+                    <p className="text-xs text-amber-800">
+                      <strong>Technique Tips:</strong> Keep your thumb behind the neck, press firmly behind the fret, and maintain a relaxed wrist position.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-amber-100 rounded-lg">
+                    <p className="text-xs text-amber-800">
+                      <strong>Practice:</strong> Start slowly and focus on clean finger placement. Use a metronome to develop consistent timing.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
       );
     }
   };
@@ -1465,16 +1507,17 @@ const ChordDisplayPage = () => {
             </div>
 
             {filteredChords.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {filteredChords.map((chord, index) => (
-                  <Card key={index} className="group hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="pb-3">
+                  <Card key={index} className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/30">
+                    <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-2xl font-bold group-hover:text-primary transition-colors">
+                          <CardTitle className="text-2xl font-bold group-hover:text-primary transition-colors flex items-center gap-2">
+                            {activeTab === "piano" ? <Piano className="h-5 w-5" /> : <Guitar className="h-5 w-5" />}
                             {chord.name}
                           </CardTitle>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2 mt-3">
                             <Badge variant="outline" className="flex items-center gap-1">
                               <Music className="h-3 w-3" />
                               {chord.key} Key
@@ -1482,18 +1525,21 @@ const ChordDisplayPage = () => {
                             <Badge className={getDifficultyColor(chord.difficulty)}>
                               {chord.difficulty}
                             </Badge>
+                            <Badge variant="secondary" className="bg-primary/10 text-primary">
+                              {activeTab === "piano" ? "Piano" : "Guitar"}
+                            </Badge>
                           </div>
                         </div>
                       </div>
                     </CardHeader>
                     
                     <CardContent className="pt-0">
-                      <p className="text-muted-foreground mb-4">
+                      <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
                         {chord.description}
                       </p>
                       
                       {/* Chord Diagrams */}
-                      <div className="space-y-4 mb-4">
+                      <div className="space-y-6 mb-6">
                         {chord.diagrams.map((diagram, diagramIndex) => (
                           <div key={diagramIndex}>
                             {renderChordDiagram(diagram)}
@@ -1502,33 +1548,47 @@ const ChordDisplayPage = () => {
                       </div>
                       
                       {/* Common Uses */}
-                      <div className="mb-4">
-                        <h4 className="font-semibold mb-2 text-sm">Common Uses:</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {chord.commonUses.map((use, useIndex) => (
-                            <Badge key={useIndex} variant="secondary" className="text-xs">
-                              {use}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      {/* Alternative Names */}
-                      {chord.alternativeNames.length > 1 && (
-                        <div className="mb-4">
-                          <h4 className="font-semibold mb-2 text-sm">Also Known As:</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {chord.alternativeNames.slice(1).map((name, nameIndex) => (
-                              <Badge key={nameIndex} variant="outline" className="text-xs">
-                                {name}
+                      <Card className="mb-4">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <BookOpen className="h-4 w-4" />
+                            Common Uses
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="flex flex-wrap gap-2">
+                            {chord.commonUses.map((use, useIndex) => (
+                              <Badge key={useIndex} variant="secondary" className="text-xs">
+                                {use}
                               </Badge>
                             ))}
                           </div>
-                        </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Alternative Names */}
+                      {chord.alternativeNames.length > 1 && (
+                        <Card className="mb-4">
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                              <Tag className="h-4 w-4" />
+                              Also Known As
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <div className="flex flex-wrap gap-2">
+                              {chord.alternativeNames.slice(1).map((name, nameIndex) => (
+                                <Badge key={nameIndex} variant="outline" className="text-xs">
+                                  {name}
+                                </Badge>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
                       
                       {/* Action Buttons */}
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-3 mt-6">
                         <Button size="sm" variant="outline" className="flex-1">
                           <Download className="mr-2 h-4 w-4" />
                           Save
@@ -1536,6 +1596,10 @@ const ChordDisplayPage = () => {
                         <Button size="sm" variant="outline" className="flex-1">
                           <Printer className="mr-2 h-4 w-4" />
                           Print
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1">
+                          <Share2 className="mr-2 h-4 w-4" />
+                          Share
                         </Button>
                       </div>
                     </CardContent>
