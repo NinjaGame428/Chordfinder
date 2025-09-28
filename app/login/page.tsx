@@ -38,11 +38,11 @@ export default function LoginPage() {
     const result = await login(email, password);
     console.log('Login result:', result);
     
-    if (result.success) {
+    if (result) {
       console.log('Login successful, redirecting to dashboard');
       router.push("/dashboard");
     } else {
-      setError(result.error || "Login failed. Please try again.");
+      setError("Login failed. Please try again.");
     }
   };
 
