@@ -212,16 +212,11 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       console.log('Attempting registration for:', userData.email);
       setIsLoading(true);
       
-      const { data, error } = await userService.signUp(
+      const { user, session } = await userService.signUp(
         userData.email,
         userData.password,
         userData.fullName
       );
-
-      if (error) {
-        console.error('Registration error:', error);
-        return false;
-      }
 
       if (user) {
         console.log('Registration successful, user created:', user.id);
