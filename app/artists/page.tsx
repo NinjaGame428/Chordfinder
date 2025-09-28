@@ -302,9 +302,9 @@ const ArtistsPage = () => {
                         <p className="text-sm font-medium">Popular Songs:</p>
                         <div className="flex flex-wrap gap-1">
                           {artist.popularSongs.slice(0, 3).map((song, index) => (
-                            <Link key={index} href={`/songs/${song.id}`}>
+                            <Link key={index} href={`/songs/${typeof song === 'string' ? index + 1 : song.id}`}>
                               <Badge variant="secondary" className="text-xs hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors">
-                                {song.title}
+                                {typeof song === 'string' ? song : song.title}
                               </Badge>
                             </Link>
                           ))}
