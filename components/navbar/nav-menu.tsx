@@ -23,11 +23,6 @@ export const NavMenu = (props: NavigationMenuProps) => {
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/chords">Chords</Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
             <Link href="/artists">Artists</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>

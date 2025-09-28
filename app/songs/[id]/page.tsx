@@ -189,6 +189,10 @@ const SongPage = () => {
                     <Heart className="mr-2 h-4 w-4" />
                     Favorite
                   </Button>
+                  <Button variant="outline" className="rounded-full">
+                    <Music className="mr-2 h-4 w-4" />
+                    Transpose
+                  </Button>
                 </div>
               </div>
               

@@ -192,7 +192,7 @@ export default function AdminDashboardPage() {
   const [showEditSongDialog, setShowEditSongDialog] = useState(false);
   const [showAddResourceDialog, setShowAddResourceDialog] = useState(false);
   const [showEditResourceDialog, setShowEditResourceDialog] = useState(false);
-  const [editingSong, setEditingSong] = useState(null);
+  const [editingSong, setEditingSong] = useState<any>(null);
   const [editingResource, setEditingResource] = useState(null);
 
   // Check if user is admin
