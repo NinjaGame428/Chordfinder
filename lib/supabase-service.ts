@@ -13,7 +13,13 @@ export const userService = {
       .eq('id', user.id)
       .single()
 
-    if (error) throw error
+    if (error) {
+      // If user doesn't exist in database, return null instead of throwing
+      if (error.code === 'PGRST116') {
+        return null
+      }
+      throw error
+    }
     return data
   },
 

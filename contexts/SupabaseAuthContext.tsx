@@ -26,12 +26,22 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('Auth state changed:', { user: !!user, isLoading });
+  }, [user, isLoading]);
+
   // Check for existing session on mount
   useEffect(() => {
     if (!supabase) {
       setIsLoading(false);
       return;
     }
+
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000); // 10 second timeout
 
     const getInitialSession = async () => {
       try {
@@ -41,6 +51,16 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             const userData = await userService.getCurrentUser();
             if (userData) {
               setUser(userData);
+            } else {
+              // If user data is null, set basic user info
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                full_name: session.user.user_metadata?.full_name || '',
+                role: 'user',
+                created_at: session.user.created_at,
+                updated_at: session.user.updated_at || session.user.created_at,
+              });
             }
           } catch (userError) {
             console.error('Error fetching user data:', userError);
@@ -58,6 +78,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       } catch (error) {
         console.error('Error getting initial session:', error);
       } finally {
+        clearTimeout(timeoutId);
         setIsLoading(false);
       }
     };
@@ -67,13 +88,31 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (session?.user) {
-          try {
-            const userData = await userService.getCurrentUser();
-            if (userData) {
-              setUser(userData);
-            } else {
-              // Fallback to basic user info if userService fails
+        // Set a timeout for auth state changes too
+        const authTimeoutId = setTimeout(() => {
+          setIsLoading(false);
+        }, 5000); // 5 second timeout for auth changes
+
+        try {
+          if (session?.user) {
+            try {
+              const userData = await userService.getCurrentUser();
+              if (userData) {
+                setUser(userData);
+              } else {
+                // If user data is null, set basic user info
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || '',
+                  role: 'user',
+                  created_at: session.user.created_at,
+                  updated_at: session.user.updated_at || session.user.created_at,
+                });
+              }
+            } catch (error) {
+              console.error('Error fetching user data:', error);
+              // Fallback to basic user info
               setUser({
                 id: session.user.id,
                 email: session.user.email || '',
@@ -83,22 +122,13 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
                 updated_at: session.user.updated_at || session.user.created_at,
               });
             }
-          } catch (error) {
-            console.error('Error fetching user data:', error);
-            // Fallback to basic user info
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              full_name: session.user.user_metadata?.full_name || '',
-              role: 'user',
-              created_at: session.user.created_at,
-              updated_at: session.user.updated_at || session.user.created_at,
-            });
+          } else {
+            setUser(null);
           }
-        } else {
-          setUser(null);
+        } finally {
+          clearTimeout(authTimeoutId);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 
