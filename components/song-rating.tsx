@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star, ThumbsUp, ThumbsDown, MessageCircle, Heart, LogIn } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Link from "next/link";
 
 interface SongRatingProps {
@@ -38,8 +39,11 @@ const SongRating: React.FC<SongRatingProps> = ({
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalRatings, setTotalRatings] = useState(0);
+  const [hasUserRated, setHasUserRated] = useState(false);
+  const [userExistingRating, setUserExistingRating] = useState<Rating | null>(null);
   const { isSongFavorite, addSongToFavorites, removeSongFromFavorites } = useFavorites();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   // Load ratings from localStorage
   useEffect(() => {
@@ -47,6 +51,17 @@ const SongRating: React.FC<SongRatingProps> = ({
     if (savedRatings) {
       const parsedRatings = JSON.parse(savedRatings);
       setRatings(parsedRatings);
+      
+      // Check if current user has already rated this song
+      if (user) {
+        const existingRating = parsedRatings.find((rating: Rating) => rating.userId === user.id);
+        if (existingRating) {
+          setHasUserRated(true);
+          setUserExistingRating(existingRating);
+          setUserRating(existingRating.rating);
+          setComment(existingRating.comment || '');
+        }
+      }
       
       // Calculate average rating
       if (parsedRatings.length > 0) {
@@ -56,15 +71,42 @@ const SongRating: React.FC<SongRatingProps> = ({
       }
     }
 
-    // Load user's previous rating
-    const userRatingKey = `user-rating-${songId}`;
-    const savedUserRating = localStorage.getItem(userRatingKey);
-    if (savedUserRating) {
-      setUserRating(parseInt(savedUserRating));
+    // Load user's previous rating (fallback for non-logged in users)
+    if (!user) {
+      const userRatingKey = `user-rating-${songId}`;
+      const savedUserRating = localStorage.getItem(userRatingKey);
+      if (savedUserRating) {
+        setUserRating(parseInt(savedUserRating));
+      }
     }
-  }, [songId]);
+  }, [songId, user]);
 
   const handleRatingClick = (rating: number) => {
+    if (hasUserRated) {
+      // If user has already rated, remove their rating
+      const updatedRatings = ratings.filter(r => r.userId !== user?.id);
+      setRatings(updatedRatings);
+      localStorage.setItem(`song-ratings-${songId}`, JSON.stringify(updatedRatings));
+      
+      // Update average rating
+      if (updatedRatings.length > 0) {
+        const sum = updatedRatings.reduce((acc, r) => acc + r.rating, 0);
+        setAverageRating(sum / updatedRatings.length);
+      } else {
+        setAverageRating(0);
+      }
+      setTotalRatings(updatedRatings.length);
+      
+      // Reset user rating state
+      setUserRating(0);
+      setComment('');
+      setHasUserRated(false);
+      setUserExistingRating(null);
+      setShowCommentForm(false);
+      
+      return;
+    }
+    
     setUserRating(rating);
     
     // Save user rating
@@ -77,11 +119,11 @@ const SongRating: React.FC<SongRatingProps> = ({
       rating,
       comment: comment || '',
       timestamp: new Date().toISOString(),
-      userId: 'user-' + Math.random().toString(36).substr(2, 9)
+      userId: user?.id || 'anonymous'
     };
 
     // Update ratings
-    const updatedRatings = [...ratings.filter(r => r.userId !== newRating.userId), newRating];
+    const updatedRatings = [...ratings, newRating];
     setRatings(updatedRatings);
     localStorage.setItem(`song-ratings-${songId}`, JSON.stringify(updatedRatings));
     
@@ -90,8 +132,9 @@ const SongRating: React.FC<SongRatingProps> = ({
     setAverageRating(sum / updatedRatings.length);
     setTotalRatings(updatedRatings.length);
     
-    setComment('');
-    setShowCommentForm(false);
+    setHasUserRated(true);
+    setUserExistingRating(newRating);
+    setShowCommentForm(true);
   };
 
   const handleToggleFavorite = () => {
@@ -177,7 +220,12 @@ const SongRating: React.FC<SongRatingProps> = ({
                   ))}
                 </div>
                 <span className="text-sm font-medium">
-                  {userRating > 0 ? getRatingText(userRating) : 'Rate this song'}
+                  {hasUserRated 
+                    ? `${t('song.youRatedThis')} ${getRatingText(userRating)} - ${t('song.clickToRemoveRating')}`
+                    : userRating > 0 
+                      ? getRatingText(userRating) 
+                      : t('song.rateThisSong')
+                  }
                 </span>
               </div>
               
@@ -203,7 +251,7 @@ const SongRating: React.FC<SongRatingProps> = ({
                   onClick={() => setShowCommentForm(!showCommentForm)}
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
-                  {showCommentForm ? 'Hide Comment' : 'Add Comment'}
+                  {showCommentForm ? t('song.hideComment') : t('song.addComment')}
                 </Button>
                 
                 {showCommentForm && (
@@ -211,7 +259,7 @@ const SongRating: React.FC<SongRatingProps> = ({
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
-                      placeholder="Share your thoughts about this song's chord progression, difficulty, or any tips for other musicians..."
+                      placeholder={t('song.comment')}
                       className="w-full p-3 border rounded-lg resize-none"
                       rows={3}
                     />
@@ -221,7 +269,7 @@ const SongRating: React.FC<SongRatingProps> = ({
                         onClick={() => handleRatingClick(userRating)}
                         className="rounded-full"
                       >
-                        Save Comment
+                        {t('song.submitComment')}
                       </Button>
                       <Button
                         size="sm"
@@ -229,7 +277,7 @@ const SongRating: React.FC<SongRatingProps> = ({
                         onClick={() => setShowCommentForm(false)}
                         className="rounded-full"
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     </div>
                   </div>

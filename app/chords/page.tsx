@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
+import { useLanguage } from "@/contexts/LanguageContext";
 import Link from "next/link";
 
 interface ChordDiagram {
@@ -44,10 +45,44 @@ interface Chord {
 }
 
 const ChordDisplayPage = () => {
+  const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKey, setSelectedKey] = useState("All Keys");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All Levels");
   const [activeTab, setActiveTab] = useState("guitar");
+
+  // Function to convert chord names to French
+  const getChordName = (chordName: string) => {
+    if (language === 'fr') {
+      const chordMap: { [key: string]: string } = {
+        'C': 'Do',
+        'C#': 'Do#',
+        'Db': 'Ré♭',
+        'D': 'Ré',
+        'D#': 'Ré#',
+        'Eb': 'Mi♭',
+        'E': 'Mi',
+        'F': 'Fa',
+        'F#': 'Fa#',
+        'Gb': 'Sol♭',
+        'G': 'Sol',
+        'G#': 'Sol#',
+        'Ab': 'La♭',
+        'A': 'La',
+        'A#': 'La#',
+        'Bb': 'Si♭',
+        'B': 'Si',
+      };
+      
+      // Replace chord names in the chord name string
+      let frenchChord = chordName;
+      Object.entries(chordMap).forEach(([english, french]) => {
+        frenchChord = frenchChord.replace(new RegExp(english, 'g'), french);
+      });
+      return frenchChord;
+    }
+    return chordName;
+  };
 
   const keys = [
     "All Keys", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
@@ -1164,114 +1199,183 @@ const ChordDisplayPage = () => {
 
   const renderChordDiagram = (diagram: ChordDiagram) => {
     if (activeTab === "piano") {
-      // Modern piano keyboard with Shadcn UI components
+      // Accurate 1-octave piano keyboard representation
       const pianoKeys = [
-        { note: 'C', isBlack: false, width: 'w-12' },
-        { note: 'C#', isBlack: true, width: 'w-8' },
-        { note: 'D', isBlack: false, width: 'w-12' },
-        { note: 'D#', isBlack: true, width: 'w-8' },
-        { note: 'E', isBlack: false, width: 'w-12' },
-        { note: 'F', isBlack: false, width: 'w-12' },
-        { note: 'F#', isBlack: true, width: 'w-8' },
-        { note: 'G', isBlack: false, width: 'w-12' },
-        { note: 'G#', isBlack: true, width: 'w-8' },
-        { note: 'A', isBlack: false, width: 'w-12' },
-        { note: 'A#', isBlack: true, width: 'w-8' },
-        { note: 'B', isBlack: false, width: 'w-12' },
-        { note: 'C', isBlack: false, width: 'w-12' }
+        { note: 'C', isBlack: false, position: 0 },
+        { note: 'C#', isBlack: true, position: 0.5 },
+        { note: 'D', isBlack: false, position: 1 },
+        { note: 'D#', isBlack: true, position: 1.5 },
+        { note: 'E', isBlack: false, position: 2 },
+        { note: 'F', isBlack: false, position: 3 },
+        { note: 'F#', isBlack: true, position: 3.5 },
+        { note: 'G', isBlack: false, position: 4 },
+        { note: 'G#', isBlack: true, position: 4.5 },
+        { note: 'A', isBlack: false, position: 5 },
+        { note: 'A#', isBlack: true, position: 5.5 },
+        { note: 'B', isBlack: false, position: 6 },
+        { note: 'C', isBlack: false, position: 7 } // Next octave C
       ];
       
-      // Map chord notes to piano keys based on the chord name
+      // Enhanced chord mapping with more comprehensive chord types
       const getChordNotes = (chordName: string) => {
         const chordMap: { [key: string]: string[] } = {
+          // C Chords
           'C Major': ['C', 'E', 'G'],
           'C Minor': ['C', 'Eb', 'G'],
           'C7': ['C', 'E', 'G', 'Bb'],
+          'Cmaj7': ['C', 'E', 'G', 'B'],
+          'Cmin7': ['C', 'Eb', 'G', 'Bb'],
+          'Cdim': ['C', 'Eb', 'Gb'],
+          'Caug': ['C', 'E', 'G#'],
+          'Csus2': ['C', 'D', 'G'],
+          'Csus4': ['C', 'F', 'G'],
+          
+          // C# Chords
           'C# Major': ['C#', 'F', 'G#'],
           'C# Minor': ['C#', 'E', 'G#'],
+          'C#7': ['C#', 'F', 'G#', 'B'],
+          
+          // D Chords
           'D Major': ['D', 'F#', 'A'],
           'D Minor': ['D', 'F', 'A'],
+          'D7': ['D', 'F#', 'A', 'C'],
+          'Dmaj7': ['D', 'F#', 'A', 'C#'],
+          'Dmin7': ['D', 'F', 'A', 'C'],
+          
+          // D# Chords
           'D# Major': ['D#', 'G', 'A#'],
           'D# Minor': ['D#', 'F#', 'A#'],
+          'D#7': ['D#', 'G', 'A#', 'C#'],
+          
+          // E Chords
           'E Major': ['E', 'G#', 'B'],
           'E Minor': ['E', 'G', 'B'],
+          'E7': ['E', 'G#', 'B', 'D'],
+          'Emaj7': ['E', 'G#', 'B', 'D#'],
+          'Emin7': ['E', 'G', 'B', 'D'],
+          
+          // F Chords
           'F Major': ['F', 'A', 'C'],
           'F Minor': ['F', 'Ab', 'C'],
+          'F7': ['F', 'A', 'C', 'Eb'],
+          'Fmaj7': ['F', 'A', 'C', 'E'],
+          'Fmin7': ['F', 'Ab', 'C', 'Eb'],
+          
+          // F# Chords
           'F# Major': ['F#', 'A#', 'C#'],
           'F# Minor': ['F#', 'A', 'C#'],
+          'F#7': ['F#', 'A#', 'C#', 'E'],
+          
+          // G Chords
           'G Major': ['G', 'B', 'D'],
           'G Minor': ['G', 'Bb', 'D'],
+          'G7': ['G', 'B', 'D', 'F'],
+          'Gmaj7': ['G', 'B', 'D', 'F#'],
+          'Gmin7': ['G', 'Bb', 'D', 'F'],
+          
+          // G# Chords
           'G# Major': ['G#', 'C', 'D#'],
           'G# Minor': ['G#', 'B', 'D#'],
+          'G#7': ['G#', 'C', 'D#', 'F#'],
+          
+          // A Chords
           'A Major': ['A', 'C#', 'E'],
           'A Minor': ['A', 'C', 'E'],
+          'A7': ['A', 'C#', 'E', 'G'],
+          'Amaj7': ['A', 'C#', 'E', 'G#'],
+          'Amin7': ['A', 'C', 'E', 'G'],
+          
+          // A# Chords
           'A# Major': ['A#', 'D', 'F'],
           'A# Minor': ['A#', 'C#', 'F'],
+          'A#7': ['A#', 'D', 'F', 'G#'],
+          
+          // B Chords
           'B Major': ['B', 'D#', 'F#'],
-          'B Minor': ['B', 'D', 'F#']
+          'B Minor': ['B', 'D', 'F#'],
+          'B7': ['B', 'D#', 'F#', 'A'],
+          'Bmaj7': ['B', 'D#', 'F#', 'A#'],
+          'Bmin7': ['B', 'D', 'F#', 'A']
         };
         
         return chordMap[chordName] || ['C', 'E', 'G'];
       };
       
       const chordNotes = getChordNotes(diagram.name);
+      const displayChordName = getChordName(diagram.name);
       
       return (
         <Card className="overflow-hidden border-2 border-primary/20 shadow-lg">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl font-bold text-primary">{diagram.name}</CardTitle>
+                <CardTitle className="text-xl font-bold text-primary">{displayChordName}</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">{diagram.description}</p>
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary">
-                {chordNotes.join(' - ')}
+                {chordNotes.map(note => getChordName(note)).join(' - ')}
               </Badge>
             </div>
           </CardHeader>
           
           <CardContent className="pt-0">
             <div className="flex justify-center mb-6">
-              <div className="relative bg-gradient-to-b from-muted/50 to-muted/80 p-6 rounded-2xl shadow-inner border-2 border-border">
-                {/* Piano Keys */}
-                <div className="flex items-end h-28 relative">
+              <div className="relative bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 p-8 rounded-3xl shadow-2xl border-2 border-slate-200 dark:border-slate-700">
+                {/* Piano Keys - Accurate 1-octave representation */}
+                <div className="flex items-end h-32 relative">
                   {/* White Keys */}
                   {pianoKeys.filter(key => !key.isBlack).map((key, index) => {
                     const isPressed = chordNotes.includes(key.note);
+                    const keyWidth = key.note === 'C' && index === 0 ? 'w-14' : 'w-12';
                     return (
                       <div
-                        key={`white-${index}`}
-                        className={`h-24 w-12 border-2 border-border rounded-b-xl flex items-end justify-center pb-3 text-xs font-bold transition-all duration-300 cursor-pointer ${
+                        key={`white-${key.note}-${index}`}
+                        className={`${keyWidth} h-28 border-2 border-slate-300 dark:border-slate-600 rounded-b-lg flex items-end justify-center pb-4 text-sm font-bold transition-all duration-300 cursor-pointer relative ${
                           isPressed 
-                            ? 'bg-primary text-primary-foreground shadow-lg transform -translate-y-2 border-primary' 
-                            : 'bg-background text-foreground hover:bg-muted hover:shadow-md'
+                            ? 'bg-primary text-primary-foreground shadow-xl transform -translate-y-3 border-primary scale-105' 
+                            : 'bg-white dark:bg-slate-100 text-slate-800 hover:bg-slate-50 dark:hover:bg-slate-200 hover:shadow-lg'
                         }`}
+                        style={{
+                          zIndex: isPressed ? 20 : 1
+                        }}
                       >
-                        {key.note}
+                        <span className="text-xs font-semibold">{getChordName(key.note)}</span>
+                        {isPressed && (
+                          <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                        )}
                       </div>
                     );
                   })}
                   
-                  {/* Black Keys */}
+                  {/* Black Keys - Positioned accurately */}
                   {pianoKeys.filter(key => key.isBlack).map((key, index) => {
                     const isPressed = chordNotes.includes(key.note);
+                    const leftPosition = key.position * 48 + 24; // Position between white keys
                     return (
                       <div
-                        key={`black-${index}`}
-                        className={`absolute h-14 w-8 rounded-b-xl flex items-end justify-center pb-2 text-xs font-bold transition-all duration-300 cursor-pointer ${
+                        key={`black-${key.note}-${index}`}
+                        className={`absolute h-20 w-8 rounded-b-lg flex items-end justify-center pb-2 text-xs font-bold transition-all duration-300 cursor-pointer ${
                           isPressed 
-                            ? 'bg-primary text-primary-foreground shadow-lg transform -translate-y-2 border-primary border-2' 
-                            : 'bg-foreground text-background hover:bg-foreground/80 hover:shadow-md'
+                            ? 'bg-primary text-primary-foreground shadow-xl transform -translate-y-3 border-2 border-primary scale-110' 
+                            : 'bg-slate-800 text-white hover:bg-slate-700 hover:shadow-lg'
                         }`}
                         style={{
-                          left: `${(index + 1) * 48 - 16}px`,
-                          zIndex: 10
+                          left: `${leftPosition}px`,
+                          zIndex: isPressed ? 25 : 15
                         }}
                       >
-                        {key.note}
+                        <span className="text-xs font-semibold">{getChordName(key.note)}</span>
+                        {isPressed && (
+                          <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-primary-foreground rounded-full animate-pulse"></div>
+                        )}
                       </div>
                     );
                   })}
+                </div>
+                
+                {/* Octave indicator */}
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-slate-200 dark:bg-slate-700 px-3 py-1 rounded-full text-xs font-medium">
+                  Octave 4
                 </div>
               </div>
             </div>
@@ -1281,7 +1385,7 @@ const ChordDisplayPage = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-semibold text-primary flex items-center gap-2">
                   <Piano className="h-4 w-4" />
-                  Hand Position Guide
+                  {t('chord.handPositionGuide')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
@@ -1289,15 +1393,15 @@ const ChordDisplayPage = () => {
                   {diagram.fingers.map((finger, index) => (
                     <div key={index} className="flex items-center justify-center gap-2 bg-primary/10 rounded-lg p-2">
                       <Badge variant="outline" className="text-xs">
-                        Finger {finger}
+                        {t('chord.finger')} {finger}
                       </Badge>
-                      <span className="text-sm font-medium">{chordNotes[index] || 'Note'}</span>
+                      <span className="text-sm font-medium">{getChordName(chordNotes[index] || 'Note')}</span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 p-3 bg-muted/50 rounded-lg">
                   <p className="text-xs text-muted-foreground">
-                    <strong>Technique:</strong> Keep your fingers curved, press keys firmly but not tensely, and maintain a relaxed wrist position.
+                    <strong>{t('chord.techniqueTips')}:</strong> {t('chord.pianoTechnique')}
                   </p>
                 </div>
               </CardContent>

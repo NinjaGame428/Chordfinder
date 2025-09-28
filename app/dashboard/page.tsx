@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ import Footer from "@/components/footer";
 
 export default function DashboardPage() {
   const { user, logout, updateProfile, isLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -244,7 +246,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Favorite Songs</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('song.favoriteSongs')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Heart className="h-4 w-4 text-muted-foreground" />
                       {isUpdating && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -255,14 +257,14 @@ export default function DashboardPage() {
                       {userStats.favoriteSongs}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Songs you've saved
+                      {t('song.songsYouveSaved')}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Downloads</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('song.downloads')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Download className="h-4 w-4 text-muted-foreground" />
                       {isUpdating && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -273,14 +275,14 @@ export default function DashboardPage() {
                       {userStats.downloadedResources}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Resources downloaded
+                      {t('song.resourcesDownloaded')}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ratings Given</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('song.ratingsGiven')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Star className="h-4 w-4 text-muted-foreground" />
                       {isUpdating && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -291,14 +293,14 @@ export default function DashboardPage() {
                       {userStats.ratingsGiven}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Songs you've rated
+                      {t('song.songsYouveRated')}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Member Since</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('song.memberSince')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
                       {isUpdating && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -312,7 +314,7 @@ export default function DashboardPage() {
                       })}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {Math.floor((Date.now() - userStats.memberSince.getTime()) / (1000 * 60 * 60 * 24))} days ago
+                      {Math.floor((Date.now() - userStats.memberSince.getTime()) / (1000 * 60 * 60 * 24))} {t('song.daysAgo')}
                     </p>
                   </CardContent>
                 </Card>
