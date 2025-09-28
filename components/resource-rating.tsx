@@ -31,7 +31,7 @@ const ResourceRating: React.FC<ResourceRatingProps> = ({
   className = '' 
 }) => {
   const { user } = useAuth();
-  const { favorites, toggleFavorite } = useFavorites();
+  const { favoriteResources, addResourceToFavorites, removeResourceFromFavorites, isResourceFavorite } = useFavorites();
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [userRating, setUserRating] = useState<number>(0);
   const [userComment, setUserComment] = useState<string>('');
@@ -60,10 +60,9 @@ const ResourceRating: React.FC<ResourceRatingProps> = ({
   // Check if resource is favorited
   useEffect(() => {
     if (user) {
-      const userFavorites = favorites[user.id] || [];
-      setIsFavorited(userFavorites.includes(resourceId));
+      setIsFavorited(isResourceFavorite(resourceId));
     }
-  }, [favorites, user, resourceId]);
+  }, [user, resourceId, isResourceFavorite]);
 
   const handleRating = (rating: number) => {
     if (!user) {
@@ -110,7 +109,16 @@ const ResourceRating: React.FC<ResourceRatingProps> = ({
       alert('Please log in to add favorites');
       return;
     }
-    toggleFavorite(user.id, resourceId);
+    if (isResourceFavorite(resourceId)) {
+      removeResourceFromFavorites(resourceId);
+    } else {
+      addResourceToFavorites({
+        id: resourceId,
+        title: resourceTitle,
+        type: resourceType,
+        category: 'General'
+      });
+    }
     setIsFavorited(!isFavorited);
   };
 
