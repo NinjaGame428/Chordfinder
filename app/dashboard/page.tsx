@@ -99,12 +99,15 @@ export default function DashboardPage() {
       
       setUserStats(newStats);
       
-      // Update the user object with new stats
-      if (updateProfile) {
-        await updateProfile({
-          stats: newStats
-        });
-      }
+             // Update the user object with new stats
+             if (updateProfile) {
+               await updateProfile({
+                 stats: {
+                   ...newStats,
+                   lastActive: new Date().toISOString()
+                 }
+               });
+             }
     } catch (error) {
       console.error('Error updating stats:', error);
     } finally {
