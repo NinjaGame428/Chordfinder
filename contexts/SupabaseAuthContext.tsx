@@ -146,23 +146,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       console.log('Attempting login for:', email);
       setIsLoading(true);
       
-      const { user, session, error } = await userService.signIn(email, password);
-      
-      if (error) {
-        console.error('Login error:', error);
-        
-        // Provide specific error messages
-        let errorMessage = 'Login failed. Please try again.';
-        if (error.message.includes('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
-        } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Please check your email and click the confirmation link before signing in.';
-        } else if (error.message.includes('Too many requests')) {
-          errorMessage = 'Too many login attempts. Please wait a moment and try again.';
-        }
-        
-        return { success: false, error: errorMessage };
-      }
+      const { user, session } = await userService.signIn(email, password);
 
       if (user) {
         console.log('Login successful, fetching user data...');
@@ -201,7 +185,18 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       return { success: false, error: 'Login failed. Please try again.' };
     } catch (error: any) {
       console.error('Login error:', error);
-      return { success: false, error: error.message || 'An unexpected error occurred' };
+      
+      // Provide specific error messages
+      let errorMessage = 'Login failed. Please try again.';
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and click the confirmation link before signing in.';
+      } else if (error.message?.includes('Too many requests')) {
+        errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+      }
+      
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
