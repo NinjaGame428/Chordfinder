@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/contexts/SupabaseAuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
@@ -26,8 +26,19 @@ import {
   Save,
   X
 } from "lucide-react";
-import { Navbar } from "@/components/navbar";
-import Footer from "@/components/footer";
+import dynamic from "next/dynamic";
+import { PageLoading } from "@/components/loading";
+
+// Lazy load components for better performance
+const Navbar = dynamic(() => import("@/components/navbar").then(mod => ({ default: mod.Navbar })), {
+  ssr: false,
+  loading: () => <div className="h-16 bg-background/50 backdrop-blur-sm border-b" />
+});
+
+const Footer = dynamic(() => import("@/components/footer"), {
+  ssr: false,
+  loading: () => <div className="h-32 bg-muted/20" />
+});
 
 export default function DashboardPage() {
   const { user, logout, updateProfile, isLoading } = useAuth();
@@ -184,14 +195,7 @@ export default function DashboardPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading />;
   }
 
   if (!user) {

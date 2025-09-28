@@ -135,10 +135,10 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     if (!supabase) {
       console.error('Supabase not configured');
-      return false;
+      return { success: false, error: 'Authentication service not configured' };
     }
 
     try {
@@ -149,7 +149,18 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       
       if (error) {
         console.error('Login error:', error);
-        return false;
+        
+        // Provide specific error messages
+        let errorMessage = 'Login failed. Please try again.';
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a moment and try again.';
+        }
+        
+        return { success: false, error: errorMessage };
       }
 
       if (data.user) {
@@ -183,13 +194,13 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             updated_at: data.user.updated_at || data.user.created_at,
           });
         }
-        return true;
+        return { success: true };
       }
       
-      return false;
-    } catch (error) {
+      return { success: false, error: 'Login failed. Please try again.' };
+    } catch (error: any) {
       console.error('Login error:', error);
-      return false;
+      return { success: false, error: error.message || 'An unexpected error occurred' };
     } finally {
       setIsLoading(false);
     }

@@ -35,14 +35,14 @@ export default function LoginPage() {
     }
 
     console.log('Attempting login...');
-    const success = await login(email, password);
-    console.log('Login result:', success);
+    const result = await login(email, password);
+    console.log('Login result:', result);
     
-    if (success) {
+    if (result.success) {
       console.log('Login successful, redirecting to dashboard');
       router.push("/dashboard");
     } else {
-      setError("Login failed. Please check your credentials and try again.");
+      setError(result.error || "Login failed. Please try again.");
     }
   };
 

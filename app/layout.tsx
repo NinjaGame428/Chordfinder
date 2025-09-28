@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { SupabaseAuthProvider } from "@/contexts/SupabaseAuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { PerformanceOptimizer } from "@/components/performance-optimizer";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -109,6 +110,7 @@ export default function RootLayout({
                   <NotificationProvider>
                     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                       <TooltipProvider>
+                        <PerformanceOptimizer />
                         {children}
                       </TooltipProvider>
                     </ThemeProvider>
