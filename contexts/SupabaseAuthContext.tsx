@@ -146,7 +146,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
       console.log('Attempting login for:', email);
       setIsLoading(true);
       
-      const { data, error } = await userService.signIn(email, password);
+      const { user, session, error } = await userService.signIn(email, password);
       
       if (error) {
         console.error('Login error:', error);
@@ -164,7 +164,7 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         return { success: false, error: errorMessage };
       }
 
-      if (data.user) {
+      if (user) {
         console.log('Login successful, fetching user data...');
         try {
           const userData = await userService.getCurrentUser();
@@ -175,24 +175,24 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
             console.log('No user data, using session data');
             // Use session data as fallback
             setUser({
-              id: data.user.id,
-              email: data.user.email || '',
-              full_name: data.user.user_metadata?.full_name || '',
+              id: user.id,
+              email: user.email || '',
+              full_name: user.user_metadata?.full_name || '',
               role: 'user',
-              created_at: data.user.created_at,
-              updated_at: data.user.updated_at || data.user.created_at,
+              created_at: user.created_at,
+              updated_at: user.updated_at || user.created_at,
             });
           }
         } catch (userError) {
           console.error('Error fetching user data:', userError);
           // Use session data as fallback
           setUser({
-            id: data.user.id,
-            email: data.user.email || '',
-            full_name: data.user.user_metadata?.full_name || '',
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || '',
             role: 'user',
-            created_at: data.user.created_at,
-            updated_at: data.user.updated_at || data.user.created_at,
+            created_at: user.created_at,
+            updated_at: user.updated_at || user.created_at,
           });
         }
         return { success: true };
@@ -228,16 +228,16 @@ export function SupabaseAuthProvider({ children }: { children: React.ReactNode }
         return false;
       }
 
-      if (data.user) {
-        console.log('Registration successful, user created:', data.user.id);
+      if (user) {
+        console.log('Registration successful, user created:', user.id);
         // Set user immediately with session data
         setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          full_name: data.user.user_metadata?.full_name || '',
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || '',
           role: 'user',
-          created_at: data.user.created_at,
-          updated_at: data.user.updated_at || data.user.created_at,
+          created_at: user.created_at,
+          updated_at: user.updated_at || user.created_at,
         });
         return true;
       }
