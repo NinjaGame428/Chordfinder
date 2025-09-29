@@ -46,7 +46,7 @@ export default function LoginPage() {
           router.push("/dashboard");
         }, 100);
       } else {
-        setError("Invalid email or password. Please try again.");
+        setError("Invalid email or password. Please check your credentials and try again.");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -67,7 +67,7 @@ export default function LoginPage() {
           </Link>
           <div className="flex items-center justify-center space-x-2">
             <Music className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold">HeavenKeys</h1>
+            <h1 className="text-2xl font-bold">HeavenKeys Chords Finder</h1>
           </div>
           <p className="text-muted-foreground">Sign in to your account</p>
         </div>
@@ -87,14 +87,19 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="john@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Link href="#" className="text-sm text-primary hover:underline">
+                    Forgot password?
+                  </Link>
+                </div>
                 <Input
                   id="password"
                   type="password"
