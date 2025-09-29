@@ -93,7 +93,7 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
       .limit(3);
 
     if (recentFavorites) {
-      recentFavorites.forEach(fav => {
+      recentFavorites.forEach((fav: any) => {
         activities.push({
           id: fav.id,
           type: 'favorite',
@@ -119,7 +119,7 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
       .limit(3);
 
     if (recentDownloads) {
-      recentDownloads.forEach(download => {
+      recentDownloads.forEach((download: any) => {
         activities.push({
           id: download.id,
           type: 'download',
@@ -146,7 +146,7 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
       .limit(3);
 
     if (recentRatings) {
-      recentRatings.forEach(rating => {
+      recentRatings.forEach((rating: any) => {
         activities.push({
           id: rating.id,
           type: 'rating',
