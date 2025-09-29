@@ -94,11 +94,14 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
 
     if (recentFavorites) {
       recentFavorites.forEach((fav: any) => {
+        const songTitle = fav.songs?.title || 'Unknown Song';
+        const songArtist = fav.songs?.artist || 'Unknown Artist';
+        
         activities.push({
           id: fav.id,
           type: 'favorite',
-          title: `Added "${fav.songs.title}" to favorites`,
-          description: `by ${fav.songs.artist}`,
+          title: `Added "${songTitle}" to favorites`,
+          description: `by ${songArtist}`,
           timestamp: fav.created_at,
           icon: 'Heart'
         });
@@ -120,11 +123,14 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
 
     if (recentDownloads) {
       recentDownloads.forEach((download: any) => {
+        const resourceTitle = download.resources?.title || 'Unknown Resource';
+        const resourceType = download.resources?.type || 'Unknown Type';
+        
         activities.push({
           id: download.id,
           type: 'download',
-          title: `Downloaded "${download.resources.title}"`,
-          description: `${download.resources.type} resource`,
+          title: `Downloaded "${resourceTitle}"`,
+          description: `${resourceType} resource`,
           timestamp: download.created_at,
           icon: 'Download'
         });
@@ -147,11 +153,15 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
 
     if (recentRatings) {
       recentRatings.forEach((rating: any) => {
+        const songTitle = rating.songs?.title || 'Unknown Song';
+        const songArtist = rating.songs?.artist || 'Unknown Artist';
+        const ratingValue = rating.rating || 0;
+        
         activities.push({
           id: rating.id,
           type: 'rating',
-          title: `Rated "${rating.songs.title}" ${rating.rating} stars`,
-          description: `by ${rating.songs.artist}`,
+          title: `Rated "${songTitle}" ${ratingValue} stars`,
+          description: `by ${songArtist}`,
           timestamp: rating.created_at,
           icon: 'Star'
         });
@@ -192,11 +202,11 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
     if (error) throw error;
 
     return data?.map((fav: any) => ({
-      id: fav.songs.id,
-      title: fav.songs.title,
-      artist: fav.songs.artist,
-      genre: fav.songs.genre,
-      key_signature: fav.songs.key_signature,
+      id: fav.songs?.id || '',
+      title: fav.songs?.title || 'Unknown Song',
+      artist: fav.songs?.artist || 'Unknown Artist',
+      genre: fav.songs?.genre || 'Unknown Genre',
+      key_signature: fav.songs?.key_signature || 'Unknown Key',
       created_at: fav.created_at
     })) || [];
 
@@ -229,11 +239,11 @@ export const fetchDownloadedResources = async (userId: string): Promise<Download
     if (error) throw error;
 
     return data?.map((download: any) => ({
-      id: download.resources.id,
-      title: download.resources.title,
-      type: download.resources.type,
-      category: download.resources.category,
-      file_size: download.resources.file_size,
+      id: download.resources?.id || '',
+      title: download.resources?.title || 'Unknown Resource',
+      type: download.resources?.type || 'Unknown Type',
+      category: download.resources?.category || 'Unknown Category',
+      file_size: download.resources?.file_size || 0,
       created_at: download.created_at
     })) || [];
 
