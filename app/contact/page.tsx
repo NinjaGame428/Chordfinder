@@ -99,7 +99,7 @@ const ContactPage = () => {
     <>
       <Navbar />
       <main className="pt-16 xs:pt-20 sm:pt-24 min-h-screen">
-        <section className="pt-20 pb-10 px-6 bg-gradient-to-br from-background to-muted/20">
+        <section className="pt-20 pb-5 px-6 bg-gradient-to-br from-background to-muted/20">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mx-auto mb-6">
               <MessageSquare className="h-8 w-8 text-primary" />
