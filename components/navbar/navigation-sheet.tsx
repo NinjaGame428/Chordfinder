@@ -3,8 +3,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { Logo } from "./logo";
 import { NavMenu } from "./nav-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserMenu } from "./user-menu";
+import LanguageSwitcher from "../language-switcher";
+import Link from "next/link";
 
 export const NavigationSheet = () => {
+  const { user, isLoading } = useAuth();
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -22,12 +28,29 @@ export const NavigationSheet = () => {
           </div>
           
           <div className="mt-auto pt-4 border-t space-y-4">
-            <Button variant="outline" className="w-full">
-              Sign In
-            </Button>
-            <Button className="w-full">
-              Get Started
-            </Button>
+            <div className="flex justify-center mb-4">
+              <LanguageSwitcher />
+            </div>
+            
+            {isLoading ? (
+              <div className="w-full h-10 animate-pulse bg-muted rounded-full" />
+            ) : user ? (
+              <div className="space-y-2">
+                <div className="text-center py-2">
+                  <span className="text-sm text-muted-foreground">Welcome back, {user.firstName || user.email}</span>
+                </div>
+                <UserMenu user={user} />
+              </div>
+            ) : (
+              <>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link href="/login">Sign In</Link>
+                </Button>
+                <Button className="w-full" asChild>
+                  <Link href="/register">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </SheetContent>

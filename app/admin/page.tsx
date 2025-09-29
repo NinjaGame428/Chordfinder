@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/SupabaseAuthContext";
+// Authentication removed
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { 
   Users, 
   Music, 
-  FileText,
   Download, 
   Star, 
   Settings, 
@@ -123,7 +122,10 @@ const mockResources = [
     downloads: 234,
     category: "Educational",
     status: "published",
-    createdDate: "2024-01-12"
+    createdDate: "2024-01-12",
+    icon: "📚",
+    size: "2.4 MB",
+    description: "Comprehensive guide to gospel chord progressions and theory"
   },
   {
     id: "2",
@@ -132,7 +134,10 @@ const mockResources = [
     downloads: 156,
     category: "Training",
     status: "published",
-    createdDate: "2024-01-10"
+    createdDate: "2024-01-10",
+    icon: "🎥",
+    size: "1.2 GB",
+    description: "Complete course on worship leading techniques and best practices"
   },
   {
     id: "3",
@@ -141,7 +146,10 @@ const mockResources = [
     downloads: 89,
     category: "Technical",
     status: "draft",
-    createdDate: "2024-01-15"
+    createdDate: "2024-01-15",
+    icon: "🎸",
+    size: "850 MB",
+    description: "Advanced guitar techniques specifically for worship music"
   }
 ];
 
@@ -180,7 +188,9 @@ const mockUserRequests = [
 ];
 
 export default function AdminDashboardPage() {
-  const { user, isLoading } = useAuth();
+  // Authentication removed - demo mode
+  const user = { role: 'admin' }; // Demo admin user
+  const isLoading = false;
   const router = useRouter();
   const { addNotification } = useNotifications();
   const [searchTerm, setSearchTerm] = useState("");
@@ -831,7 +841,7 @@ export default function AdminDashboardPage() {
                                   <div className="space-y-4">
                                     <div className="flex items-center space-x-4">
                                       <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
-                                        <FileText className="h-8 w-8 text-primary" />
+                                        {resource.icon}
                                       </div>
                                       <div>
                                         <h3 className="text-xl font-semibold">{resource.title}</h3>
@@ -849,7 +859,7 @@ export default function AdminDashboardPage() {
                                       </div>
                                       <div>
                                         <span className="font-medium">Size:</span>
-                                        <span className="ml-2">2.5 MB</span>
+                                        <span className="ml-2">{resource.size}</span>
                                       </div>
                                       <div>
                                         <span className="font-medium">Status:</span>
@@ -866,7 +876,7 @@ export default function AdminDashboardPage() {
                                     </div>
                                     <div>
                                       <span className="font-medium">Description:</span>
-                                      <p className="text-sm text-muted-foreground mt-1">A useful resource for musicians and worship leaders.</p>
+                                      <p className="text-sm text-muted-foreground mt-1">{resource.description}</p>
                                     </div>
                                   </div>
                                 </DialogContent>

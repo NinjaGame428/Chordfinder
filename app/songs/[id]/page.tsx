@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music, User, Clock, Key, ArrowLeft, Download, Share2, Heart, Play, RotateCcw } from "lucide-react";
+import { Music, User, Clock, Key, ArrowLeft, Download, Share2, Heart, RotateCcw } from "lucide-react";
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import AdvancedTransposeButton from "@/components/advanced-transpose-button";
@@ -18,17 +18,50 @@ const SongPage = () => {
   const params = useParams();
   const songSlug = params.id as string;
   const [activeTab, setActiveTab] = useState("lyrics");
-  const [currentKey, setCurrentKey] = useState("");
+  const [currentKey, setCurrentKey] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   // Find song by title slug
   const song = getSongBySlug(songSlug);
 
-  // Transpose chord function
-  const transposeChord = (chord: string, fromKey: string, toKey: string) => {
+  // Handle client-side hydration
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Helper function to check if a string is likely a chord
+  const isChordSymbol = (text: string): boolean => {
+    if (!text || text.length > 8) return false;
+    
+    // Common chord patterns
+    const chordPattern = /^[A-G][b#]?(?:m|M|maj|min|dim|aug|sus|add|7|9|11|13|maj7|min7|dim7|aug7|sus2|sus4|add9|m7|M7|maj9|min9|maj11|min11|maj13|min13)?$/;
+    return chordPattern.test(text.trim());
+  };
+
+  // Enhanced transpose chord function
+  const transposeChord = (chord: string, fromKey: string, toKey: string): string => {
+    if (!chord || !fromKey || !toKey) return chord;
+    
     const chromatic = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
     const flatScale = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
     
-    // Extract the base chord (without extensions)
+    // Extract just the note from keys like "C Major" -> "C"
+    const extractNote = (key: string): string => {
+      return key.split(' ')[0];
+    };
+    
+    const fromNote = extractNote(fromKey);
+    const toNote = extractNote(toKey);
+    
+    // Handle slash chords (e.g., C/E, Am/G)
+    if (chord.includes('/')) {
+      const [rootChord, bassNote] = chord.split('/');
+      const transposedRoot: string = transposeChord(rootChord, fromKey, toKey);
+      const transposedBass: string = transposeChord(bassNote, fromKey, toKey);
+      return `${transposedRoot}/${transposedBass}`;
+    }
+    
+    // Extract the base chord (without extensions) - improved pattern
     const chordMatch = chord.match(/^([A-G][b#]?)(.*)$/);
     if (!chordMatch) return chord;
     
@@ -42,14 +75,14 @@ const SongPage = () => {
     if (fromIndex === -1) return chord;
     
     // Find the index of the target key
-    let toIndex = chromatic.indexOf(toKey);
+    let toIndex = chromatic.indexOf(toNote);
     if (toIndex === -1) {
-      toIndex = flatScale.indexOf(toKey);
+      toIndex = flatScale.indexOf(toNote);
     }
     if (toIndex === -1) return chord;
     
     // Calculate the transposition interval
-    const fromKeyIndex = chromatic.indexOf(fromKey);
+    const fromKeyIndex = chromatic.indexOf(fromNote);
     if (fromKeyIndex === -1) return chord;
     
     const semitones = (toIndex - fromKeyIndex + 12) % 12;
@@ -61,21 +94,50 @@ const SongPage = () => {
 
   // Transpose chord chart
   const getTransposedChordChart = () => {
-    if (!currentKey || currentKey === song?.key) {
+    if (!isClient || !currentKey || !song?.key || currentKey === song.key) {
       return song?.chordChart || '';
     }
     
-    // Simple chord transposition for the chart
-    return song?.chordChart.replace(/\[([^\]]+)\]/g, (match, chord) => {
-      return `[${transposeChord(chord, song.key, currentKey)}]`;
-    }) || '';
+    // Enhanced chord transposition for the chart - handles both [C] and C formats
+    let transposedChart = song?.chordChart || '';
+    
+    // Handle chords in brackets [C]
+    transposedChart = transposedChart.replace(/\[([^\]]+)\]/g, (match, chord) => {
+      return `[${transposeChord(chord, song?.key || '', currentKey)}]`;
+    });
+    
+    // Handle chords without brackets (like in chord charts)
+    // Use a more precise approach to identify chord symbols
+    const lines = transposedChart.split('\n');
+    const transposedLines = lines.map(line => {
+      // Split line into words and check each one
+      const words = line.split(/(\s+)/); // Preserve whitespace
+      const transposedWords = words.map(word => {
+        // Check if word is a chord symbol
+        if (isChordSymbol(word)) {
+          return transposeChord(word, song?.key || '', currentKey);
+        }
+        return word;
+      });
+      return transposedWords.join('');
+    });
+    
+    transposedChart = transposedLines.join('\n');
+    
+    return transposedChart;
   };
 
   // Transpose chord progression
   const getTransposedChordProgression = () => {
-    if (!currentKey || currentKey === song?.key) {
+    if (!isClient || !currentKey || !song?.key || currentKey === song.key) {
       return song?.chordProgression || '';
     }
+    
+    console.log('Transposing chord progression:', {
+      original: song.chordProgression,
+      fromKey: song.key,
+      toKey: currentKey
+    });
     
     return song?.chordProgression.split(' - ').map(chord => 
       transposeChord(chord.trim(), song.key, currentKey)
@@ -84,13 +146,31 @@ const SongPage = () => {
 
   // Transpose chords array
   const getTransposedChords = () => {
-    if (!currentKey || currentKey === song?.key) {
+    if (!isClient || !currentKey || !song?.key || currentKey === song.key) {
       return song?.chords || [];
     }
+    
+    console.log('Transposing chords array:', {
+      original: song.chords,
+      fromKey: song.key,
+      toKey: currentKey
+    });
     
     return song?.chords.map(chord => 
       transposeChord(chord, song.key, currentKey)
     ) || [];
+  };
+
+  // Transpose lyrics with chord changes
+  const getTransposedLyrics = () => {
+    if (!isClient || !currentKey || !song?.key || currentKey === song.key) {
+      return song?.lyrics || '';
+    }
+    
+    // Transpose chords in lyrics (chords are typically in brackets like [C] or [Am])
+    return song?.lyrics.replace(/\[([^\]]+)\]/g, (match, chord) => {
+      return `[${transposeChord(chord, song.key, currentKey)}]`;
+    }) || '';
   };
 
   if (!song) {
@@ -159,7 +239,7 @@ const SongPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Key className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-lg">{song.key}</span>
+                    <span className="text-lg">{isClient && currentKey ? currentKey : song.key}</span>
                   </div>
                 </div>
                 
@@ -173,10 +253,12 @@ const SongPage = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                  <Button className="rounded-full">
-                    <Play className="mr-2 h-4 w-4" />
-                    Play Song
-                  </Button>
+                    <AdvancedTransposeButton
+                      originalKey={song.key}
+                      currentKey={isClient && currentKey ? currentKey : song.key}
+                      onKeyChange={setCurrentKey}
+                      className="rounded-full"
+                    />
                   <Button variant="outline" className="rounded-full">
                     <Download className="mr-2 h-4 w-4" />
                     Download
@@ -188,10 +270,6 @@ const SongPage = () => {
                   <Button variant="outline" className="rounded-full">
                     <Heart className="mr-2 h-4 w-4" />
                     Favorite
-                  </Button>
-                  <Button variant="outline" className="rounded-full">
-                    <Music className="mr-2 h-4 w-4" />
-                    Transpose
                   </Button>
                 </div>
               </div>
@@ -214,27 +292,54 @@ const SongPage = () => {
           <div className="max-w-7xl mx-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="chords">Chord Chart</TabsTrigger>
                 <TabsTrigger value="lyrics">Lyrics</TabsTrigger>
+                <TabsTrigger value="chords">Chord Chart</TabsTrigger>
                 <TabsTrigger value="info">Song Info</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="lyrics" className="mt-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Lyrics</span>
+                        <AdvancedTransposeButton
+                          originalKey={song.key}
+                          currentKey={isClient && currentKey ? currentKey : song.key}
+                          onKeyChange={setCurrentKey}
+                        />
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-muted p-6 rounded-lg">
+                      <pre className="text-sm whitespace-pre-wrap font-mono">{getTransposedLyrics()}</pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
               
               <TabsContent value="chords" className="mt-8">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Chord Chart</CardTitle>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>Chord Chart</span>
+                        <AdvancedTransposeButton
+                          originalKey={song.key}
+                          currentKey={isClient && currentKey ? currentKey : song.key}
+                          onKeyChange={setCurrentKey}
+                        />
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                           <h4 className="font-semibold mb-2">Chord Progression</h4>
-                          <p className="text-lg font-mono bg-muted p-3 rounded">{song.chordProgression}</p>
+                          <p className="text-lg font-mono bg-muted p-3 rounded">{getTransposedChordProgression()}</p>
                         </div>
                         <div>
                           <h4 className="font-semibold mb-2">Chords Used</h4>
                           <div className="flex flex-wrap gap-2">
-                            {song.chords.map((chord, index) => (
+                            {getTransposedChords().map((chord, index) => (
                               <Badge key={index} variant="outline" className="text-lg px-3 py-1">
                                 {chord}
                               </Badge>
@@ -246,33 +351,10 @@ const SongPage = () => {
                       <div>
                         <h4 className="font-semibold mb-2">Chord Chart</h4>
                         <div className="bg-muted p-4 rounded-lg">
-                          <pre className="text-sm font-mono whitespace-pre-wrap">{song.chordChart}</pre>
+                          <pre className="text-sm font-mono whitespace-pre-wrap">{getTransposedChordChart()}</pre>
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <h4 className="font-semibold mb-2">Capo</h4>
-                          <p>{song.capo}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-2">Strumming Pattern</h4>
-                          <p>{song.strummingPattern}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="lyrics" className="mt-8">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Lyrics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="bg-muted p-6 rounded-lg">
-                      <pre className="text-sm whitespace-pre-wrap font-mono">{song.lyrics}</pre>
                     </div>
                   </CardContent>
                 </Card>

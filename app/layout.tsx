@@ -5,8 +5,8 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
-import { SupabaseAuthProvider } from "@/contexts/SupabaseAuthContext";
 import { NotificationProvider } from "@/contexts/NotificationContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { PerformanceOptimizer } from "@/components/performance-optimizer";
 
 const geistSans = Geist({
@@ -33,10 +33,10 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
-    siteName: "Chords Finder",
+    siteName: "HeavenKeys Chords Finder",
     locale: "en_US",
-    url: "https://chord-finder.vercel.app",
-    title: "Chords Finder - Gospel Music Chords & Resources",
+    url: "https://heavenkeys-chords-finder-ofisx6lin-jackmichaels-projects.vercel.app",
+    title: "HeavenKeys Chords Finder - Gospel Music Chords & Resources",
     description:
       "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
     images: [
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Chords Finder Preview",
+        alt: "HeavenKeys Chords Finder Preview",
       },
     ],
   },
@@ -104,20 +104,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
-            <LanguageProvider>
-              <FavoritesProvider>
-                <SupabaseAuthProvider>
-                  <NotificationProvider>
-                    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-                      <TooltipProvider>
-                        <PerformanceOptimizer />
-                        {children}
-                      </TooltipProvider>
-                    </ThemeProvider>
-                  </NotificationProvider>
-                </SupabaseAuthProvider>
-              </FavoritesProvider>
-            </LanguageProvider>
+        <LanguageProvider>
+          <FavoritesProvider>
+            <NotificationProvider>
+              <AuthProvider>
+                <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                  <TooltipProvider>
+                    <PerformanceOptimizer />
+                    {children}
+                  </TooltipProvider>
+                </ThemeProvider>
+              </AuthProvider>
+            </NotificationProvider>
+          </FavoritesProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

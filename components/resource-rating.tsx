@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, MessageCircle, Heart } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
-import { useAuth } from "@/contexts/SupabaseAuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ResourceRatingProps {
   resourceId: string;
@@ -62,7 +62,7 @@ const ResourceRating: React.FC<ResourceRatingProps> = ({
     if (user) {
       setIsFavorited(isResourceFavorite(resourceId));
     }
-  }, [user, resourceId, isResourceFavorite]);
+  }, [isResourceFavorite, user, resourceId]);
 
   const handleRating = (rating: number) => {
     if (!user) {
@@ -109,14 +109,14 @@ const ResourceRating: React.FC<ResourceRatingProps> = ({
       alert('Please log in to add favorites');
       return;
     }
-    if (isResourceFavorite(resourceId)) {
+    if (isFavorited) {
       removeResourceFromFavorites(resourceId);
     } else {
       addResourceToFavorites({
         id: resourceId,
         title: resourceTitle,
         type: resourceType,
-        category: 'General'
+        category: resourceType
       });
     }
     setIsFavorited(!isFavorited);

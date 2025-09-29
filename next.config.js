@@ -7,9 +7,12 @@ const nextConfig = {
   
   // Performance optimizations
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // Reduce preload warnings
+    optimizeCss: false,
   },
+  
+  // Font optimization is handled automatically by Next.js
   
   // Image optimization
   images: {

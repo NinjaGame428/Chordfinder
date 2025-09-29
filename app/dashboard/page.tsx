@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useAuth } from "@/contexts/SupabaseAuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -68,8 +68,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) {
       setEditData({
-        firstName: user.firstName || user.full_name?.split(' ')[0] || '',
-        lastName: user.lastName || user.full_name?.split(' ')[1] || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || '',
       });
       
@@ -78,7 +78,7 @@ export default function DashboardPage() {
         favoriteSongs: user.stats?.favoriteSongs || 0,
         downloadedResources: user.stats?.downloadedResources || 0,
         ratingsGiven: user.stats?.ratingsGiven || 0,
-        memberSince: new Date(user.joinDate || user.created_at)
+        memberSince: new Date(user.joinDate)
       });
     }
   }, [user]);
@@ -94,20 +94,18 @@ export default function DashboardPage() {
         favoriteSongs: Math.floor(Math.random() * 50) + (user.stats?.favoriteSongs || 0),
         downloadedResources: Math.floor(Math.random() * 30) + (user.stats?.downloadedResources || 0),
         ratingsGiven: Math.floor(Math.random() * 20) + (user.stats?.ratingsGiven || 0),
-        memberSince: new Date(user.joinDate || user.created_at)
+        lastActive: new Date().toISOString(),
+        memberSince: new Date(user.joinDate)
       };
       
       setUserStats(newStats);
       
-             // Update the user object with new stats
-             if (updateProfile) {
-               await updateProfile({
-                 stats: {
-                   ...newStats,
-                   lastActive: new Date().toISOString()
-                 }
-               });
-             }
+      // Update the user object with new stats
+      if (updateProfile) {
+        await updateProfile({
+          stats: newStats
+        });
+      }
     } catch (error) {
       console.error('Error updating stats:', error);
     } finally {
@@ -161,7 +159,6 @@ export default function DashboardPage() {
           firstName: editData.firstName,
           lastName: editData.lastName,
           email: editData.email,
-          full_name: `${editData.firstName} ${editData.lastName}`,
         });
         
         if (success) {
@@ -182,8 +179,8 @@ export default function DashboardPage() {
   const handleCancelEdit = () => {
     if (user) {
       setEditData({
-        firstName: user.firstName || user.full_name?.split(' ')[0] || '',
-        lastName: user.lastName || user.full_name?.split(' ')[1] || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || '',
       });
     }
@@ -214,7 +211,7 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user.firstName || user.full_name || 'User'}!</h1>
+            <h1 className="text-3xl font-bold mb-2">Welcome back, {user.firstName || 'User'}!</h1>
             <p className="text-muted-foreground">
               Manage your profile, view your activity, and access your saved content.
             </p>
@@ -430,16 +427,16 @@ export default function DashboardPage() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center space-x-6">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={user.avatar || user.avatar_url} alt={`${user.firstName || user.full_name} ${user.lastName}`} />
+                      <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
                       <AvatarFallback className="text-lg">
-                        {(user.firstName || user.full_name?.split(' ')[0] || 'U')[0]}{(user.lastName || user.full_name?.split(' ')[1] || 'U')[0]}
+                        {(user.firstName || 'U')[0]}{(user.lastName || 'U')[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-semibold">{user.firstName || user.full_name} {user.lastName}</h3>
+                      <h3 className="text-lg font-semibold">{user.firstName} {user.lastName}</h3>
                       <p className="text-muted-foreground">{user.email}</p>
                       <Badge variant="secondary" className="mt-1">
-                        Member since {new Date(user.joinDate || user.created_at).toLocaleDateString()}
+                        Member since {new Date(user.joinDate).toLocaleDateString()}
                       </Badge>
                     </div>
                   </div>

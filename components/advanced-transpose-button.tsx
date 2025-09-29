@@ -34,11 +34,13 @@ const AdvancedTransposeButton: React.FC<AdvancedTransposeButtonProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState(currentKey);
+  const [isClient, setIsClient] = useState(false);
 
   const chromaticScale = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const flatScale = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 
   useEffect(() => {
+    setIsClient(true);
     setSelectedKey(currentKey);
   }, [currentKey]);
 
@@ -77,7 +79,9 @@ const AdvancedTransposeButton: React.FC<AdvancedTransposeButtonProps> = ({
   };
 
   const transposeUp = () => {
-    const currentIndex = chromaticScale.indexOf(currentKey);
+    // Extract just the note from currentKey (e.g., "C Major" -> "C")
+    const currentNote = currentKey.split(' ')[0];
+    const currentIndex = chromaticScale.indexOf(currentNote);
     if (currentIndex === -1) return;
     
     const newIndex = (currentIndex + 1) % 12;
@@ -87,7 +91,9 @@ const AdvancedTransposeButton: React.FC<AdvancedTransposeButtonProps> = ({
   };
 
   const transposeDown = () => {
-    const currentIndex = chromaticScale.indexOf(currentKey);
+    // Extract just the note from currentKey (e.g., "C Major" -> "C")
+    const currentNote = currentKey.split(' ')[0];
+    const currentIndex = chromaticScale.indexOf(currentNote);
     if (currentIndex === -1) return;
     
     const newIndex = (currentIndex - 1 + 12) % 12;
@@ -103,8 +109,10 @@ const AdvancedTransposeButton: React.FC<AdvancedTransposeButtonProps> = ({
   };
 
   const resetToOriginal = () => {
-    setSelectedKey(originalKey);
-    onKeyChange(originalKey);
+    // Extract just the note from originalKey (e.g., "C Major" -> "C")
+    const originalNote = originalKey.split(' ')[0];
+    setSelectedKey(originalNote);
+    onKeyChange(originalNote);
     setIsOpen(false);
   };
 
@@ -139,7 +147,7 @@ const AdvancedTransposeButton: React.FC<AdvancedTransposeButtonProps> = ({
                 onClick={() => setIsOpen(!isOpen)}
               >
                 <Music className="h-4 w-4 mr-2" />
-                {currentKey}
+                {isClient ? currentKey : originalKey.split(' ')[0]}
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </TooltipTrigger>

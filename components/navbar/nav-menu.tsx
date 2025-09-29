@@ -7,7 +7,7 @@ import {
   NavigationMenuList,
 } from "@/components/ui/navigation-menu";
 import { NavigationMenuProps } from "@radix-ui/react-navigation-menu";
-import { useAuth } from "@/contexts/SupabaseAuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 
 export const NavMenu = (props: NavigationMenuProps) => {
@@ -19,6 +19,11 @@ export const NavMenu = (props: NavigationMenuProps) => {
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
             <Link href="/songs">Songs</Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <Link href="/chords">Chords</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>

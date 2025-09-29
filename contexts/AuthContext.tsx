@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -50,58 +52,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedUser = localStorage.getItem('chordfinder_user');
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await loadUserProfile(session.user);
         }
       } catch (error) {
         console.error('Error checking auth:', error);
-        localStorage.removeItem('chordfinder_user');
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          await loadUserProfile(session.user);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+
+      if (error) {
+        console.error('Error loading user profile:', error);
+        return;
+      }
+
+      // Extract first and last name from full_name if available
+      const fullName = profile.full_name || '';
+      const nameParts = fullName.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const userData: User = {
+        id: profile.id,
+        firstName: firstName,
+        lastName: lastName,
+        email: profile.email,
+        avatar: profile.avatar_url || undefined,
+        role: profile.role as 'user' | 'admin' | 'moderator',
+        joinDate: profile.created_at,
+        preferences: {
+          language: 'en',
+          theme: 'light',
+          notifications: true
+        },
+        stats: {
+          favoriteSongs: 0,
+          downloadedResources: 0,
+          ratingsGiven: 0,
+          lastActive: new Date().toISOString()
+        }
+      };
+
+      setUser(userData);
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
-      // Simulate API call - in real app, this would be an actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock validation - in real app, validate against backend
-      if (email && password) {
-        // Check for admin login
-        const isAdmin = email === 'admin@chordfinder.com' && password === 'admin123';
-        const isModerator = email === 'mod@chordfinder.com' && password === 'mod123';
-        
-        const mockUser: User = {
-          id: '1',
-          firstName: isAdmin ? 'Admin' : isModerator ? 'Moderator' : 'John',
-          lastName: isAdmin ? 'User' : isModerator ? 'User' : 'Doe',
-          email: email,
-          role: isAdmin ? 'admin' : isModerator ? 'moderator' : 'user',
-          avatar: '/avatars/default-avatar.jpg',
-          joinDate: new Date().toISOString(),
-          preferences: {
-            language: 'en',
-            theme: 'light',
-            notifications: true
-          },
-          stats: {
-            favoriteSongs: 12,
-            downloadedResources: 8,
-            ratingsGiven: 15,
-            lastActive: new Date().toISOString()
-          }
-        };
-        
-        setUser(mockUser);
-        localStorage.setItem('chordfinder_user', JSON.stringify(mockUser));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        return false;
+      }
+
+      if (data.user) {
+        await loadUserProfile(data.user);
         return true;
       }
       
@@ -118,34 +158,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock validation
-      if (userData.email && userData.password && userData.firstName && userData.lastName) {
-        const newUser: User = {
-          id: Date.now().toString(),
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-          role: 'user', // Default role for new registrations
-          avatar: '/avatars/default-avatar.jpg',
-          joinDate: new Date().toISOString(),
-          preferences: {
-            language: 'en',
-            theme: 'light',
-            notifications: true
-          },
-          stats: {
-            favoriteSongs: 0,
-            downloadedResources: 0,
-            ratingsGiven: 0,
-            lastActive: new Date().toISOString()
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+            full_name: `${userData.firstName} ${userData.lastName}`
           }
-        };
-        
-        setUser(newUser);
-        localStorage.setItem('chordfinder_user', JSON.stringify(newUser));
+        }
+      });
+
+      if (error) {
+        console.error('Registration error:', error);
+        return false;
+      }
+
+      if (data.user) {
+        // The user profile will be created by the database trigger
+        // We'll load it after the trigger completes
+        await loadUserProfile(data.user);
         return true;
       }
       
@@ -158,18 +191,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('chordfinder_user');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
     try {
       if (!user) return false;
       
+      const { error } = await supabase
+        .from('users')
+        .update({
+          full_name: userData.firstName && userData.lastName 
+            ? `${userData.firstName} ${userData.lastName}` 
+            : userData.firstName || userData.lastName || user.firstName + ' ' + user.lastName,
+          avatar_url: userData.avatar,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Profile update error:', error);
+        return false;
+      }
+
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
-      localStorage.setItem('chordfinder_user', JSON.stringify(updatedUser));
       return true;
     } catch (error) {
       console.error('Profile update error:', error);
@@ -181,12 +233,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!user) return false;
       
+      // For now, just update the local state since preferences column doesn't exist in current schema
       const updatedUser = {
         ...user,
         preferences: { ...user.preferences, ...preferences }
       };
       setUser(updatedUser);
-      localStorage.setItem('chordfinder_user', JSON.stringify(updatedUser));
       return true;
     } catch (error) {
       console.error('Preferences update error:', error);
