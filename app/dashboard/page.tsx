@@ -28,6 +28,17 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { PageLoading } from "@/components/loading";
+import { 
+  fetchUserStats, 
+  fetchRecentActivity, 
+  fetchFavoriteSongs, 
+  fetchDownloadedResources,
+  updateUserStats,
+  type UserStats,
+  type RecentActivity,
+  type FavoriteSong,
+  type DownloadedResource
+} from "@/lib/user-stats";
 
 // Lazy load components for better performance
 const Navbar = dynamic(() => import("@/components/navbar").then(mod => ({ default: mod.Navbar })), {
@@ -50,12 +61,15 @@ export default function DashboardPage() {
     lastName: "",
     email: "",
   });
-  const [userStats, setUserStats] = useState({
+  const [userStats, setUserStats] = useState<UserStats>({
     favoriteSongs: 0,
     downloadedResources: 0,
     ratingsGiven: 0,
-    memberSince: new Date()
+    lastActive: new Date().toISOString()
   });
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [favoriteSongs, setFavoriteSongs] = useState<FavoriteSong[]>([]);
+  const [downloadedResources, setDownloadedResources] = useState<DownloadedResource[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
@@ -73,51 +87,45 @@ export default function DashboardPage() {
         email: user.email || '',
       });
       
-      // Update user stats with real data
-      setUserStats({
-        favoriteSongs: user.stats?.favoriteSongs || 0,
-        downloadedResources: user.stats?.downloadedResources || 0,
-        ratingsGiven: user.stats?.ratingsGiven || 0,
-        memberSince: new Date(user.joinDate)
-      });
+      // Load real-time data
+      loadUserData();
     }
   }, [user]);
 
-  // Function to update user stats in real-time
-  const updateUserStats = async () => {
+  const loadUserData = async () => {
     if (!user) return;
     
     try {
       setIsUpdating(true);
-      // Simulate fetching real data - in a real app, this would be API calls
-      const newStats = {
-        favoriteSongs: Math.floor(Math.random() * 50) + (user.stats?.favoriteSongs || 0),
-        downloadedResources: Math.floor(Math.random() * 30) + (user.stats?.downloadedResources || 0),
-        ratingsGiven: Math.floor(Math.random() * 20) + (user.stats?.ratingsGiven || 0),
-        lastActive: new Date().toISOString(),
-        memberSince: new Date(user.joinDate)
-      };
       
-      setUserStats(newStats);
+      // Fetch all user data in parallel
+      const [stats, activity, favorites, downloads] = await Promise.all([
+        fetchUserStats(user.id),
+        fetchRecentActivity(user.id),
+        fetchFavoriteSongs(user.id),
+        fetchDownloadedResources(user.id)
+      ]);
+
+      setUserStats(stats);
+      setRecentActivity(activity);
+      setFavoriteSongs(favorites);
+      setDownloadedResources(downloads);
+
+      // Update user stats in database
+      await updateUserStats(user.id, stats);
       
-      // Update the user object with new stats
-      if (updateProfile) {
-        await updateProfile({
-          stats: newStats
-        });
-      }
     } catch (error) {
-      console.error('Error updating stats:', error);
+      console.error('Error loading user data:', error);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Auto-update stats every 30 seconds
+  // Auto-refresh data every 30 seconds
   useEffect(() => {
     if (!user) return;
     
-    const interval = setInterval(updateUserStats, 30000);
+    const interval = setInterval(loadUserData, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -165,7 +173,7 @@ export default function DashboardPage() {
           setIsEditing(false);
           setValidationErrors({});
           // Trigger stats update after profile change
-          await updateUserStats();
+          await loadUserData();
         }
       } catch (error) {
         console.error('Error updating profile:', error);
@@ -238,12 +246,12 @@ export default function DashboardPage() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={updateUserStats}
+                  onClick={loadUserData}
                   disabled={isUpdating}
                   className="flex items-center gap-2"
                 >
                   <Clock className="h-4 w-4" />
-                  {isUpdating ? 'Updating...' : 'Refresh Stats'}
+                  {isUpdating ? 'Updating...' : 'Refresh Data'}
                 </Button>
               </div>
               
@@ -312,13 +320,13 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {userStats.memberSince.toLocaleDateString('en-US', { 
+                      {new Date(user.joinDate).toLocaleDateString('en-US', { 
                         month: 'short', 
                         year: 'numeric' 
                       })}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {Math.floor((Date.now() - userStats.memberSince.getTime()) / (1000 * 60 * 60 * 24))} {t('song.daysAgo')}
+                      {Math.floor((Date.now() - new Date(user.joinDate).getTime()) / (1000 * 60 * 60 * 24))} {t('song.daysAgo')}
                     </p>
                   </CardContent>
                 </Card>
@@ -331,33 +339,32 @@ export default function DashboardPage() {
                     <CardDescription>Your latest interactions with Chord Finder</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Heart className="h-4 w-4 text-primary" />
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((activity) => {
+                        const IconComponent = activity.icon === 'Heart' ? Heart : 
+                                            activity.icon === 'Download' ? Download : Star;
+                        const timeAgo = new Date(activity.timestamp).toLocaleDateString();
+                        
+                        return (
+                          <div key={activity.id} className="flex items-center space-x-4">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <IconComponent className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{activity.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {activity.description} • {timeAgo}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">No recent activity</p>
+                        <p className="text-xs text-muted-foreground">Start exploring to see your activity here</p>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Added "Amazing Grace" to favorites</p>
-                        <p className="text-xs text-muted-foreground">2 hours ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Download className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Downloaded "Gospel Chord Theory Guide"</p>
-                        <p className="text-xs text-muted-foreground">1 day ago</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Star className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">Rated "How Great Thou Art" 5 stars</p>
-                        <p className="text-xs text-muted-foreground">3 days ago</p>
-                      </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -371,9 +378,17 @@ export default function DashboardPage() {
                       <Music className="mr-2 h-4 w-4" />
                       Browse Songs
                     </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/dashboard/favorites")}>
+                      <Heart className="mr-2 h-4 w-4" />
+                      My Favorites
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/dashboard/downloads")}>
+                      <Download className="mr-2 h-4 w-4" />
+                      My Downloads
+                    </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/resources")}>
                       <Download className="mr-2 h-4 w-4" />
-                      View Resources
+                      Browse Resources
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/request-song")}>
                       <Music className="mr-2 h-4 w-4" />
@@ -499,49 +514,57 @@ export default function DashboardPage() {
             <TabsContent value="activity" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Activity History</CardTitle>
-                  <CardDescription>Track your engagement with Chord Finder</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Activity History</CardTitle>
+                      <CardDescription>Track your engagement with Chord Finder</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={loadUserData} disabled={isUpdating}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      {isUpdating ? 'Updating...' : 'Refresh'}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Heart className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Added to Favorites</p>
-                          <p className="text-sm text-muted-foreground">"Amazing Grace" by John Newton</p>
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((activity) => {
+                        const IconComponent = activity.icon === 'Heart' ? Heart : 
+                                            activity.icon === 'Download' ? Download : Star;
+                        const timeAgo = new Date(activity.timestamp).toLocaleDateString();
+                        
+                        return (
+                          <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <IconComponent className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{activity.title}</p>
+                                <p className="text-sm text-muted-foreground">{activity.description}</p>
+                              </div>
+                            </div>
+                            <span className="text-sm text-muted-foreground">{timeAgo}</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8">
+                        <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Start exploring to see your activity here
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                          <Button onClick={() => router.push("/songs")}>
+                            Browse Songs
+                          </Button>
+                          <Button variant="outline" onClick={() => router.push("/resources")}>
+                            View Resources
+                          </Button>
                         </div>
                       </div>
-                      <span className="text-sm text-muted-foreground">2 hours ago</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Download className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Downloaded Resource</p>
-                          <p className="text-sm text-muted-foreground">"Gospel Chord Theory Guide"</p>
-                        </div>
-                      </div>
-                      <span className="text-sm text-muted-foreground">1 day ago</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          <Star className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Rated Song</p>
-                          <p className="text-sm text-muted-foreground">"How Great Thou Art" - 5 stars</p>
-                        </div>
-                      </div>
-                      <span className="text-sm text-muted-foreground">3 days ago</span>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
