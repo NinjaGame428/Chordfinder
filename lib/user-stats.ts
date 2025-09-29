@@ -191,7 +191,7 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
 
     if (error) throw error;
 
-    return data?.map(fav => ({
+    return data?.map((fav: any) => ({
       id: fav.songs.id,
       title: fav.songs.title,
       artist: fav.songs.artist,
@@ -228,7 +228,7 @@ export const fetchDownloadedResources = async (userId: string): Promise<Download
 
     if (error) throw error;
 
-    return data?.map(download => ({
+    return data?.map((download: any) => ({
       id: download.resources.id,
       title: download.resources.title,
       type: download.resources.type,
