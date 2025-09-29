@@ -176,10 +176,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.user) {
-        // The user profile will be created by the database trigger
-        // We'll load it after the trigger completes
-        await loadUserProfile(data.user);
-        return true;
+        // Create user profile manually if trigger doesn't exist
+        try {
+          const { error: profileError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              full_name: `${userData.firstName} ${userData.lastName}`,
+              role: 'user',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Continue anyway - user is created in auth
+          }
+
+          // Load the user profile
+          await loadUserProfile(data.user);
+          return true;
+        } catch (profileError) {
+          console.error('Profile creation error:', profileError);
+          // Continue anyway - user is created in auth
+          await loadUserProfile(data.user);
+          return true;
+        }
       }
       
       return false;

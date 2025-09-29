@@ -70,9 +70,12 @@ export default function RegisterPage() {
       });
 
       if (success) {
-        router.push("/dashboard");
+        // Small delay to ensure auth state updates before redirect
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 100);
       } else {
-        setError("Registration failed. Please try again.");
+        setError("Registration failed. Please check your information and try again.");
       }
     } catch (error) {
       console.error("Registration error:", error);
