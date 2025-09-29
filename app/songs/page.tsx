@@ -96,10 +96,10 @@ const SongsPage = () => {
         <section className="pt-20 pb-0 px-6 bg-gradient-to-br from-background to-muted/20 mb-[-50px]">
           <div className="max-w-7xl mx-auto text-center">
             <h1 className="text-4xl xs:text-5xl sm:text-6xl font-bold tracking-tight mb-6">
-              {t('songs.title')}
+              Gospel Songs
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
-              {t('songs.subtitle')}
+              Discover beautiful gospel songs with chord charts, lyrics, and resources for worship
             </p>
             
             {/* Enhanced Search Bar */}
