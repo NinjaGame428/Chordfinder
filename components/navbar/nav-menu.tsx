@@ -46,16 +46,6 @@ export const NavMenu = (props: NavigationMenuProps) => {
             <Link href="/contact">Contact</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink asChild>
-            <Link href="/youtube-scraper" className="text-red-600 font-medium">YouTube Scraper</Link>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-    <NavigationMenuItem>
-      <NavigationMenuLink asChild>
-        <Link href="/chord-collection" className="text-blue-600 font-medium">Chord Collection</Link>
-      </NavigationMenuLink>
-    </NavigationMenuItem>
         {user?.role === 'admin' && (
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
