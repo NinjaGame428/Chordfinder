@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Music, User, Filter, X, SortAsc, SortDesc } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createBrowserClient } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 interface SearchResult {
@@ -78,7 +78,6 @@ const EnhancedSearch = ({
 
     const searchDatabase = async () => {
       setIsLoading(true);
-      const supabase = createBrowserClient();
       
       if (!supabase) {
         setIsLoading(false);
