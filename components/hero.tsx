@@ -17,7 +17,7 @@ const Hero = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] flex flex-col items-center pt-[70px] pb-0 px-6 mb-[-176px]">
+    <div className="min-h-[calc(100vh-6rem)] flex flex-col items-center pt-[70px] pb-16 px-6">
       <div className="md:mt-6 flex items-center justify-center">
         <div className="text-center max-w-4xl">
           <Badge className="bg-primary rounded-full py-1 border-none">

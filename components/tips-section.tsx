@@ -44,7 +44,7 @@ const TipsSection = () => {
   };
 
   return (
-    <section id="tips" className="pt-20 pb-0 px-6 bg-muted/30 mb-[-100px]">
+    <section id="tips" className="pt-20 pb-16 px-6 bg-muted/30">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl xs:text-4xl font-bold tracking-tight">
