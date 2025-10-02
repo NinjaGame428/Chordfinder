@@ -98,23 +98,23 @@ const SongList = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl xs:text-4xl font-bold tracking-tight">
-            Popular Gospel Songs
+            Chansons Gospel Populaires
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore our curated collection of beloved gospel songs with chord charts and resources
+            Explorez notre collection de chansons gospel bien-aimées avec grilles d'accords et ressources
           </p>
         </div>
 
         {isLoading ? (
           <div className="text-center py-20">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-            <p className="mt-4 text-muted-foreground">Loading songs from database...</p>
+            <p className="mt-4 text-muted-foreground">Chargement des chansons depuis la base de données...</p>
           </div>
         ) : popularSongs.length === 0 ? (
           <div className="text-center py-20">
             <Music className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No songs found</h3>
-            <p className="text-muted-foreground">Check back soon for new gospel songs!</p>
+            <h3 className="text-xl font-semibold mb-2">Aucune chanson trouvée</h3>
+            <p className="text-muted-foreground">Revenez bientôt pour de nouvelles chansons gospel !</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -21,20 +21,20 @@ const Hero = () => {
       <div className="md:mt-6 flex items-center justify-center">
         <div className="text-center max-w-4xl">
           <Badge className="bg-primary rounded-full py-1 border-none">
-            Gospel Music Resources 🎵
+            Ressources de Musique Gospel 🎵
           </Badge>
           <h1 className="mt-6 max-w-[30ch] text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold !leading-[1.2] tracking-tight">
-            Find Gospel Music Chords & Resources
+            Trouvez des Accords et Ressources Gospel
           </h1>
           <p className="mt-6 max-w-[70ch] xs:text-lg text-muted-foreground">
-            Discover chord charts, lyrics, and resources for your worship ministry. 
-            Supporting gospel music enthusiasts with curated collections and easy-to-follow chord progressions.
+            Découvrez des grilles d'accords, des paroles et des ressources pour votre ministère de louange. 
+            Soutenir les passionnés de musique gospel avec des collections organisées et des progressions d'accords faciles à suivre.
           </p>
           
               {/* Enhanced Search Bar */}
               <div className="mt-12 max-w-2xl mx-auto">
                 <EnhancedSearch
-                  placeholder="Search for songs, artists, chords, or lyrics..."
+                  placeholder="Rechercher des chansons, artistes, accords ou paroles..."
                   onSearch={(query) => setSearchQuery(query)}
                   onResultSelect={(result) => {
                     console.log("Selected result:", result);
@@ -51,8 +51,8 @@ const Hero = () => {
                   className="w-full sm:w-auto rounded-full text-base"
                   asChild
                 >
-                  <Link href="/register">
-                    <Music className="mr-2 h-5 w-5" /> Browse Songs
+                  <Link href="/songs">
+                    <Music className="mr-2 h-5 w-5" /> Parcourir les Chansons
                   </Link>
                 </Button>
                 <Button
@@ -62,7 +62,7 @@ const Hero = () => {
                   asChild
                 >
                   <Link href="/request-song">
-                    <Plus className="mr-2 h-5 w-5" /> Request Song
+                    <Plus className="mr-2 h-5 w-5" /> Demander une Chanson
                   </Link>
                 </Button>
               </div>

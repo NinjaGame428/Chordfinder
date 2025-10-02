@@ -14,30 +14,30 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "PhinAccords - Gospel Music Chords & Resources",
+  title: "PhinAccords - Accords de Musique Gospel et Ressources",
   description:
-    "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
+    "Trouvez des accords de musique gospel, des paroles et des ressources pour le culte. Soutenir les passionnés de musique gospel avec des collections de chansons et des grilles d'accords.",
   keywords: [
-    "Gospel Music",
-    "Chord Charts",
-    "Worship Music",
-    "Gospel Chords",
-    "Christian Music",
-    "Church Music",
-    "Praise Songs",
-    "Worship Songs",
-    "Gospel Resources",
-    "Music Ministry",
+    "Musique Gospel",
+    "Grilles d'Accords",
+    "Musique de Louange",
+    "Accords Gospel",
+    "Musique Chrétienne",
+    "Musique d'Église",
+    "Chants de Louange",
+    "Chansons de Culte",
+    "Ressources Gospel",
+    "Ministère Musical",
     "PhinAccords",
   ],
   openGraph: {
     type: "website",
     siteName: "PhinAccords",
-    locale: "en_US",
+    locale: "fr_FR",
     url: "https://heavenkeys-chords-finder-ofisx6lin-jackmichaels-projects.vercel.app",
-    title: "PhinAccords - Gospel Music Chords & Resources",
+    title: "PhinAccords - Accords de Musique Gospel et Ressources",
     description:
-      "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
+      "Trouvez des accords de musique gospel, des paroles et des ressources pour le culte. Soutenir les passionnés de musique gospel avec des collections de chansons et des grilles d'accords.",
     images: [
       {
         url: "/og-image.jpg",

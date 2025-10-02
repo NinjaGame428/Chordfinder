@@ -14,28 +14,28 @@ const Footer: React.FC = () => {
               <span className="text-xl font-bold">PhinAccords</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Discover gospel music chords, lyrics, and resources for worship.
+              Découvrez des accords de musique gospel, des paroles et des ressources pour le culte.
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Quick Links</h3>
+            <h3 className="font-semibold">Liens Rapides</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/songs" className="text-muted-foreground hover:text-primary transition-colors">Songs</Link></li>
-              <li><Link href="/chords" className="text-muted-foreground hover:text-primary transition-colors">Chords</Link></li>
-              <li><Link href="/artists" className="text-muted-foreground hover:text-primary transition-colors">Artists</Link></li>
-              <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link></li>
+              <li><Link href="/songs" className="text-muted-foreground hover:text-primary transition-colors">Chansons</Link></li>
+              <li><Link href="/chords" className="text-muted-foreground hover:text-primary transition-colors">Accords</Link></li>
+              <li><Link href="/artists" className="text-muted-foreground hover:text-primary transition-colors">Artistes</Link></li>
+              <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">À propos</Link></li>
             </ul>
           </div>
 
           {/* Resources */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Resources</h3>
+            <h3 className="font-semibold">Ressources</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">All Resources</Link></li>
-              <li><Link href="/learning" className="text-muted-foreground hover:text-primary transition-colors">Learning</Link></li>
-              <li><Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">Community</Link></li>
+              <li><Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">Toutes les Ressources</Link></li>
+              <li><Link href="/learning" className="text-muted-foreground hover:text-primary transition-colors">Apprentissage</Link></li>
+              <li><Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">Communauté</Link></li>
             </ul>
           </div>
 
@@ -57,11 +57,11 @@ const Footer: React.FC = () => {
 
         <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Heavenkeys Ltd. All rights reserved.
+            © 2025 Heavenkeys Ltd. Tous droits réservés.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms</Link>
+            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Confidentialité</Link>
+            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Conditions</Link>
           </div>
         </div>
       </div>
