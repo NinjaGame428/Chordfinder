@@ -190,7 +190,6 @@ const EnhancedSearch = ({
   const clearFilters = () => {
     setSelectedFilters({
       genre: "",
-      difficulty: "",
       key: "",
     });
   };
