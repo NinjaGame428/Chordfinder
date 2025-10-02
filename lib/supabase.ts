@@ -1,9 +1,40 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Function to create Supabase client safely
+const createSupabaseClient = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+  // Check if we have valid environment variables
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.warn('Supabase environment variables not found')
+    return null
+  }
+
+  // Validate URL format
+  if (!supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+    console.warn('Invalid Supabase URL format')
+    return null
+  }
+
+  // Validate key length
+  if (supabaseAnonKey.length < 20) {
+    console.warn('Invalid Supabase anon key')
+    return null
+  }
+
+  try {
+    return createClient(supabaseUrl, supabaseAnonKey)
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error)
+    return null
+  }
+}
+
+// Create the client
+const supabase = createSupabaseClient()
+
+export { supabase }
 
 // Database types
 export interface Database {
@@ -73,7 +104,7 @@ export interface Database {
           title: string
           artist_id: string
           genre: string | null
-          key: string | null
+          key_signature: string | null
           tempo: number | null
           chords: string[] | null
           lyrics: string | null
@@ -89,7 +120,7 @@ export interface Database {
           title: string
           artist_id: string
           genre?: string | null
-          key?: string | null
+          key_signature?: string | null
           tempo?: number | null
           chords?: string[] | null
           lyrics?: string | null
@@ -105,7 +136,7 @@ export interface Database {
           title?: string
           artist_id?: string
           genre?: string | null
-          key?: string | null
+          key_signature?: string | null
           tempo?: number | null
           chords?: string[] | null
           lyrics?: string | null

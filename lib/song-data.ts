@@ -19,6 +19,14 @@ export interface Song {
   downloads: number;
   rating: number;
   description: string;
+  // YouTube fields
+  url?: string;
+  thumbnail?: string;
+  duration?: string;
+  published_at?: string;
+  quality?: string;
+  language?: string;
+  captions_available?: boolean;
 }
 
 export const songs: Song[] = [

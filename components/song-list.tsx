@@ -1,13 +1,84 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Music, User, ExternalLink, Clock, Star, Heart, Calendar, Tag } from "lucide-react";
+import { Music, User, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { songs } from "@/lib/song-data";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+
+interface Song {
+  id: number;
+  title: string;
+  artist: string;
+  key: string;
+  difficulty: string;
+  category: string;
+}
 
 const SongList = () => {
-  // Get the first 10 songs for the homepage
-  const popularSongs = songs.slice(0, 10);
+  const [popularSongs, setPopularSongs] = useState<Song[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch 12 songs from Supabase
+  useEffect(() => {
+    async function fetchSongs() {
+      console.log('🏠 Fetching songs for home page...');
+      
+      if (!supabase) {
+        console.error('❌ Supabase client not initialized');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch 12 songs from database
+        const { data: songsData, error: songsError } = await supabase
+          .from('songs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(12);
+
+        if (songsError) {
+          console.error('❌ Error fetching songs:', songsError);
+          setIsLoading(false);
+          return;
+        }
+
+        if (songsData && songsData.length > 0) {
+          // Get unique artist IDs
+          const artistIds = [...new Set(songsData.map((song: any) => song.artist_id).filter(Boolean))];
+          
+          // Fetch artists
+          const { data: artistsData } = await supabase
+            .from('artists')
+            .select('id, name')
+            .in('id', artistIds);
+
+          const artistMap = new Map(artistsData?.map((a: any) => [a.id, a.name]) || []);
+
+          const formattedSongs: Song[] = songsData.map((song: any, index: number) => ({
+            id: index + 1,
+            title: song.title,
+            artist: artistMap.get(song.artist_id) || 'Unknown Artist',
+            key: song.key_signature || 'C',
+            difficulty: 'Medium',
+            category: song.genre || 'Gospel',
+          }));
+
+          console.log(`✅ Loaded ${formattedSongs.length} songs for home page`);
+          setPopularSongs(formattedSongs);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching songs:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchSongs();
+  }, []);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -34,8 +105,20 @@ const SongList = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {popularSongs.map((song) => (
+        {isLoading ? (
+          <div className="text-center py-20">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+            <p className="mt-4 text-muted-foreground">Loading songs from database...</p>
+          </div>
+        ) : popularSongs.length === 0 ? (
+          <div className="text-center py-20">
+            <Music className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No songs found</h3>
+            <p className="text-muted-foreground">Check back soon for new gospel songs!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {popularSongs.map((song) => (
             <Card key={song.id} className="group hover:shadow-lg transition-all duration-300">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -75,15 +158,20 @@ const SongList = () => {
                 </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        <div className="text-center mt-12">
-          <Button size="lg" className="rounded-full">
-            View All Songs
-            <ExternalLink className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
+        {!isLoading && popularSongs.length > 0 && (
+          <div className="text-center mt-12">
+            <Button size="lg" className="rounded-full" asChild>
+              <Link href="/songs">
+                View All Songs
+                <ExternalLink className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
     </section>
   );

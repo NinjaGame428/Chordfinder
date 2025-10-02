@@ -8,13 +8,112 @@ import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import EnhancedSearch from "@/components/enhanced-search";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+
+interface Artist {
+  id: string;
+  name: string;
+  country?: string;
+  founded?: string;
+  genre?: string;
+  songs: number;
+  rating?: number;
+  bio?: string;
+  image_url?: string;
+  website?: string;
+}
 
 const ArtistsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [displayedArtists, setDisplayedArtists] = useState(12);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const artists = [
+  // Fetch artists from Supabase
+  useEffect(() => {
+    async function fetchArtists() {
+      console.log('🔄 Fetching artists from Supabase...');
+      
+      if (!supabase) {
+        console.error('❌ Supabase client not initialized');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch all artists
+        const { data: artistsData, error: artistsError } = await supabase
+          .from('artists')
+          .select('*')
+          .order('name', { ascending: true });
+
+        if (artistsError) {
+          console.error('❌ Error fetching artists:', artistsError);
+          setIsLoading(false);
+          return;
+        }
+
+        console.log(`✅ Retrieved ${artistsData?.length || 0} artists`);
+
+        if (artistsData && artistsData.length > 0 && supabase) {
+          // Get song counts for each artist
+          const artistsWithCounts = await Promise.all(
+            artistsData.map(async (artist) => {
+              const { count } = await supabase
+                .from('songs')
+                .select('*', { count: 'exact', head: true })
+                .eq('artist_id', artist.id);
+
+              return {
+                id: artist.id,
+                name: artist.name,
+                bio: artist.bio || undefined,
+                image_url: artist.image_url || undefined,
+                website: artist.website || undefined,
+                genre: 'Gospel',
+                songs: count || 0,
+                rating: 4.5,
+              };
+            })
+          );
+
+          console.log(`✅ Formatted ${artistsWithCounts.length} artists with song counts`);
+          setArtists(artistsWithCounts);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching artists:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchArtists();
+  }, []);
+
+  // Filter and search logic
+  const filteredArtists = artists.filter(artist =>
+    artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (artist.genre && artist.genre.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (artist.bio && artist.bio.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const visibleArtists = filteredArtists.slice(0, displayedArtists);
+  const hasMoreArtists = displayedArtists < filteredArtists.length;
+
+  const handleLoadMore = () => {
+    setDisplayedArtists(prev => Math.min(prev + 12, filteredArtists.length));
+  };
+
+  const getRatingColor = (rating: number) => {
+    if (rating >= 4.5) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
+    if (rating >= 4.0) return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+    if (rating >= 3.5) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
+    return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+  };
+
+  // Old hardcoded artists (kept for reference, not used)
+  const _hardcodedArtistsForReference = [
     {
       id: 1,
       name: "Hillsong Worship",
@@ -174,35 +273,14 @@ const ArtistsPage = () => {
       popularSongs: ["I Smile", "Wanna Be Happy?", "Love Theory", "Brighter Day"],
       image: "/artists/kirk-franklin.jpg"
     }
-  ];
-
-  const filteredArtists = artists.filter(artist =>
-    artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    artist.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    artist.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    artist.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const visibleArtists = filteredArtists.slice(0, displayedArtists);
-  const hasMoreArtists = displayedArtists < filteredArtists.length;
-
-  const handleLoadMore = () => {
-    setDisplayedArtists(prev => Math.min(prev + 12, filteredArtists.length));
-  };
-
-  const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-    if (rating >= 4.0) return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-    if (rating >= 3.5) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300";
-    return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
-  };
+  ]; // End of hardcoded reference data
 
   return (
     <>
       <Navbar />
       <main className="pt-16 xs:pt-20 sm:pt-24 min-h-screen">
         {/* Hero Section */}
-        <section className="pt-20 pb-0 px-6 bg-gradient-to-br from-background to-muted/20 mb-[-50px]">
+        <section className="pt-20 pb-12 px-6 bg-gradient-to-br from-background to-muted/20">
           <div className="max-w-7xl mx-auto text-center">
             <h1 className="text-4xl xs:text-5xl sm:text-6xl font-bold tracking-tight mb-6">
               Gospel Artists
@@ -249,19 +327,37 @@ const ArtistsPage = () => {
         </section>
 
         {/* Artists Grid */}
-        <section className="pt-20 pb-0 px-6 mb-[-50px]">
+        <section className="pt-12 pb-20 px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl xs:text-4xl font-bold tracking-tight mb-4">
                 {searchQuery ? `Search Results for "${searchQuery}"` : "All Artists"}
               </h2>
-              <p className="text-lg text-muted-foreground">
-                {filteredArtists.length} artist{filteredArtists.length !== 1 ? 's' : ''} found
-              </p>
+              {isLoading ? (
+                <p className="text-lg text-muted-foreground">Loading artists...</p>
+              ) : (
+                <p className="text-lg text-muted-foreground">
+                  {filteredArtists.length} artist{filteredArtists.length !== 1 ? 's' : ''} found
+                </p>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {visibleArtists.map((artist) => (
+            {isLoading ? (
+              <div className="text-center py-20">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+                <p className="mt-4 text-muted-foreground">Loading artists from database...</p>
+              </div>
+            ) : visibleArtists.length === 0 ? (
+              <div className="text-center py-20">
+                <Music className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No artists found</h3>
+                <p className="text-muted-foreground">
+                  {searchQuery ? 'Try adjusting your search terms' : 'No artists in the database yet'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {visibleArtists.map((artist) => (
                 <Card key={artist.id} className="group hover:shadow-lg transition-all duration-300">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between mb-4">
@@ -269,23 +365,31 @@ const ArtistsPage = () => {
                         <CardTitle className="text-xl font-semibold group-hover:text-primary transition-colors">
                           {artist.name}
                         </CardTitle>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          {artist.country}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          Founded {artist.founded}
-                        </div>
+                        {artist.country && (
+                          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            {artist.country}
+                          </div>
+                        )}
+                        {artist.founded && (
+                          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            Founded {artist.founded}
+                          </div>
+                        )}
                       </div>
-                      <Badge className={getRatingColor(artist.rating)}>
-                        <Star className="h-3 w-3 mr-1" />
-                        {artist.rating}
-                      </Badge>
+                      {artist.rating && (
+                        <Badge className={getRatingColor(artist.rating)}>
+                          <Star className="h-3 w-3 mr-1" />
+                          {artist.rating}
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {artist.description}
-                    </p>
+                    {artist.bio && (
+                      <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                        {artist.bio}
+                      </p>
+                    )}
                   </CardHeader>
                   <CardContent className="pt-0">
                     <div className="space-y-3">
@@ -298,23 +402,14 @@ const ArtistsPage = () => {
                         <span className="font-medium">{artist.songs}</span>
                       </div>
                       
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Popular Songs:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {artist.popularSongs.slice(0, 3).map((song, index) => (
-                            <Link key={index} href={`/songs/${typeof song === 'object' ? song.id : index}`}>
-                              <Badge variant="secondary" className="text-xs hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors">
-                                {typeof song === 'object' ? song.title : song}
-                              </Badge>
-                            </Link>
-                          ))}
-                          {artist.popularSongs.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{artist.popularSongs.length - 3} more
-                            </Badge>
-                          )}
+                      {artist.website && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Website:</span>
+                          <a href={artist.website} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
                         </div>
-                      </div>
+                      )}
                       
                       <Button 
                         className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
@@ -328,10 +423,11 @@ const ArtistsPage = () => {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
-            {hasMoreArtists && (
+            {!isLoading && hasMoreArtists && (
               <div className="text-center mt-12">
                 <Button 
                   size="lg" 
@@ -340,23 +436,6 @@ const ArtistsPage = () => {
                 >
                   Load More Artists ({filteredArtists.length - displayedArtists} remaining)
                   <ExternalLink className="ml-2 h-5 w-5" />
-                </Button>
-              </div>
-            )}
-
-            {filteredArtists.length === 0 && (
-              <div className="text-center py-12">
-                <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No artists found</h3>
-                <p className="text-muted-foreground">
-                  Try adjusting your search terms or browse all artists.
-                </p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4 rounded-full"
-                  onClick={() => setSearchQuery("")}
-                >
-                  Clear Search
                 </Button>
               </div>
             )}

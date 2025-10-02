@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Volume2, RotateCcw, Info } from "lucide-react";
+import { Play, Pause, Download, Printer, Share2 } from "lucide-react";
 
 interface PianoChordDiagramProps {
   chordName: string;
@@ -12,6 +11,8 @@ interface PianoChordDiagramProps {
   fingers: number[];
   description: string;
   difficulty: "Easy" | "Medium" | "Hard";
+  category?: string;
+  commonUses?: string[];
   onPlay?: () => void;
   onStop?: () => void;
   isPlaying?: boolean;
@@ -23,28 +24,24 @@ const PianoChordDiagram = ({
   fingers,
   description,
   difficulty,
+  category,
+  commonUses = [],
   onPlay,
   onStop,
   isPlaying = false
 }: PianoChordDiagramProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  // Piano key layout - 1 octave (C to C) with proper spacing
-  const pianoKeys = [
-    { note: 'C', isBlack: false, position: 0, width: 1 },
-    { note: 'C#', isBlack: true, position: 0.7, width: 0.6 },
-    { note: 'D', isBlack: false, position: 1, width: 1 },
-    { note: 'D#', isBlack: true, position: 1.7, width: 0.6 },
-    { note: 'E', isBlack: false, position: 2, width: 1 },
-    { note: 'F', isBlack: false, position: 3, width: 1 },
-    { note: 'F#', isBlack: true, position: 3.7, width: 0.6 },
-    { note: 'G', isBlack: false, position: 4, width: 1 },
-    { note: 'G#', isBlack: true, position: 4.7, width: 0.6 },
-    { note: 'A', isBlack: false, position: 5, width: 1 },
-    { note: 'A#', isBlack: true, position: 5.7, width: 0.6 },
-    { note: 'B', isBlack: false, position: 6, width: 1 },
-    { note: 'C', isBlack: false, position: 7, width: 1 }
-  ];
+  // Full octave from C to B, including sharps/flats
+  const octaveNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  
+  // Normalize note names (handle enharmonic equivalents)
+  const normalizeNote = (note: string): string => {
+    const enharmonic: { [key: string]: string } = {
+      'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#',
+      'E#': 'F', 'B#': 'C', 'Fb': 'E', 'Cb': 'B',
+      'F##': 'G', 'C##': 'D', 'G##': 'A', 'D##': 'E', 'A##': 'B'
+    };
+    return enharmonic[note] || note;
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -56,21 +53,25 @@ const PianoChordDiagram = ({
   };
 
   const isKeyPressed = (note: string) => {
-    return notes.includes(note);
+    const normalized = normalizeNote(note);
+    return notes.some(n => normalizeNote(n) === normalized);
   };
 
-  const getFingerForNote = (note: string) => {
-    const noteIndex = notes.indexOf(note);
-    return noteIndex >= 0 ? fingers[noteIndex] : null;
+  const blackKeyPositions: { [key: string]: number } = {
+    'C#': 35,
+    'D#': 85,
+    'F#': 185,
+    'G#': 235,
+    'A#': 285
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-6">
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-primary">{chordName}</h3>
-            <p className="text-muted-foreground mt-1">{description}</p>
+            <CardTitle className="text-center">{chordName}</CardTitle>
+            <CardDescription className="text-center mt-1">{description}</CardDescription>
           </div>
           <div className="flex items-center gap-2">
             <Badge className={getDifficultyColor(difficulty)}>
@@ -90,114 +91,120 @@ const PianoChordDiagram = ({
             </Button>
           </div>
         </div>
-
-        {/* Piano Keyboard */}
-        <div className="relative bg-gradient-to-b from-slate-50 to-slate-100 rounded-lg p-4 border-2 border-slate-200">
-          <div className="relative h-32">
-            {/* White Keys */}
-            <div className="absolute inset-0 flex">
-              {pianoKeys.filter(key => !key.isBlack).map((key, index) => {
-                const isPressed = isKeyPressed(key.note);
-                const finger = getFingerForNote(key.note);
-                
-                return (
-                  <div
-                    key={`white-${key.note}-${index}`}
-                    className={`relative border-r border-slate-300 rounded-b-lg transition-all duration-200 ${
-                      isPressed 
-                        ? 'bg-blue-200 shadow-inner border-blue-300' 
-                        : 'bg-white hover:bg-blue-50'
-                    }`}
-                    style={{ 
-                      zIndex: 1,
-                      flex: key.width,
-                      minWidth: `${(key.width * 100) / 7}%`
-                    }}
-                  >
-                    {/* Key Label */}
-                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-medium text-slate-600">
-                      {key.note}
-                    </div>
-                    
-                    {/* Finger Number */}
-                    {finger && (
-                      <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                        {finger}
-                      </div>
-                    )}
-                    
-                    {/* Pressed Effect */}
-                    {isPressed && (
-                      <div className="absolute inset-0 bg-blue-300/30 rounded-b-lg animate-pulse" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Black Keys */}
-            <div className="absolute inset-0 flex">
-              {pianoKeys.filter(key => key.isBlack).map((key, index) => {
-                const isPressed = isKeyPressed(key.note);
-                const finger = getFingerForNote(key.note);
-                
-                return (
-                  <div
-                    key={`black-${key.note}-${index}`}
-                    className={`relative w-8 h-20 -ml-4 rounded-b-lg transition-all duration-200 ${
-                      isPressed 
-                        ? 'bg-blue-800 shadow-inner' 
-                        : 'bg-slate-800 hover:bg-blue-900'
-                    }`}
-                    style={{ 
-                      zIndex: 2,
-                      left: `${(key.position * 100) / 7}%`
-                    }}
-                  >
-                    {/* Finger Number for Black Keys */}
-                    {finger && (
-                      <div className="absolute top-1 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
-                        {finger}
-                      </div>
-                    )}
-                    
-                    {/* Pressed Effect */}
-                    {isPressed && (
-                      <div className="absolute inset-0 bg-blue-400/50 rounded-b-lg animate-pulse" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center">
+        {/* Notes Badge Display */}
+        <div className="mb-3 flex gap-2">
+          {notes.map(note => (
+            <Badge key={note} variant="secondary" className="text-sm px-3 py-1">
+              {note}
+            </Badge>
+          ))}
         </div>
 
-        {/* Chord Information */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-sm font-medium text-muted-foreground">Notes</div>
-            <div className="text-lg font-semibold">{notes.join(' - ')}</div>
-          </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-sm font-medium text-muted-foreground">Fingers</div>
-            <div className="text-lg font-semibold">{fingers.join(' - ')}</div>
-          </div>
-          <div className="text-center p-3 bg-muted/50 rounded-lg">
-            <div className="text-sm font-medium text-muted-foreground">Type</div>
-            <div className="text-lg font-semibold">{chordName.split(' ')[1] || 'Major'}</div>
-          </div>
+        {/* Piano Keyboard SVG */}
+        <div className="relative inline-block">
+          <svg width="400" height="180" className="bg-card rounded-lg border">
+            {/* Draw white keys */}
+            {octaveNotes.filter(n => !n.includes('#')).map((note, idx) => {
+              const x = idx * 50;
+              const isHighlighted = isKeyPressed(note);
+              return (
+                <g key={note}>
+                  <rect
+                    x={x}
+                    y="20"
+                    width="48"
+                    height="140"
+                    fill={isHighlighted ? '#991b1b' : 'hsl(var(--background))'}
+                    stroke="hsl(var(--border))"
+                    strokeWidth="2"
+                    rx="4"
+                    ry="4"
+                  />
+                  <text
+                    x={x + 24}
+                    y="150"
+                    textAnchor="middle"
+                    fontSize="14"
+                    fontWeight="bold"
+                    fill={isHighlighted ? 'white' : 'hsl(var(--foreground))'}
+                  >
+                    {note}
+                  </text>
+                </g>
+              );
+            })}
+            
+            {/* Draw black keys */}
+            {octaveNotes.filter(n => n.includes('#')).map((note) => {
+              const x = blackKeyPositions[note];
+              const isHighlighted = isKeyPressed(note);
+              return (
+                <g key={note}>
+                  <rect
+                    x={x}
+                    y="20"
+                    width="30"
+                    height="90"
+                    fill={isHighlighted ? '#7f1d1d' : 'hsl(var(--foreground))'}
+                    stroke="hsl(var(--border))"
+                    strokeWidth="2"
+                    rx="3"
+                    ry="3"
+                  />
+                  {isHighlighted && (
+                    <text
+                      x={x + 15}
+                      y="95"
+                      textAnchor="middle"
+                      fontSize="10"
+                      fontWeight="bold"
+                      fill="white"
+                    >
+                      {note}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
         </div>
 
-        {/* Hand Position Guide */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-            <Info className="h-4 w-4" />
-            Hand Position Guide
-          </h4>
-          <p className="text-sm text-blue-800">
-            Keep your fingers curved, press keys firmly but not tensely, and maintain a relaxed wrist position. 
-            Use the finger numbers as a guide for proper fingering technique.
-          </p>
+        {/* Chord Details */}
+        <div className="w-full mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">{chordName}</h3>
+            {category && <Badge variant="outline">{category}</Badge>}
+          </div>
+          
+          <p className="text-muted-foreground text-sm">{description}</p>
+          
+          {commonUses && commonUses.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-2 text-sm">Common Uses:</h4>
+              <div className="flex flex-wrap gap-2">
+                {commonUses.map((use, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">{use}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button size="sm" variant="outline">
+              <Printer className="h-4 w-4 mr-2" />
+              Print
+            </Button>
+            <Button size="sm" variant="outline">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

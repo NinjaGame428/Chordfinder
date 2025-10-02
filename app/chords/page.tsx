@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import PianoChordDiagram from "@/components/piano-chord-diagram";
 import GuitarChordDiagram from "@/components/guitar-chord-diagram";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface ChordDiagram {
   name: string;
@@ -73,6 +74,8 @@ const ChordDisplayPage = () => {
   const [activeTab, setActiveTab] = useState("guitar");
   const [playingChord, setPlayingChord] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [chords, setChords] = useState<Chord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Function to convert chord names to French
   const getChordName = (chordName: string) => {
@@ -113,8 +116,121 @@ const ChordDisplayPage = () => {
 
   const difficulties = ["All Levels", "Easy", "Medium", "Hard"];
 
-  // Comprehensive chord library with both guitar and piano data
-  const chords: Chord[] = [
+  // Fetch chords from Supabase
+  useEffect(() => {
+    const fetchChords = async () => {
+      console.log('🎸🎹 Fetching chords from Supabase...');
+      setIsLoading(true);
+
+      if (!supabase) {
+        console.error('❌ Supabase client not initialized');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch both piano and guitar chords
+        const [pianoData, guitarData] = await Promise.all([
+          supabase.from('piano_chords').select('*'),
+          supabase.from('guitar_chords').select('*')
+        ]);
+
+        if (pianoData.error || guitarData.error) {
+          console.error('❌ Error fetching chords:', pianoData.error || guitarData.error);
+          setIsLoading(false);
+          return;
+        }
+
+        console.log(`✅ Loaded ${pianoData.data?.length} piano chords, ${guitarData.data?.length} guitar chords`);
+
+        // Group chords by name to combine piano and guitar data
+        const chordMap = new Map<string, Chord>();
+
+        // Process piano chords
+        pianoData.data?.forEach((pianoChord: any) => {
+          const chordName = pianoChord.chord_name;
+          if (!chordMap.has(chordName)) {
+            chordMap.set(chordName, {
+              name: chordName,
+              key: pianoChord.root_note,
+              difficulty: pianoChord.difficulty as "Easy" | "Medium" | "Hard",
+              guitarDiagrams: [],
+              pianoChords: [],
+              description: pianoChord.description || '',
+              commonUses: [],
+              alternativeNames: pianoChord.alternate_name ? [pianoChord.alternate_name] : [],
+              category: pianoChord.chord_type
+            });
+          }
+
+          const chord = chordMap.get(chordName)!;
+          chord.pianoChords.push({
+            name: 'Root Position',
+            notes: pianoChord.notes,
+            fingers: pianoChord.fingering?.split('-').map((f: string) => parseInt(f)) || [1, 3, 5],
+            description: pianoChord.intervals
+          });
+        });
+
+        // Process guitar chords
+        guitarData.data?.forEach((guitarChord: any) => {
+          const chordName = guitarChord.chord_name;
+          if (!chordMap.has(chordName)) {
+            chordMap.set(chordName, {
+              name: chordName,
+              key: guitarChord.root_note,
+              difficulty: guitarChord.difficulty as "Easy" | "Medium" | "Hard",
+              guitarDiagrams: [],
+              pianoChords: [],
+              description: guitarChord.description || '',
+              commonUses: [],
+              alternativeNames: guitarChord.alternate_name ? [guitarChord.alternate_name] : [],
+              category: guitarChord.chord_type
+            });
+          }
+
+          const chord = chordMap.get(chordName)!;
+          if (guitarChord.frets && guitarChord.fingers) {
+            chord.guitarDiagrams.push({
+              name: `${chordName} Position`,
+              frets: guitarChord.frets,
+              fingers: guitarChord.fingers,
+              description: guitarChord.intervals
+            });
+          }
+        });
+
+        // Sort chords in musical order: C, D, E, F, G, A, B
+        const musicalOrder = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+        const chordsArray = Array.from(chordMap.values()).sort((a, b) => {
+          const aRoot = a.key;
+          const bRoot = b.key;
+          const aIndex = musicalOrder.indexOf(aRoot);
+          const bIndex = musicalOrder.indexOf(bRoot);
+          
+          // If both roots are in the order array, sort by position
+          if (aIndex !== -1 && bIndex !== -1) {
+            if (aIndex !== bIndex) return aIndex - bIndex;
+          }
+          
+          // If same root, sort by chord type
+          return a.name.localeCompare(b.name);
+        });
+        
+        console.log(`✅ Processed ${chordsArray.length} total chords in musical order`);
+        setChords(chordsArray);
+      } catch (error) {
+        console.error('❌ Error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchChords();
+  }, []);
+
+  // Fallback hardcoded chords for reference
+  const hardcodedChords: Chord[] = [
     // C Major Chords
     {
       name: "C Major",
@@ -641,7 +757,12 @@ const ChordDisplayPage = () => {
             </TabsList>
 
             <TabsContent value="guitar" className="space-y-8">
-              {filteredChords.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-20">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Loading guitar chords...</p>
+                </div>
+              ) : filteredChords.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {filteredChords.map((chord) => (
                     <div key={chord.name} className="space-y-4">
@@ -653,51 +774,15 @@ const ChordDisplayPage = () => {
                           fingers={diagram.fingers}
                           barre={diagram.barre}
                           capo={diagram.capo}
-                          description={diagram.description}
+                          description={chord.description}
                           difficulty={chord.difficulty}
+                          category={chord.category}
+                          commonUses={chord.commonUses}
                           onPlay={() => handlePlayChord(`${chord.name}-guitar-${index}`)}
                           onStop={() => setPlayingChord(null)}
                           isPlaying={playingChord === `${chord.name}-guitar-${index}`}
                         />
                       ))}
-                      
-                      {/* Chord Information */}
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-xl font-semibold">{getChordName(chord.name)}</h3>
-                              <Badge variant="outline">{chord.category}</Badge>
-                            </div>
-                            
-                            <p className="text-muted-foreground">{chord.description}</p>
-                            
-                            <div>
-                              <h4 className="font-medium mb-2">Common Uses:</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {chord.commonUses.map((use, index) => (
-                                  <Badge key={index} variant="secondary">{use}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Download className="h-4 w-4 mr-2" />
-                                Save
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Printer className="h-4 w-4 mr-2" />
-                                Print
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Share2 className="h-4 w-4 mr-2" />
-                                Share
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
                     </div>
                   ))}
                 </div>
@@ -724,8 +809,13 @@ const ChordDisplayPage = () => {
             </TabsContent>
 
             <TabsContent value="piano" className="space-y-8">
-              {filteredChords.length > 0 ? (
-                <div className="space-y-8">
+              {isLoading ? (
+                <div className="text-center py-20">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                  <p className="mt-4 text-muted-foreground">Loading piano chords...</p>
+                </div>
+              ) : filteredChords.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {filteredChords.map((chord) => (
                     <div key={chord.name} className="space-y-6">
                       {chord.pianoChords.map((pianoChord, index) => (
@@ -734,51 +824,15 @@ const ChordDisplayPage = () => {
                           chordName={getChordName(chord.name)}
                           notes={pianoChord.notes}
                           fingers={pianoChord.fingers}
-                          description={pianoChord.description}
+                          description={chord.description}
                           difficulty={chord.difficulty}
+                          category={chord.category}
+                          commonUses={chord.commonUses}
                           onPlay={() => handlePlayChord(`${chord.name}-piano-${index}`)}
                           onStop={() => setPlayingChord(null)}
                           isPlaying={playingChord === `${chord.name}-piano-${index}`}
                         />
                       ))}
-                      
-                      {/* Chord Information */}
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-xl font-semibold">{getChordName(chord.name)}</h3>
-                              <Badge variant="outline">{chord.category}</Badge>
-                            </div>
-                            
-                            <p className="text-muted-foreground">{chord.description}</p>
-                            
-                            <div>
-                              <h4 className="font-medium mb-2">Common Uses:</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {chord.commonUses.map((use, index) => (
-                                  <Badge key={index} variant="secondary">{use}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="outline">
-                                <Download className="h-4 w-4 mr-2" />
-                                Save
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Printer className="h-4 w-4 mr-2" />
-                                Print
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Share2 className="h-4 w-4 mr-2" />
-                                Share
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
                     </div>
                   ))}
                 </div>

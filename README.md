@@ -1,4 +1,4 @@
-# Chords Finder 🎵
+# PhinAccords 🎵
 
 A comprehensive gospel music application for finding chords, lyrics, and resources for worship ministry.
 
@@ -25,7 +25,7 @@ A comprehensive gospel music application for finding chords, lyrics, and resourc
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd chords-finder
+cd phinaccords
 ```
 
 2. Install dependencies:

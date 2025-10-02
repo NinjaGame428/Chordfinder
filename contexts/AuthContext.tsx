@@ -51,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
+      if (!supabase) {
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -66,21 +71,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          await loadUserProfile(session.user);
-        } else {
-          setUser(null);
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (session?.user) {
+            await loadUserProfile(session.user);
+          } else {
+            setUser(null);
+          }
+          setIsLoading(false);
         }
-        setIsLoading(false);
-      }
-    );
+      );
 
-    return () => subscription.unsubscribe();
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   const loadUserProfile = async (supabaseUser: SupabaseUser) => {
+    if (!supabase) return;
+    
     try {
       const { data: profile, error } = await supabase
         .from('users')
@@ -127,6 +136,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    if (!supabase) {
+      throw new Error('Authentication not configured');
+    }
+    
     try {
       setIsLoading(true);
       
@@ -155,6 +168,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (userData: RegisterData): Promise<boolean> => {
+    if (!supabase) {
+      throw new Error('Authentication not configured');
+    }
+    
     try {
       setIsLoading(true);
       
@@ -215,6 +232,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    if (!supabase) return;
+    
     try {
       await supabase.auth.signOut();
       setUser(null);
@@ -224,6 +243,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
+    if (!supabase) {
+      throw new Error('Authentication not configured');
+    }
+    
     try {
       if (!user) return false;
       

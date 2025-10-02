@@ -36,6 +36,10 @@ export interface DownloadedResource {
 
 // Fetch real user statistics
 export const fetchUserStats = async (userId: string): Promise<UserStats> => {
+  if (!supabase) {
+    throw new Error('Supabase not configured');
+  }
+  
   try {
     // Get favorite songs count
     const { count: favoriteSongs } = await supabase
@@ -76,6 +80,10 @@ export const fetchUserStats = async (userId: string): Promise<UserStats> => {
 
 // Fetch recent activity
 export const fetchRecentActivity = async (userId: string): Promise<RecentActivity[]> => {
+  if (!supabase) {
+    throw new Error('Supabase not configured');
+  }
+  
   try {
     const activities: RecentActivity[] = [];
 
@@ -181,6 +189,10 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
 
 // Fetch user's favorite songs
 export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]> => {
+  if (!supabase) {
+    throw new Error('Supabase not configured');
+  }
+  
   try {
     const { data, error } = await supabase
       .from('favorites')
@@ -218,6 +230,10 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
 
 // Fetch user's downloaded resources
 export const fetchDownloadedResources = async (userId: string): Promise<DownloadedResource[]> => {
+  if (!supabase) {
+    throw new Error('Supabase not configured');
+  }
+  
   try {
     const { data, error } = await supabase
       .from('favorites')
@@ -255,6 +271,10 @@ export const fetchDownloadedResources = async (userId: string): Promise<Download
 
 // Update user stats in database
 export const updateUserStats = async (userId: string, stats: UserStats): Promise<boolean> => {
+  if (!supabase) {
+    throw new Error('Supabase not configured');
+  }
+  
   try {
     const { error } = await supabase
       .from('users')

@@ -14,7 +14,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Chords Finder - Gospel Music Chords & Resources",
+  title: "PhinAccords - Gospel Music Chords & Resources",
   description:
     "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
   keywords: [
@@ -28,15 +28,14 @@ export const metadata: Metadata = {
     "Worship Songs",
     "Gospel Resources",
     "Music Ministry",
-    "Heavenkeys Ltd",
-    "Chords Finder",
+    "PhinAccords",
   ],
   openGraph: {
     type: "website",
-    siteName: "HeavenKeys Chords Finder",
+    siteName: "PhinAccords",
     locale: "en_US",
     url: "https://heavenkeys-chords-finder-ofisx6lin-jackmichaels-projects.vercel.app",
-    title: "HeavenKeys Chords Finder - Gospel Music Chords & Resources",
+    title: "PhinAccords - Gospel Music Chords & Resources",
     description:
       "Find gospel music chords, lyrics, and resources for worship. Supporting gospel music enthusiasts with curated song collections and chord charts.",
     images: [
@@ -44,7 +43,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "HeavenKeys Chords Finder Preview",
+        alt: "PhinAccords Preview",
       },
     ],
   },

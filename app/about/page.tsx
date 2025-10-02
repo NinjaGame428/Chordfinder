@@ -51,7 +51,7 @@ const AboutPage = () => {
       <Navbar />
       <main className="pt-16 xs:pt-20 sm:pt-24 min-h-screen">
         {/* Hero Section */}
-        <section className="pt-20 pb-0 px-6 bg-gradient-to-br from-background to-muted/20 mb-[-70px]">
+        <section className="pt-20 pb-12 px-6 bg-gradient-to-br from-background to-muted/20">
           <div className="max-w-7xl mx-auto text-center">
             <h1 className="text-4xl xs:text-5xl sm:text-6xl font-bold tracking-tight mb-6">
               About Chord Finder
@@ -74,7 +74,7 @@ const AboutPage = () => {
         </section>
 
         {/* Stats Section */}
-        <section className="pt-20 pb-0 px-6 bg-muted/30 mb-[-70px]">
+        <section className="pt-12 pb-12 px-6 bg-muted/30">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
               {stats.map((stat, index) => (
@@ -92,7 +92,7 @@ const AboutPage = () => {
         </section>
 
         {/* Mission Section */}
-        <section className="pt-20 pb-0 px-6 mb-[-70px]">
+        <section className="pt-12 pb-12 px-6">
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
@@ -128,7 +128,7 @@ const AboutPage = () => {
         </section>
 
         {/* Values Section */}
-        <section className="pt-20 pb-0 px-6 bg-muted/30 mb-[-70px]">
+        <section className="pt-12 pb-12 px-6 bg-muted/30">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl xs:text-4xl font-bold tracking-tight mb-4">
@@ -155,7 +155,7 @@ const AboutPage = () => {
         </section>
 
         {/* Team Section */}
-        <section className="pt-20 pb-0 px-6 mb-[-70px]">
+        <section className="pt-12 pb-20 px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl xs:text-4xl font-bold tracking-tight mb-4">

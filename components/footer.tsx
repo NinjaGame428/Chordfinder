@@ -1,112 +1,67 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import {
-  DribbbleIcon,
-  GithubIcon,
-  Music,
-  Plus,
-  TwitchIcon,
-  TwitterIcon,
-} from "lucide-react";
-import Link from "next/link";
+import React from 'react';
+import { Music, Github, Mail } from 'lucide-react';
+import Link from 'next/link';
 
-const footerLinks = [
-  {
-    title: "Songs",
-    href: "/songs",
-  },
-  {
-    title: "Artists",
-    href: "/artists",
-  },
-  {
-    title: "About",
-    href: "/about",
-  },
-  {
-    title: "Resources",
-    href: "/resources",
-  },
-  {
-    title: "Request Song",
-    href: "/request-song",
-  },
-  {
-    title: "Contact",
-    href: "/contact",
-  },
-  {
-    title: "Privacy",
-    href: "#privacy",
-  },
-];
-
-const Footer = () => {
+const Footer: React.FC = () => {
   return (
-    <footer className="dark:border-t mt-40 dark bg-background text-foreground">
-      <div className="max-w-screen-xl mx-auto">
-        <div className="py-12 flex flex-col sm:flex-row items-start justify-between gap-x-8 gap-y-10 px-6 xl:px-0">
-          <div>
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-lg">
-                <Music className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">HeavenKeys Chords Finder</span>
-            </Link>
+    <footer className="bg-muted/50 border-t">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {/* Brand */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Music className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold">PhinAccords</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Discover gospel music chords, lyrics, and resources for worship.
+            </p>
+          </div>
 
-            <ul className="mt-6 flex items-center gap-4 flex-wrap">
-              {footerLinks.map(({ title, href }) => (
-                <li key={title}>
-                  <Link
-                    href={href}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    {title}
-                  </Link>
-                </li>
-              ))}
+          {/* Quick Links */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Quick Links</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/songs" className="text-muted-foreground hover:text-primary transition-colors">Songs</Link></li>
+              <li><Link href="/chords" className="text-muted-foreground hover:text-primary transition-colors">Chords</Link></li>
+              <li><Link href="/artists" className="text-muted-foreground hover:text-primary transition-colors">Artists</Link></li>
+              <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">About</Link></li>
             </ul>
           </div>
 
-          {/* Subscribe Newsletter */}
-          <div className="max-w-xs w-full">
-            <h6 className="font-semibold">Stay up to date</h6>
-            <form className="mt-6 flex items-center gap-2">
-              <Input type="email" placeholder="Enter your email" />
-              <Button>Subscribe</Button>
-            </form>
+          {/* Resources */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Resources</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">All Resources</Link></li>
+              <li><Link href="/learning" className="text-muted-foreground hover:text-primary transition-colors">Learning</Link></li>
+              <li><Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">Community</Link></li>
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Contact</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center space-x-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">business@heavenkeys.ca</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Github className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Heavenkeys Ltd.</span>
+              </div>
+            </div>
           </div>
         </div>
-        <Separator />
-        <div className="py-8 flex flex-col-reverse sm:flex-row items-center justify-between gap-x-2 gap-y-5 px-6 xl:px-0">
-          {/* Copyright */}
-          <span className="text-muted-foreground text-center sm:text-start">
-            &copy; {new Date().getFullYear()}{" "}
-            <Link href="/" target="_blank">
-              HeavenKeys Chords Finder
-            </Link>
-            . All rights reserved. Powered by{" "}
-                <Link href="https://heavenkeys.ca" target="_blank" className="hover:text-primary">
-                  HeavenKeys Ltd
-                </Link>
-            .
-          </span>
 
-          <div className="flex items-center gap-5 text-muted-foreground">
-            <Link href="#" target="_blank">
-              <TwitterIcon className="h-5 w-5" />
-            </Link>
-            <Link href="#" target="_blank">
-              <DribbbleIcon className="h-5 w-5" />
-            </Link>
-            <Link href="#" target="_blank">
-              <TwitchIcon className="h-5 w-5" />
-            </Link>
-            <Link href="#" target="_blank">
-              <GithubIcon className="h-5 w-5" />
-            </Link>
+        <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
+          <p className="text-sm text-muted-foreground">
+            © 2024 Heavenkeys Ltd. All rights reserved.
+          </p>
+          <div className="flex space-x-4 mt-4 sm:mt-0">
+            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Terms</Link>
           </div>
         </div>
       </div>
