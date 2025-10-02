@@ -58,9 +58,10 @@ const ArtistsPage = () => {
 
         if (artistsData && artistsData.length > 0 && supabase) {
           // Get song counts for each artist
+          const supabaseClient = supabase; // Store in const for TypeScript
           const artistsWithCounts = await Promise.all(
             artistsData.map(async (artist) => {
-              const { count } = await supabase
+              const { count } = await supabaseClient
                 .from('songs')
                 .select('*', { count: 'exact', head: true })
                 .eq('artist_id', artist.id);
