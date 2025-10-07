@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('query') || '';
     const category = searchParams.get('category') || 'All Songs';
-    const limit = Math.min(parseInt(searchParams.get('limit') || '12'), 50); // Cap at 50
+    const limit = parseInt(searchParams.get('limit') || '50'); // Default to 50, but allow higher
     const offset = parseInt(searchParams.get('offset') || '0');
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';

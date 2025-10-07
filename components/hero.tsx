@@ -17,8 +17,8 @@ const Hero = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] flex flex-col items-center pt-[70px] pb-16 px-6">
-      <div className="md:mt-6 flex items-center justify-center">
+    <div className="flex flex-col items-center pt-16 pb-8 px-6">
+      <div className="flex items-center justify-center">
         <div className="text-center max-w-4xl">
           <Badge className="bg-primary rounded-full py-1 border-none">
             Ressources de Musique Gospel 🎵
@@ -32,7 +32,7 @@ const Hero = () => {
           </p>
           
               {/* Enhanced Search Bar */}
-              <div className="mt-12 max-w-2xl mx-auto">
+              <div className="mt-8 max-w-2xl mx-auto">
                 <EnhancedSearch
                   placeholder="Rechercher des chansons, artistes, accords ou paroles..."
                   onSearch={(query) => setSearchQuery(query)}
@@ -45,7 +45,7 @@ const Hero = () => {
                 />
               </div>
 
-              <div className="mt-8 flex flex-col sm:flex-row items-center sm:justify-center gap-4">
+              <div className="mt-6 flex flex-col sm:flex-row items-center sm:justify-center gap-4">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto rounded-full text-base"

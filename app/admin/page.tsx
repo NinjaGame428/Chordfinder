@@ -18,11 +18,15 @@ import {
   Download,
   Users,
   BarChart3,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Filter
 } from 'lucide-react';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
 import { AdminSongEditor } from '@/components/AdminSongEditor';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 
 const AdminPage = () => {
@@ -30,9 +34,13 @@ const AdminPage = () => {
   const [showSongEditor, setShowSongEditor] = useState(false);
   const [editingSong, setEditingSong] = useState<any>(null);
   const [songs, setSongs] = useState<any[]>([]);
+  const [filteredSongs, setFilteredSongs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterGenre, setFilterGenre] = useState('all');
+  const [filterArtist, setFilterArtist] = useState('all');
 
   // Fetch songs from database
   const fetchSongs = async () => {
@@ -44,6 +52,7 @@ const AdminPage = () => {
       }
       const data = await response.json();
       setSongs(data.songs || []);
+      setFilteredSongs(data.songs || []);
       setError(null);
       setSuccessMessage(null);
     } catch (err) {
@@ -57,6 +66,31 @@ const AdminPage = () => {
   useEffect(() => {
     fetchSongs();
   }, []);
+
+  // Filter songs based on search and filters
+  useEffect(() => {
+    let filtered = songs;
+
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(song => 
+        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (song.artists?.name && song.artists.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    // Genre filter
+    if (filterGenre !== 'all') {
+      filtered = filtered.filter(song => song.genre === filterGenre);
+    }
+
+    // Artist filter
+    if (filterArtist !== 'all') {
+      filtered = filtered.filter(song => song.artists?.name === filterArtist);
+    }
+
+    setFilteredSongs(filtered);
+  }, [songs, searchQuery, filterGenre, filterArtist]);
 
   const handleSaveSong = async (song: any) => {
     try {
@@ -312,6 +346,73 @@ const AdminPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {/* Search and Filter Controls */}
+                    <div className="mb-6 space-y-4">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {/* Search Input */}
+                        <div className="flex-1">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                            <Input
+                              placeholder="Search songs by title or artist..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Genre Filter */}
+                        <div className="w-full sm:w-48">
+                          <Select value={filterGenre} onValueChange={setFilterGenre}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Filter by genre" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Genres</SelectItem>
+                              {Array.from(new Set(songs.map(song => song.genre).filter(Boolean))).map(genre => (
+                                <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Artist Filter */}
+                        <div className="w-full sm:w-48">
+                          <Select value={filterArtist} onValueChange={setFilterArtist}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Filter by artist" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Artists</SelectItem>
+                              {Array.from(new Set(songs.map(song => song.artists?.name).filter(Boolean))).map(artist => (
+                                <SelectItem key={artist} value={artist}>{artist}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Results Summary */}
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>
+                          Showing {filteredSongs.length} of {songs.length} songs
+                        </span>
+                        {(searchQuery || filterGenre !== 'all' || filterArtist !== 'all') && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSearchQuery('');
+                              setFilterGenre('all');
+                              setFilterArtist('all');
+                            }}
+                          >
+                            Clear Filters
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                     {loading ? (
                       <div className="flex items-center justify-center py-8">
                         <div className="text-muted-foreground">Loading songs...</div>
@@ -320,13 +421,15 @@ const AdminPage = () => {
                       <div className="flex items-center justify-center py-8">
                         <div className="text-red-500">{error}</div>
                       </div>
-                    ) : songs.length === 0 ? (
+                    ) : filteredSongs.length === 0 ? (
                       <div className="flex items-center justify-center py-8">
-                        <div className="text-muted-foreground">No songs found. Add your first song!</div>
+                        <div className="text-muted-foreground">
+                          {songs.length === 0 ? 'No songs found. Add your first song!' : 'No songs match your filters.'}
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {songs.map((song) => (
+                        {filteredSongs.map((song) => (
                           <div key={song.id} className="flex items-center justify-between p-4 border rounded-lg">
                             <div className="flex items-center space-x-4">
                               <div>

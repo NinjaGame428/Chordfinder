@@ -63,8 +63,8 @@ const SongsPage = () => {
             slug,
             created_at
           `)
-          .order('created_at', { ascending: false })
-          .limit(50); // Limit initial load for better performance
+          .order('created_at', { ascending: false });
+          // Removed limit to show all songs
 
         if (songsError) {
           console.error('❌ Error fetching songs:', songsError);
