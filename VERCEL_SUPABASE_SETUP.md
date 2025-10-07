@@ -7,8 +7,8 @@
 Go to your Vercel project dashboard and add these environment variables:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://weoukngkpqvfkxerpvno.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlb3VrbmdrcHF2Zmt4ZXJwdm5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5NTE4MDYsImV4cCI6MjA3NDUyNzgwNn0.kfkg_Smf7CxxgvJloy817JrDLrQQBvFUAImPRXyyexs
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### 2. Supabase Database Setup

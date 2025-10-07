@@ -23,7 +23,7 @@ Once your project is created:
 1. Go to **Settings** → **API**
 2. Copy the following values:
    - **Project URL**: `https://your-project-id.supabase.co`
-   - **Anon Key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+   - **Anon Key**: `your_supabase_anon_key`
 
 ### 3. Set Up the Database
 

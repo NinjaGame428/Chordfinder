@@ -11,8 +11,8 @@ Your Vercel deployment needs the correct Supabase environment variables. Let's v
 2. Click on **Settings** → **Environment Variables**
 3. Make sure these variables are set:
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://zsujkjbvliqphssuvvyw.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzdWpramJ2bGlxcGhzc3V2dnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxMjEwMjYsImV4cCI6MjA3NDY5NzAyNn0.5bb8uOT3hexN832BiW9pg2LAN1NwgQoBkgYQAY4GH-4
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 4. **Redeploy** your project after adding the variables
 
@@ -23,7 +23,7 @@ vercel env add NEXT_PUBLIC_SUPABASE_URL
 # Enter: https://zsujkjbvliqphssuvvyw.supabase.co
 
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY  
-# Enter: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzdWpramJ2bGlxcGhzc3V2dnl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxMjEwMjYsImV4cCI6MjA3NDY5NzAyNn0.5bb8uOT3hexN832BiW9pg2LAN1NwgQoBkgYQAY4GH-4
+# Enter: your_supabase_anon_key
 
 # Redeploy
 vercel --prod
