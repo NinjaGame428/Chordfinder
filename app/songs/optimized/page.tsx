@@ -13,11 +13,10 @@ import LazyLoad from "@/components/lazy-load";
 import { YouTubeSongCard } from "@/components/youtube-song-card";
 import { ViewToggle } from "@/components/view-toggle";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Song } from "@/lib/song-data";
-import { supabase } from "@/lib/supabase";
 
-const SongsPage = () => {
+const OptimizedSongsPage = () => {
   const { t } = useLanguage();
   const { addSongToFavorites, removeSongFromFavorites, isSongFavorite } = useFavorites();
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,128 +25,51 @@ const SongsPage = () => {
   const [filteredSongs, setFilteredSongs] = useState<Song[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [highlightedSong, setHighlightedSong] = useState<string | null>(null);
-  const [supabaseSongs, setSupabaseSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalSongs, setTotalSongs] = useState(0);
 
-  // Fetch songs from Supabase with pagination and caching
-  useEffect(() => {
-    async function fetchSongs() {
-      console.log('🔄 Starting to fetch songs from Supabase...');
-      
-      if (!supabase) {
-        console.error('❌ Supabase client is not initialized!');
-        console.error('Check your .env.local file for NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
-        setIsLoading(false);
-        return;
+  // Fetch songs with pagination
+  const fetchSongs = useCallback(async (query: string, category: string, limit: number, offset: number) => {
+    try {
+      const params = new URLSearchParams({
+        query,
+        category,
+        limit: limit.toString(),
+        offset: offset.toString(),
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+      });
+
+      const response = await fetch(`/api/songs/optimized?${params}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch songs');
       }
 
-      console.log('✅ Supabase client is initialized');
-
-      try {
-        // Fetch songs with optimized query (only essential fields)
-        console.log('📡 Fetching songs from database...');
-        const { data: songsData, error: songsError } = await supabase
-          .from('songs')
-          .select(`
-            id,
-            title,
-            artist_id,
-            genre,
-            key_signature,
-            year,
-            tempo,
-            chords,
-            downloads,
-            rating,
-            description,
-            slug,
-            created_at
-          `)
-          .order('created_at', { ascending: false })
-          .limit(50); // Limit initial load for better performance
-
-        if (songsError) {
-          console.error('❌ Error fetching songs:', songsError);
-          console.error('Error details:', JSON.stringify(songsError, null, 2));
-          setIsLoading(false);
-          return;
-        }
-
-        console.log(`📊 Retrieved ${songsData?.length || 0} songs from database`);
-
-        if (songsData && songsData.length > 0) {
-          // Get unique artist IDs
-          const artistIds = [...new Set(songsData.map((song: any) => song.artist_id).filter(Boolean))];
-          console.log(`👥 Fetching ${artistIds.length} unique artists...`);
-          
-          // Fetch artists with optimized query
-          const { data: artistsData, error: artistsError } = await supabase
-            .from('artists')
-            .select('id, name')
-            .in('id', artistIds);
-
-          if (artistsError) {
-            console.error('❌ Error fetching artists:', artistsError);
-          } else {
-            console.log(`✅ Retrieved ${artistsData?.length || 0} artists`);
-          }
-
-          // Create a map of artist IDs to names
-          const artistMap = new Map(artistsData?.map((a: any) => [a.id, a.name]) || []);
-
-          const formattedSongs: Song[] = songsData.map((song: any, index: number) => ({
-            id: song.id, // Use actual UUID as string
-            title: song.title,
-            artist: artistMap.get(song.artist_id) || 'Unknown Artist',
-            key: song.key_signature || 'C',
-            difficulty: 'Medium',
-            category: song.genre || 'Gospel',
-            year: song.year?.toString() || new Date().getFullYear().toString(),
-            tempo: song.tempo ? `${song.tempo} BPM` : '120 BPM',
-            timeSignature: '4/4',
-            genre: song.genre || 'Gospel',
-            chords: song.chords || ['C', 'G', 'Am', 'F'],
-            chordProgression: song.chords?.join(' - ') || 'C - G - Am - F',
-            lyrics: '',
-            chordChart: '',
-            capo: 'No capo needed',
-            strummingPattern: 'Down, Down, Up, Down, Up, Down',
-            tags: ['Gospel', song.genre || 'Worship'],
-            downloads: song.downloads || 0,
-            rating: song.rating || 0,
-            description: song.description || '',
-            slug: song.slug,
-            language: 'en',
-            captions_available: false
-          }));
-
-          console.log(`✅ Successfully formatted ${formattedSongs.length} songs`);
-          console.log('📝 Sample songs:', formattedSongs.slice(0, 3).map(s => ({ title: s.title, artist: s.artist })));
-          setSupabaseSongs(formattedSongs);
-        } else {
-          console.warn('⚠️ No songs found in database. Did you run the import script?');
-        }
-      } catch (error) {
-        console.error('❌ Unexpected error fetching songs:', error);
-        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      } finally {
-        setIsLoading(false);
-        console.log('✨ Finished fetching songs');
-      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching songs:', error);
+      return { songs: [], total: 0, hasMore: false };
     }
-
-    fetchSongs();
   }, []);
 
-  // Use only database songs
-  const allSongs: Song[] = supabaseSongs;
+  // Load initial songs
+  useEffect(() => {
+    const loadInitialSongs = async () => {
+      setIsLoading(true);
+      const data = await fetchSongs(searchQuery, selectedCategory, 12, 0);
+      setFilteredSongs(data.songs);
+      setTotalSongs(data.total);
+      setHasMore(data.hasMore);
+      setDisplayedSongs(12);
+      setIsLoading(false);
+    };
 
-  const categories = [
-    { name: "All Songs", icon: Music },
-    { name: "Classic Hymn", icon: BookOpen },
-    { name: "Contemporary", icon: Zap },
-    { name: "Modern Hymn", icon: Star }
-  ];
+    loadInitialSongs();
+  }, [searchQuery, selectedCategory, fetchSongs]);
 
   // Handle URL parameters for highlighting songs
   useEffect(() => {
@@ -166,30 +88,16 @@ const SongsPage = () => {
     }
   }, []);
 
-  // Filter songs based on search query and category
-  useEffect(() => {
-    let filtered = [...allSongs];
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
 
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(song =>
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.key.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Filter by category
-    if (selectedCategory !== "All Songs") {
-      filtered = filtered.filter(song => song.category === selectedCategory);
-    }
-
-    setFilteredSongs(filtered);
-    setDisplayedSongs(12); // Reset displayed songs when filters change
-  }, [searchQuery, selectedCategory, allSongs]);
-
-  const handleLoadMore = () => {
-    setDisplayedSongs(prev => Math.min(prev + 12, filteredSongs.length));
+    setIsLoadingMore(true);
+    const data = await fetchSongs(searchQuery, selectedCategory, 12, displayedSongs);
+    
+    setFilteredSongs(prev => [...prev, ...data.songs]);
+    setHasMore(data.hasMore);
+    setDisplayedSongs(prev => prev + 12);
+    setIsLoadingMore(false);
   };
 
   const handleToggleFavorite = (song: any) => {
@@ -220,8 +128,12 @@ const SongsPage = () => {
     }
   };
 
-  const visibleSongs = filteredSongs.slice(0, displayedSongs);
-  const hasMoreSongs = displayedSongs < filteredSongs.length;
+  const categories = [
+    { name: "All Songs", icon: Music },
+    { name: "Classic Hymn", icon: BookOpen },
+    { name: "Contemporary", icon: Zap },
+    { name: "Modern Hymn", icon: Star }
+  ];
 
   return (
     <>
@@ -243,7 +155,6 @@ const SongsPage = () => {
                 placeholder="Search for songs, artists, chords, or lyrics..."
                 onSearch={(query) => setSearchQuery(query)}
                 onResultSelect={(result) => {
-                  // Navigate to the selected song using slug
                   const slug = result.slug || result.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                   window.location.href = `/songs/${slug}`;
                 }}
@@ -278,20 +189,20 @@ const SongsPage = () => {
             <div className="text-center mb-8">
               <h2 className="text-3xl xs:text-4xl font-bold tracking-tight mb-4">
                 {searchQuery || selectedCategory !== "All Songs" 
-                  ? `Search Results (${filteredSongs.length} songs found)` 
+                  ? `Search Results (${totalSongs} songs found)` 
                   : "All Gospel Songs"
                 }
               </h2>
               <p className="text-lg text-muted-foreground mb-4">
                 Browse our complete collection of gospel songs with chord charts and resources
               </p>
-              {!isLoading && supabaseSongs.length > 0 && (
+              {!isLoading && totalSongs > 0 && (
                 <div className="flex justify-center gap-3 flex-wrap">
                   <Badge variant="default" className="text-sm">
-                    🎵 {allSongs.length} songs available
+                    🎵 {totalSongs} songs available
                   </Badge>
                   <Badge variant="secondary" className="text-sm">
-                    📀 From our database collection
+                    ⚡ Optimized loading
                   </Badge>
                 </div>
               )}
@@ -301,7 +212,7 @@ const SongsPage = () => {
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-muted-foreground">
-                  {filteredSongs.length} songs found
+                  {filteredSongs.length} songs loaded
                 </span>
               </div>
               <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
@@ -315,11 +226,11 @@ const SongsPage = () => {
                   Fetching the latest gospel songs from our collection
                 </p>
               </div>
-            ) : visibleSongs.length > 0 ? (
+            ) : filteredSongs.length > 0 ? (
               <>
                 {viewMode === 'grid' ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {visibleSongs.map((song) => (
+                    {filteredSongs.map((song) => (
                       <LazyLoad key={song.id}>
                         {song.category === 'YouTube Scraped' ? (
                           <YouTubeSongCard
@@ -394,7 +305,7 @@ const SongsPage = () => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {visibleSongs.map((song) => (
+                    {filteredSongs.map((song) => (
                       <LazyLoad key={song.id}>
                         <Card 
                           id={`song-${song.id}`}
@@ -481,15 +392,25 @@ const SongsPage = () => {
                   </div>
                 )}
 
-                {hasMoreSongs && (
+                {hasMore && (
                   <div className="text-center mt-12">
                     <Button 
                       size="lg" 
                       className="rounded-full"
                       onClick={handleLoadMore}
+                      disabled={isLoadingMore}
                     >
-                      Load More Songs ({filteredSongs.length - displayedSongs} remaining)
-                      <ExternalLink className="ml-2 h-5 w-5" />
+                      {isLoadingMore ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Loading more songs...
+                        </>
+                      ) : (
+                        <>
+                          Load More Songs ({totalSongs - displayedSongs} remaining)
+                          <ExternalLink className="ml-2 h-5 w-5" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 )}
@@ -521,4 +442,4 @@ const SongsPage = () => {
   );
 };
 
-export default SongsPage;
+export default OptimizedSongsPage;

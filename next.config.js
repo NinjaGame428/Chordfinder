@@ -1,38 +1,49 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable ESLint during build
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
-  // Performance optimizations
+  // Enable experimental features for better performance
   experimental: {
+    optimizeCss: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    // Reduce preload warnings
-    optimizeCss: false,
   },
   
-  // Font optimization is handled automatically by Next.js
+  // Enable compression
+  compress: true,
+  
+  // Enable static optimization
+  trailingSlash: false,
   
   // Image optimization
   images: {
     formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 31536000, // 1 year
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
-  // Compression
-  compress: true,
-  
-  // Bundle analyzer (uncomment to analyze bundle)
-  // webpack: (config, { isServer }) => {
-  //   if (!isServer) {
-  //     config.resolve.fallback = {
-  //       ...config.resolve.fallback,
-  //       fs: false,
-  //     };
-  //   }
-  //   return config;
-  // },
+  // Webpack optimizations
+  webpack: (config, { dev, isServer }) => {
+    // Production optimizations
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            enforce: true,
+          },
+        },
+      };
+    }
+    
+    return config;
+  },
   
   // Headers for better caching
   async headers() {
@@ -55,7 +66,16 @@ const nextConfig = {
         ],
       },
       {
-        source: '/static/(.*)',
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, s-maxage=300',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/(.*)',
         headers: [
           {
             key: 'Cache-Control',
@@ -66,12 +86,12 @@ const nextConfig = {
     ];
   },
   
-  // Redirects for better SEO
+  // Redirects for SEO
   async redirects() {
     return [
       {
-        source: '/home',
-        destination: '/',
+        source: '/songs/optimized',
+        destination: '/songs',
         permanent: true,
       },
     ];
