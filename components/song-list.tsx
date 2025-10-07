@@ -94,7 +94,7 @@ const SongList = () => {
   };
 
   return (
-    <section className="pt-10 pb-16 px-6">
+    <section className="pt-4 pb-16 px-6">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl xs:text-4xl font-bold tracking-tight">
