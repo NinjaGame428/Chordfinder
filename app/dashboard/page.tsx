@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
-import { ProtectedRoute } from "@/components/protected-route";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,6 @@ import {
   Save,
   X
 } from "lucide-react";
-import dynamic from "next/dynamic";
-import { PageLoading } from "@/components/loading";
 import { 
   fetchUserStats, 
   fetchRecentActivity, 
@@ -40,19 +38,8 @@ import {
   type DownloadedResource
 } from "@/lib/user-stats";
 
-// Lazy load components for better performance
-const Navbar = dynamic(() => import("@/components/navbar").then(mod => ({ default: mod.Navbar })), {
-  ssr: false,
-  loading: () => <div className="h-16 bg-background/50 backdrop-blur-sm border-b" />
-});
-
-const Footer = dynamic(() => import("@/components/footer"), {
-  ssr: false,
-  loading: () => <div className="h-32 bg-muted/20" />
-});
-
 export default function DashboardPage() {
-  const { user, logout, updateProfile, isLoading } = useAuth();
+  const { user, updateProfile } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -72,12 +59,6 @@ export default function DashboardPage() {
   const [downloadedResources, setDownloadedResources] = useState<DownloadedResource[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
-  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (user) {
@@ -129,10 +110,6 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
 
   const handleSaveProfile = async () => {
     if (user) {
@@ -202,20 +179,9 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) {
-    return <PageLoading />;
-  }
-
-  if (!user) {
-    return null;
-  }
-
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-        <Navbar />
-      
-      <div className="container mx-auto px-4 py-8 mt-[100px]">
+    <DashboardLayout>
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -641,7 +607,7 @@ export default function DashboardPage() {
                       <Download className="mr-2 h-4 w-4" />
                       Export Data
                     </Button>
-                    <Button variant="destructive" className="w-full justify-start" onClick={handleLogout}>
+                    <Button variant="destructive" className="w-full justify-start">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign Out
                     </Button>
@@ -652,9 +618,6 @@ export default function DashboardPage() {
           </Tabs>
         </div>
       </div>
-
-        <Footer />
-      </div>
-    </ProtectedRoute>
+    </DashboardLayout>
   );
 }

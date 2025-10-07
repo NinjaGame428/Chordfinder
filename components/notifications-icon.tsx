@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +10,22 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function NotificationsIcon() {
   const { user } = useAuth();
-  const { notifications, markAsRead, removeNotification, unreadCount } = useNotifications();
+  const { notifications, markAsRead, removeNotification, unreadCount, addNotification } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Only show for logged in users
-  if (!user) return null;
+  // Show for all users (including admins and regular users)
+  // The notification system will work for everyone
+
+  // Add sample notifications for testing (remove in production)
+  useEffect(() => {
+    if (notifications.length === 0) {
+      addNotification({
+        type: 'info',
+        title: 'Welcome to PhinAccords!',
+        message: 'Discover gospel chords and resources for worship.'
+      });
+    }
+  }, [notifications.length, addNotification]);
 
   const unreadNotifications = notifications.filter(n => !n.read);
 

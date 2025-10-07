@@ -51,11 +51,13 @@ const CHORD_TYPES = [
 ];
 
 export const ChordEditor: React.FC<ChordEditorProps> = ({
-  chords,
+  chords = [],
   onChordsChange,
   instrument,
   className = ""
 }) => {
+  // Ensure chords is always an array
+  const safeChords = Array.isArray(chords) ? chords : [];
   const [newChord, setNewChord] = useState<Chord>({
     name: '',
     type: 'major',
@@ -74,7 +76,7 @@ export const ChordEditor: React.FC<ChordEditorProps> = ({
         ...newChord,
         name: chordName
       };
-      onChordsChange([...chords, chord]);
+      onChordsChange([...safeChords, chord]);
       setNewChord({
         name: '',
         type: 'major',
@@ -88,20 +90,20 @@ export const ChordEditor: React.FC<ChordEditorProps> = ({
   };
 
   const updateChord = (index: number, updatedChord: Chord) => {
-    const updatedChords = [...chords];
+    const updatedChords = [...safeChords];
     updatedChords[index] = updatedChord;
     onChordsChange(updatedChords);
     setEditingIndex(null);
   };
 
   const removeChord = (index: number) => {
-    const updatedChords = chords.filter((_, i) => i !== index);
+    const updatedChords = safeChords.filter((_, i) => i !== index);
     onChordsChange(updatedChords);
   };
 
   const startEditing = (index: number) => {
     setEditingIndex(index);
-    setNewChord(chords[index]);
+    setNewChord(safeChords[index]);
   };
 
   const cancelEditing = () => {
@@ -284,13 +286,13 @@ export const ChordEditor: React.FC<ChordEditorProps> = ({
           <CardTitle>Chord Collection</CardTitle>
         </CardHeader>
         <CardContent>
-          {chords.length === 0 ? (
+          {safeChords.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">
               No chords added yet. Add your first chord above.
             </p>
           ) : (
             <div className="space-y-2">
-              {chords.map((chord, index) => (
+              {safeChords.map((chord, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
                     <Badge variant="secondary" className="text-lg px-3 py-1">

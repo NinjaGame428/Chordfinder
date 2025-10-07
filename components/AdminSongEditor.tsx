@@ -58,6 +58,9 @@ interface SongData {
       text: string;
     }>;
   }>;
+  // Database fields
+  key_signature?: string;
+  tempo?: number;
 }
 
 interface AdminSongEditorProps {
@@ -88,10 +91,25 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
         youtube_id: song.youtube_id || '',
         slug: song.slug || '',
         artist_id: song.artist_id || '',
-        chords: song.chords ? (typeof song.chords === 'string' ? JSON.parse(song.chords) : song.chords) : {
-          piano: [],
-          guitar: []
-        },
+        chords: (() => {
+          try {
+            if (!song.chords) return { piano: [], guitar: [] };
+            if (typeof song.chords === 'string') {
+              const parsed = JSON.parse(song.chords);
+              return {
+                piano: parsed?.piano || [],
+                guitar: parsed?.guitar || []
+              };
+            }
+            return {
+              piano: song.chords?.piano || [],
+              guitar: song.chords?.guitar || []
+            };
+          } catch (error) {
+            console.warn('Error parsing chords:', error);
+            return { piano: [], guitar: [] };
+          }
+        })(),
         song_structure: song.song_structure || {
           intro: [],
           verse: [],
@@ -115,6 +133,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
       difficulty: 'Beginner',
       youtube_id: '',
       slug: '',
+      artist_id: '',
       chords: {
         piano: [],
         guitar: []
@@ -152,7 +171,15 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
   }, []);
 
   const handleSave = () => {
-    onSave(formData);
+    // Ensure chords are properly formatted before saving
+    const safeFormData = {
+      ...formData,
+      chords: {
+        piano: formData.chords?.piano || [],
+        guitar: formData.chords?.guitar || []
+      }
+    };
+    onSave(safeFormData);
   };
 
   return (
@@ -212,7 +239,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                 <div>
                   <Label htmlFor="artist">Artist</Label>
                   <Select 
-                    value={formData.artist_id || ''} 
+                    value={formData.artist_id || undefined} 
                     onValueChange={(value) => setFormData(prev => ({ ...prev, artist_id: value }))}
                   >
                     <SelectTrigger>
@@ -220,7 +247,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {loadingArtists ? (
-                        <SelectItem value="" disabled>Loading artists...</SelectItem>
+                        <SelectItem value="loading" disabled>Loading artists...</SelectItem>
                       ) : (
                         artists.map((artist) => (
                           <SelectItem key={artist.id} value={artist.id}>
@@ -254,7 +281,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                   <Label htmlFor="key">Key</Label>
                   <Select value={formData.key || 'C Major'} onValueChange={(value) => setFormData(prev => ({ ...prev, key: value }))}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select key" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="C Major">C Major</SelectItem>
@@ -283,7 +310,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                   <Label htmlFor="difficulty">Difficulty</Label>
                   <Select value={formData.difficulty || 'Beginner'} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select difficulty" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Beginner">Beginner</SelectItem>
@@ -315,10 +342,13 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                 
                 <TabsContent value="piano">
                   <ChordEditor
-                    chords={formData.chords.piano}
+                    chords={formData.chords?.piano || []}
                     onChordsChange={(chords) => setFormData(prev => ({
                       ...prev,
-                      chords: { ...prev.chords, piano: chords }
+                      chords: { 
+                        piano: chords, 
+                        guitar: prev.chords?.guitar || [] 
+                      }
                     }))}
                     instrument="piano"
                   />
@@ -326,10 +356,13 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                 
                 <TabsContent value="guitar">
                   <ChordEditor
-                    chords={formData.chords.guitar}
+                    chords={formData.chords?.guitar || []}
                     onChordsChange={(chords) => setFormData(prev => ({
                       ...prev,
-                      chords: { ...prev.chords, guitar: chords }
+                      chords: { 
+                        piano: prev.chords?.piano || [], 
+                        guitar: chords 
+                      }
                     }))}
                     instrument="guitar"
                   />

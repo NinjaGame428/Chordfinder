@@ -1,690 +1,371 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Settings, 
   Music, 
+  Users, 
   Youtube, 
-  Database, 
-  Edit,
-  Plus, 
-  Trash2,
-  Save,
-  Upload,
-  Download,
-  Users,
+  Activity, 
   BarChart3,
   RefreshCw,
-  Search,
-  Filter
+  TrendingUp,
+  Clock,
+  Globe,
+  Smartphone,
+  MapPin,
+  Monitor,
+  Laptop,
+  Tablet
 } from 'lucide-react';
-import { Navbar } from '@/components/navbar';
-import Footer from '@/components/footer';
-import { AdminSongEditor } from '@/components/AdminSongEditor';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Link from 'next/link';
 
-const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showSongEditor, setShowSongEditor] = useState(false);
-  const [editingSong, setEditingSong] = useState<any>(null);
-  const [songs, setSongs] = useState<any[]>([]);
-  const [filteredSongs, setFilteredSongs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterGenre, setFilterGenre] = useState('all');
-  const [filterArtist, setFilterArtist] = useState('all');
-  const [adminStats, setAdminStats] = useState({
+interface AdminStats {
+  totalSongs: number;
+  youtubeVideos: number;
+  totalArtists: number;
+  totalUsers: number;
+  totalResources: number;
+  activeUsers: number;
+  collections: number;
+}
+
+interface RecentUser {
+    id: string;
+  email: string;
+  full_name?: string;
+  created_at: string;
+  last_sign_in_at?: string;
+  isOnline?: boolean;
+  locationInfo?: {
+    country: string;
+    city: string;
+  };
+  deviceInfo?: {
+    device: string;
+    browser: string;
+  };
+}
+
+export default function AdminOverview() {
+  const [adminStats, setAdminStats] = useState<AdminStats>({
     totalSongs: 0,
-    totalArtists: 0,
-    totalResources: 0,
-    totalUsers: 0,
-    activeUsers: 0,
     youtubeVideos: 0,
-    collections: 0
+    totalArtists: 0,
+    totalUsers: 0,
+    totalResources: 0,
+    activeUsers: 0,
+    collections: 1
   });
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch admin statistics
   const fetchAdminStats = async () => {
     try {
       setStatsLoading(true);
       const response = await fetch('/api/admin/stats');
-      if (!response.ok) {
-        throw new Error('Failed to fetch admin statistics');
+      if (response.ok) {
+        const data = await response.json();
+        setAdminStats(data.stats);
+        setError(null);
+      } else {
+        const errorData = await response.json();
+        setError(`Failed to fetch stats: ${errorData.error || 'Unknown error'}`);
       }
-      const data = await response.json();
-      setAdminStats(data.stats);
-    } catch (err) {
-      console.error('Error fetching admin stats:', err);
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setStatsLoading(false);
     }
   };
 
-  // Fetch songs from database
-  const fetchSongs = async () => {
+  const fetchRecentUsers = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/songs');
-      if (!response.ok) {
-        throw new Error('Failed to fetch songs');
+      setUsersLoading(true);
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        // Get the 5 most recent users
+        const recent = (data.users || []).slice(0, 5);
+        setRecentUsers(recent);
+      } else {
+        console.error('Failed to fetch recent users');
       }
-      const data = await response.json();
-      setSongs(data.songs || []);
-      setFilteredSongs(data.songs || []);
-      setError(null);
-      setSuccessMessage(null);
-    } catch (err) {
-      console.error('Error fetching songs:', err);
-      setError('Failed to load songs');
+    } catch (error) {
+      console.error('Error fetching recent users:', error);
     } finally {
-      setLoading(false);
+      setUsersLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSongs();
     fetchAdminStats();
+    fetchRecentUsers();
   }, []);
 
-  // Filter songs based on search and filters
-  useEffect(() => {
-    let filtered = songs;
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(song => 
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (song.artists?.name && song.artists.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Genre filter
-    if (filterGenre !== 'all') {
-      filtered = filtered.filter(song => song.genre === filterGenre);
-    }
-
-    // Artist filter
-    if (filterArtist !== 'all') {
-      filtered = filtered.filter(song => song.artists?.name === filterArtist);
-    }
-
-    setFilteredSongs(filtered);
-  }, [songs, searchQuery, filterGenre, filterArtist]);
-
-  const handleSaveSong = async (song: any) => {
-    try {
-      const url = editingSong ? `/api/songs/${editingSong.id}` : '/api/songs';
-      const method = editingSong ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(song),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save song');
-      }
-
-      const result = await response.json();
-      console.log('Song saved successfully:', result);
-      
-      setShowSongEditor(false);
-      setEditingSong(null);
-      setSuccessMessage(editingSong ? 'Song updated successfully!' : 'Song created successfully!');
-      
-      // Refresh the songs list
-      await fetchSongs();
-    } catch (error) {
-      console.error('Error saving song:', error);
-      setError('Failed to save song. Please try again.');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setShowSongEditor(false);
-    setEditingSong(null);
-  };
-
-  const handleEditSong = (song: any) => {
-    setEditingSong(song);
-    setShowSongEditor(true);
-  };
-
-  const handleAddSong = () => {
-    setEditingSong(null);
-    setShowSongEditor(true);
-  };
-
-  const handleDeleteSong = async (songId: string) => {
-    if (!confirm('Are you sure you want to delete this song?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/songs/${songId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete song');
-      }
-
-      setSuccessMessage('Song deleted successfully!');
-      
-      // Refresh the songs list
-      await fetchSongs();
-    } catch (error) {
-      console.error('Error deleting song:', error);
-      setError('Failed to delete song. Please try again.');
-    }
-  };
-
   return (
-    <>
-        <Navbar />
-      <main className="pt-16 min-h-screen">
-        <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
             {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
                 <div>
-                  <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
                   <p className="text-muted-foreground">
-                  Manage your chord collection, YouTube scraper, and application settings
+            Welcome to your admin dashboard. Monitor your application's performance and manage your content.
                   </p>
                 </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    fetchAdminStats();
-                    fetchSongs();
-                  }}
-                  disabled={statsLoading || loading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${(statsLoading || loading) ? 'animate-spin' : ''}`} />
-                  Refresh Data
-                </Button>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            fetchAdminStats();
+            fetchRecentUsers();
+          }}
+          disabled={statsLoading || usersLoading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${(statsLoading || usersLoading) ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
               </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">{error}</div>
             </div>
-
-            {/* Notifications */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800">{error}</p>
-                <button 
-                  onClick={() => setError(null)}
-                  className="mt-2 text-sm text-red-600 hover:text-red-800"
-                >
-                  Dismiss
-                </button>
               </div>
-            )}
-            
-            {successMessage && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800">{successMessage}</p>
-                <button 
-                  onClick={() => setSuccessMessage(null)}
-                  className="mt-2 text-sm text-green-600 hover:text-green-800"
-                >
-                  Dismiss
-                </button>
               </div>
             )}
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Music className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="text-2xl font-bold">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Songs</CardTitle>
+            <Music className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
                       {statsLoading ? '...' : adminStats.totalSongs}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Songs in your collection
                     </p>
-                    <p className="text-sm text-muted-foreground">Songs in Collection</p>
-                  </div>
-                </div>
                     </CardContent>
                   </Card>
+
                   <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Youtube className="h-8 w-8 text-red-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">YouTube Videos</CardTitle>
+            <Youtube className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
                       {statsLoading ? '...' : adminStats.youtubeVideos}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Songs with YouTube links
                     </p>
-                    <p className="text-sm text-muted-foreground">YouTube Videos</p>
-                  </div>
-                </div>
                     </CardContent>
                   </Card>
+
                   <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Database className="h-8 w-8 text-green-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Collections</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
                       {statsLoading ? '...' : adminStats.collections}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total collections
                     </p>
-                    <p className="text-sm text-muted-foreground">Collections</p>
-                  </div>
-                </div>
                     </CardContent>
                   </Card>
+
                   <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Users className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
                       {statsLoading ? '...' : adminStats.activeUsers}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Users active now
                     </p>
-                    <p className="text-sm text-muted-foreground">Active Users</p>
-                  </div>
-                </div>
                     </CardContent>
                   </Card>
                 </div>
 
-          {/* Admin Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="songs">Songs</TabsTrigger>
-              <TabsTrigger value="youtube">YouTube</TabsTrigger>
-              <TabsTrigger value="scraper">Scraper</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Additional Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Music className="h-5 w-5 mr-2" />
-                      Recent Songs
+              <Users className="h-5 w-5 mr-2" />
+              Total Users
                     </CardTitle>
                     </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      {loading ? (
-                        <div className="text-center py-4 text-muted-foreground">Loading...</div>
-                      ) : songs.length === 0 ? (
-                        <div className="text-center py-4 text-muted-foreground">No songs yet</div>
-                      ) : (
-                        songs.slice(0, 3).map((song) => (
-                          <div key={song.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <p className="font-medium">{song.title}</p>
-                              <p className="text-sm text-muted-foreground">{song.artists?.name || 'Unknown Artist'}</p>
+            <div className="text-3xl font-bold">
+              {statsLoading ? '...' : adminStats.totalUsers}
                             </div>
-                            <Badge variant="secondary">Published</Badge>
-                          </div>
-                        ))
-                      )}
-                    </div>
+            <p className="text-sm text-muted-foreground">
+              Registered users
+            </p>
                   </CardContent>
                   </Card>
 
                   <Card>
                     <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Youtube className="h-5 w-5 mr-2" />
-                      YouTube Integration
+              <TrendingUp className="h-5 w-5 mr-2" />
+              Resources
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span>API Status</span>
-                        <Badge className="bg-green-100 text-green-800">Connected</Badge>
-                              </div>
-                      <div className="flex items-center justify-between">
-                        <span>Videos Scraped</span>
-                        <span className="font-medium">
-                          {statsLoading ? '...' : adminStats.youtubeVideos}
-                        </span>
-                            </div>
-                      <div className="flex items-center justify-between">
-                        <span>Last Update</span>
-                        <span className="text-sm text-muted-foreground">2 hours ago</span>
-                          </div>
-                      <Button className="w-full" variant="outline">
-                        <Youtube className="h-4 w-4 mr-2" />
-                        Manage YouTube
-                              </Button>
-                    </div>
+            <div className="text-3xl font-bold">
+              {statsLoading ? '...' : adminStats.totalResources}
+                      </div>
+                                <p className="text-sm text-muted-foreground">
+              Available resources
+            </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+            <CardTitle className="flex items-center">
+              <Globe className="h-5 w-5 mr-2" />
+              Artists
+            </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+            <div className="text-3xl font-bold">
+              {statsLoading ? '...' : adminStats.totalArtists}
+                        </div>
+            <p className="text-sm text-muted-foreground">
+              Total artists
+            </p>
                   </CardContent>
                 </Card>
               </div>
-              </TabsContent>
 
-              {/* Songs Tab */}
-              <TabsContent value="songs" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>Song Management</CardTitle>
-                      <CardDescription>
-                        Edit, add, or remove songs from your collection
-                      </CardDescription>
+      {/* Recent Users */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="h-5 w-5 mr-2" />
+            Recent Users
+          </CardTitle>
+          <CardDescription>
+            Latest registered users and their activity
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usersLoading ? (
+            <div className="text-center py-8">Loading recent users...</div>
+          ) : recentUsers.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-lg font-medium text-muted-foreground mb-2">No users found</p>
+              <p className="text-sm text-muted-foreground">
+                No users have registered yet. Users will appear here once they sign up.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Users className="h-5 w-5 text-blue-600" />
                       </div>
-                    <div className="flex space-x-2">
-                      <Button onClick={handleAddSong}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Song
-                      </Button>
-                      <Button variant="outline" onClick={fetchSongs} disabled={loading}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                      </Button>
                     </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Search and Filter Controls */}
-                    <div className="mb-6 space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        {/* Search Input */}
-                        <div className="flex-1">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                            <Input
-                              placeholder="Search songs by title or artist..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-10"
-                            />
+                    <div>
+                      <p className="font-medium">{user.full_name || 'Unknown User'}</p>
+                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {user.locationInfo && (
+                          <div className="flex items-center space-x-1">
+                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {user.locationInfo.city}, {user.locationInfo.country}
+                            </span>
                           </div>
-                        </div>
-                        
-                        {/* Genre Filter */}
-                        <div className="w-full sm:w-48">
-                          <Select value={filterGenre} onValueChange={setFilterGenre}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Filter by genre" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Genres</SelectItem>
-                              {Array.from(new Set(songs.map(song => song.genre).filter(Boolean))).map(genre => (
-                                <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Artist Filter */}
-                        <div className="w-full sm:w-48">
-                          <Select value={filterArtist} onValueChange={setFilterArtist}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Filter by artist" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Artists</SelectItem>
-                              {Array.from(new Set(songs.map(song => song.artists?.name).filter(Boolean))).map(artist => (
-                                <SelectItem key={artist} value={artist}>{artist}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Results Summary */}
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>
-                          Showing {filteredSongs.length} of {songs.length} songs
-                        </span>
-                        {(searchQuery || filterGenre !== 'all' || filterArtist !== 'all') && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSearchQuery('');
-                              setFilterGenre('all');
-                              setFilterArtist('all');
-                            }}
-                          >
-                            Clear Filters
-                          </Button>
+                        )}
+                        {user.deviceInfo && (
+                          <div className="flex items-center space-x-1">
+                            {user.deviceInfo.device === 'Mobile' && <Smartphone className="h-3 w-3 text-muted-foreground" />}
+                            {user.deviceInfo.device === 'Desktop' && <Laptop className="h-3 w-3 text-muted-foreground" />}
+                            {user.deviceInfo.device === 'Tablet' && <Tablet className="h-3 w-3 text-muted-foreground" />}
+                            <span className="text-xs text-muted-foreground">{user.deviceInfo.device}</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                    {loading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-muted-foreground">Loading songs...</div>
-                      </div>
-                    ) : error ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-red-500">{error}</div>
-                      </div>
-                    ) : filteredSongs.length === 0 ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-muted-foreground">
-                          {songs.length === 0 ? 'No songs found. Add your first song!' : 'No songs match your filters.'}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {filteredSongs.map((song) => (
-                          <div key={song.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div>
-                                <p className="font-medium">{song.title}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {song.artists?.name || 'Unknown Artist'} • {song.key_signature || 'No Key'} • {song.tempo ? `${song.tempo} BPM` : 'No BPM'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleEditSong(song)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleDeleteSong(song.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* YouTube Tab */}
-            <TabsContent value="youtube" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>YouTube Management</CardTitle>
-                  <CardDescription>
-                    Manage YouTube video IDs and video information
-                  </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Youtube className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Update Video IDs</p>
-                            </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Upload className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Bulk Import</p>
-                            </div>
-                                  </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Download className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Export Data</p>
-                                  </div>
-                              </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Settings className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">API Settings</p>
-                        </div>
-                      </Button>
-                    </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-            {/* Scraper Tab */}
-            <TabsContent value="scraper" className="space-y-6">
-                <Card>
-                  <CardHeader>
-                  <CardTitle>YouTube Scraper</CardTitle>
-                  <CardDescription>
-                    Configure and manage the YouTube scraper functionality
-                  </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                    <Link href="/youtube-scraper">
-                      <Button className="w-full">
-                        <Youtube className="h-4 w-4 mr-2" />
-                        Open YouTube Scraper
-                      </Button>
-                    </Link>
-                    <Link href="/admin/youtube-finder">
-                      <Button variant="outline" className="w-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        YouTube Finder Settings
-                              </Button>
-                    </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Application Settings</CardTitle>
-                  <CardDescription>
-                    Configure application-wide settings and preferences
-                  </CardDescription>
-                    </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Database className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Database Settings</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Users className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">User Management</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Settings className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">General Settings</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Save className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Backup & Restore</p>
-                      </div>
-                      </Button>
-                      </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-            </TabsContent>
-
-            {/* Analytics Tab */}
-            <TabsContent value="analytics" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                  <CardTitle>Analytics Dashboard</CardTitle>
-                  <CardDescription>
-                    View usage statistics and performance metrics
-                  </CardDescription>
-                    </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 border rounded-lg">
-                        <BarChart3 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <p className="text-2xl font-bold">
-                          {statsLoading ? '...' : adminStats.totalSongs}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Total Songs</p>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <Music className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                        <p className="text-2xl font-bold">
-                          {statsLoading ? '...' : adminStats.totalResources}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Resources</p>
-                      </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                        <p className="text-2xl font-bold">
-                          {statsLoading ? '...' : adminStats.totalUsers}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Total Users</p>
-                      </div>
-                    </div>
                   </div>
-                    </CardContent>
-                  </Card>
-              </TabsContent>
-            </Tabs>
-        </div>
-      </main>
-        <Footer />
-        
-        {/* Song Editor Modal */}
-        {showSongEditor && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-              <AdminSongEditor
-                song={editingSong || undefined}
-                onSave={handleSaveSong}
-                onCancel={handleCancelEdit}
-              />
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <p className="text-sm font-medium">
+                        {new Date(user.created_at).toLocaleDateString()}
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <span className="text-xs text-muted-foreground">
+                          {user.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant={user.isOnline ? 'default' : 'outline'}>
+                      {user.isOnline ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        )}
-    </>
-  );
-};
+          )}
+        </CardContent>
+      </Card>
 
-export default AdminPage;
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>
+            Common administrative tasks
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <Users className="h-6 w-6 mb-2" />
+              <span>Manage Users</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <Music className="h-6 w-6 mb-2" />
+              <span>Add Songs</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <BarChart3 className="h-6 w-6 mb-2" />
+              <span>View Analytics</span>
+            </Button>
+            <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+              <Activity className="h-6 w-6 mb-2" />
+              <span>System Status</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+          </div>
+  );
+}
