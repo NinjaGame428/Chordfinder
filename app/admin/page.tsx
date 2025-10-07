@@ -41,6 +41,33 @@ const AdminPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGenre, setFilterGenre] = useState('all');
   const [filterArtist, setFilterArtist] = useState('all');
+  const [adminStats, setAdminStats] = useState({
+    totalSongs: 0,
+    totalArtists: 0,
+    totalResources: 0,
+    totalUsers: 0,
+    activeUsers: 0,
+    youtubeVideos: 0,
+    collections: 0
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Fetch admin statistics
+  const fetchAdminStats = async () => {
+    try {
+      setStatsLoading(true);
+      const response = await fetch('/api/admin/stats');
+      if (!response.ok) {
+        throw new Error('Failed to fetch admin statistics');
+      }
+      const data = await response.json();
+      setAdminStats(data.stats);
+    } catch (err) {
+      console.error('Error fetching admin stats:', err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   // Fetch songs from database
   const fetchSongs = async () => {
@@ -65,6 +92,7 @@ const AdminPage = () => {
 
   useEffect(() => {
     fetchSongs();
+    fetchAdminStats();
   }, []);
 
   // Filter songs based on search and filters
@@ -170,10 +198,25 @@ const AdminPage = () => {
         <div className="container mx-auto px-4 py-8">
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-              <p className="text-muted-foreground">
-              Manage your chord collection, YouTube scraper, and application settings
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+                  <p className="text-muted-foreground">
+                  Manage your chord collection, YouTube scraper, and application settings
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    fetchAdminStats();
+                    fetchSongs();
+                  }}
+                  disabled={statsLoading || loading}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${(statsLoading || loading) ? 'animate-spin' : ''}`} />
+                  Refresh Data
+                </Button>
+              </div>
             </div>
 
             {/* Notifications */}
@@ -208,7 +251,9 @@ const AdminPage = () => {
                 <div className="flex items-center space-x-4">
                   <Music className="h-8 w-8 text-primary" />
                   <div>
-                    <p className="text-2xl font-bold">{songs.length}</p>
+                    <p className="text-2xl font-bold">
+                      {statsLoading ? '...' : adminStats.totalSongs}
+                    </p>
                     <p className="text-sm text-muted-foreground">Songs in Collection</p>
                   </div>
                 </div>
@@ -219,7 +264,9 @@ const AdminPage = () => {
                 <div className="flex items-center space-x-4">
                   <Youtube className="h-8 w-8 text-red-600" />
                   <div>
-                    <p className="text-2xl font-bold">8</p>
+                    <p className="text-2xl font-bold">
+                      {statsLoading ? '...' : adminStats.youtubeVideos}
+                    </p>
                     <p className="text-sm text-muted-foreground">YouTube Videos</p>
                   </div>
                 </div>
@@ -230,7 +277,9 @@ const AdminPage = () => {
                 <div className="flex items-center space-x-4">
                   <Database className="h-8 w-8 text-green-600" />
                   <div>
-                    <p className="text-2xl font-bold">2</p>
+                    <p className="text-2xl font-bold">
+                      {statsLoading ? '...' : adminStats.collections}
+                    </p>
                     <p className="text-sm text-muted-foreground">Collections</p>
                   </div>
                 </div>
@@ -241,7 +290,9 @@ const AdminPage = () => {
                 <div className="flex items-center space-x-4">
                   <Users className="h-8 w-8 text-blue-600" />
                   <div>
-                    <p className="text-2xl font-bold">1</p>
+                    <p className="text-2xl font-bold">
+                      {statsLoading ? '...' : adminStats.activeUsers}
+                    </p>
                     <p className="text-sm text-muted-foreground">Active Users</p>
                   </div>
                 </div>
@@ -306,7 +357,9 @@ const AdminPage = () => {
                               </div>
                       <div className="flex items-center justify-between">
                         <span>Videos Scraped</span>
-                        <span className="font-medium">8</span>
+                        <span className="font-medium">
+                          {statsLoading ? '...' : adminStats.youtubeVideos}
+                        </span>
                             </div>
                       <div className="flex items-center justify-between">
                         <span>Last Update</span>
@@ -589,18 +642,24 @@ const AdminPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="text-center p-4 border rounded-lg">
                         <BarChart3 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <p className="text-2xl font-bold">1,234</p>
-                        <p className="text-sm text-muted-foreground">Total Views</p>
+                        <p className="text-2xl font-bold">
+                          {statsLoading ? '...' : adminStats.totalSongs}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Total Songs</p>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
                         <Music className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                        <p className="text-2xl font-bold">567</p>
-                        <p className="text-sm text-muted-foreground">Songs Played</p>
+                        <p className="text-2xl font-bold">
+                          {statsLoading ? '...' : adminStats.totalResources}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Resources</p>
                       </div>
                       <div className="text-center p-4 border rounded-lg">
                         <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                        <p className="text-2xl font-bold">89</p>
-                        <p className="text-sm text-muted-foreground">Active Users</p>
+                        <p className="text-2xl font-bold">
+                          {statsLoading ? '...' : adminStats.totalUsers}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Total Users</p>
                       </div>
                     </div>
                   </div>
