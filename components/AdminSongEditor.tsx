@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +44,7 @@ interface SongData {
   difficulty: string;
   youtube_id?: string;
   slug: string;
+  artist_id?: string;
   chords: {
     piano: Chord[];
     guitar: Chord[];
@@ -70,31 +71,85 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
   onSave, 
   onCancel 
 }) => {
-  const [formData, setFormData] = useState<SongData>(song || {
-    id: Date.now(),
-    title: '',
-    english_title: '',
-    album: '',
-    year: new Date().getFullYear(),
-    key: 'C Major',
-    bpm: 120,
-    difficulty: 'Beginner',
-    youtube_id: '',
-    slug: '',
-    chords: {
-      piano: [],
-      guitar: []
-    },
-    song_structure: {
-      intro: [],
-      verse: [],
-      chorus: [],
-      bridge: [],
-      outro: []
-    },
-    lyrics: '',
-    lyrics_sections: []
+  const [artists, setArtists] = useState<any[]>([]);
+  const [loadingArtists, setLoadingArtists] = useState(true);
+  const [formData, setFormData] = useState<SongData>(() => {
+    if (song) {
+      // Map database fields to form structure
+      return {
+        id: song.id,
+        title: song.title || '',
+        english_title: song.english_title || '',
+        album: song.album || '',
+        year: song.year || new Date().getFullYear(),
+        key: song.key_signature || 'C Major',
+        bpm: song.tempo || 120,
+        difficulty: song.difficulty || 'Beginner',
+        youtube_id: song.youtube_id || '',
+        slug: song.slug || '',
+        artist_id: song.artist_id || '',
+        chords: song.chords ? (typeof song.chords === 'string' ? JSON.parse(song.chords) : song.chords) : {
+          piano: [],
+          guitar: []
+        },
+        song_structure: song.song_structure || {
+          intro: [],
+          verse: [],
+          chorus: [],
+          bridge: [],
+          outro: []
+        },
+        lyrics: song.lyrics || '',
+        lyrics_sections: song.lyrics_sections || []
+      };
+    }
+    
+    return {
+      id: Date.now(),
+      title: '',
+      english_title: '',
+      album: '',
+      year: new Date().getFullYear(),
+      key: 'C Major',
+      bpm: 120,
+      difficulty: 'Beginner',
+      youtube_id: '',
+      slug: '',
+      chords: {
+        piano: [],
+        guitar: []
+      },
+      song_structure: {
+        intro: [],
+        verse: [],
+        chorus: [],
+        bridge: [],
+        outro: []
+      },
+      lyrics: '',
+      lyrics_sections: []
+    };
   });
+
+  // Fetch artists for selection
+  useEffect(() => {
+    const fetchArtists = async () => {
+      try {
+        setLoadingArtists(true);
+        const response = await fetch('/api/artists');
+        if (response.ok) {
+          const data = await response.json();
+          setArtists(data.artists || []);
+        }
+      } catch (error) {
+        console.error('Error fetching artists:', error);
+      } finally {
+        setLoadingArtists(false);
+      }
+    };
+
+    fetchArtists();
+  }, []);
 
   const handleSave = () => {
     onSave(formData);
@@ -153,6 +208,28 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                     onChange={(e) => setFormData(prev => ({ ...prev, english_title: e.target.value }))}
                     placeholder="Enter English translation"
                   />
+                </div>
+                <div>
+                  <Label htmlFor="artist">Artist</Label>
+                  <Select 
+                    value={formData.artist_id || ''} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, artist_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an artist" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingArtists ? (
+                        <SelectItem value="" disabled>Loading artists...</SelectItem>
+                      ) : (
+                        artists.map((artist) => (
+                          <SelectItem key={artist.id} value={artist.id}>
+                            {artist.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="album">Album</Label>
