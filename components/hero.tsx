@@ -2,10 +2,9 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Music, Plus, MessageCircle } from "lucide-react";
+import { Music, Plus, MessageCircle, Search } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";
-import EnhancedSearch from "./enhanced-search";
 
 const Hero = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -31,18 +30,18 @@ const Hero = () => {
             Soutenir les passionnés de musique gospel avec des collections organisées et des progressions d'accords faciles à suivre.
           </p>
           
-              {/* Enhanced Search Bar */}
+              {/* Simple Search Bar */}
               <div className="mt-8 max-w-2xl mx-auto">
-                <EnhancedSearch
-                  placeholder="Rechercher des chansons, artistes, accords ou paroles..."
-                  onSearch={(query) => setSearchQuery(query)}
-                  onResultSelect={(result) => {
-                    console.log("Selected result:", result);
-                    // Handle result selection - could navigate to song page
-                  }}
-                  showFilters={true}
-                  showSort={true}
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Rechercher des chansons, artistes, accords ou paroles..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 pr-4 py-3 text-base"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch(e)}
+                  />
+                </div>
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row items-center sm:justify-center gap-4">
