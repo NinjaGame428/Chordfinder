@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, Search, Music, Youtube, CheckCircle, AlertCircle } from 'lucide-react';
 import { generateSearchSuggestions, createYouTubeSearchUrl, extractYouTubeId, isValidYouTubeId } from '@/lib/youtube-helper';
-import denaMwanaChords from '@/lib/dena-mwana-chords.json';
+import { supabase } from '@/lib/supabase';
 
 interface YouTubeVideoFinderProps {
   onSearch?: (query: string) => void;
@@ -24,6 +24,60 @@ const YouTubeVideoFinder: React.FC<YouTubeVideoFinderProps> = ({
   const [videoId, setVideoId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isValid, setIsValid] = useState<boolean | null>(null);
+  const [songs, setSongs] = useState<any[]>([]);
+  const [loadingSongs, setLoadingSongs] = useState(true);
+  const [searchFilter, setSearchFilter] = useState('');
+
+  // Fetch songs from database
+  useEffect(() => {
+    const fetchSongs = async () => {
+      if (!supabase) {
+        console.error('Supabase not configured');
+        setLoadingSongs(false);
+        return;
+      }
+
+      try {
+        setLoadingSongs(true);
+        const { data: songsData, error } = await supabase
+          .from('songs')
+          .select(`
+            id,
+            title,
+            artist_id,
+            genre,
+            key_signature,
+            year,
+            youtube_id,
+            slug,
+            created_at,
+            artists!inner(
+              id,
+              name
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching songs:', error);
+        } else {
+          setSongs(songsData || []);
+        }
+      } catch (error) {
+        console.error('Error fetching songs:', error);
+      } finally {
+        setLoadingSongs(false);
+      }
+    };
+
+    fetchSongs();
+  }, []);
+
+  // Filter songs based on search
+  const filteredSongs = songs.filter(song => 
+    song.title.toLowerCase().includes(searchFilter.toLowerCase()) ||
+    song.artists?.name?.toLowerCase().includes(searchFilter.toLowerCase())
+  );
 
   const handleVideoIdChange = (value: string) => {
     setVideoId(value);
@@ -42,12 +96,44 @@ const YouTubeVideoFinder: React.FC<YouTubeVideoFinderProps> = ({
     }
   };
 
-  const handleUpdateVideoId = () => {
+  const handleUpdateVideoId = async () => {
     if (selectedSong && videoId && isValid) {
       const extractedId = extractYouTubeId(videoId) || videoId;
-      onVideoIdUpdate?.(selectedSong.id, extractedId);
-      setVideoId('');
-      setIsValid(null);
+      
+      try {
+        if (supabase) {
+          const { error } = await supabase
+            .from('songs')
+            .update({ youtube_id: extractedId })
+            .eq('id', selectedSong.id);
+
+          if (error) {
+            console.error('Error updating YouTube ID:', error);
+            alert('Error updating YouTube ID. Please try again.');
+            return;
+          }
+
+          // Update local state
+          setSongs(prevSongs => 
+            prevSongs.map(song => 
+              song.id === selectedSong.id 
+                ? { ...song, youtube_id: extractedId }
+                : song
+            )
+          );
+
+          // Update selected song
+          setSelectedSong(prev => ({ ...prev, youtube_id: extractedId }));
+        }
+
+        onVideoIdUpdate?.(selectedSong.id, extractedId);
+        setVideoId('');
+        setIsValid(null);
+        alert('YouTube video ID updated successfully!');
+      } catch (error) {
+        console.error('Error updating YouTube ID:', error);
+        alert('Error updating YouTube ID. Please try again.');
+      }
     }
   };
 
@@ -106,26 +192,55 @@ const YouTubeVideoFinder: React.FC<YouTubeVideoFinderProps> = ({
         <CardContent className="space-y-4">
           {/* Song Selection */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Select Song</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-              {denaMwanaChords.songs.map((song: any) => (
-                <Button
-                  key={song.id}
-                  variant={selectedSong?.id === song.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedSong(song)}
-                  className="justify-start text-left"
-                >
-                  <Music className="h-4 w-4 mr-2" />
-                  {song.title}
-                  {song.youtube_id && (
-                    <Badge variant="secondary" className="ml-2">
-                      Has Video
-                    </Badge>
-                  )}
-                </Button>
-              ))}
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Select Song</label>
+              <span className="text-xs text-muted-foreground">
+                {filteredSongs.length} of {songs.length} songs
+              </span>
             </div>
+            
+            {/* Search Filter */}
+            <div className="mb-4">
+              <Input
+                placeholder="Search songs by title or artist..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="w-full"
+              />
+            </div>
+
+            {loadingSongs ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-muted-foreground">Loading songs...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-lg p-2">
+                {filteredSongs.map((song: any) => (
+                  <Button
+                    key={song.id}
+                    variant={selectedSong?.id === song.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedSong(song)}
+                    className="justify-start text-left h-auto p-3"
+                  >
+                    <div className="flex items-center w-full">
+                      <Music className="h-4 w-4 mr-2 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{song.title}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {song.artists?.name || 'Unknown Artist'}
+                        </div>
+                      </div>
+                      {song.youtube_id && (
+                        <Badge variant="secondary" className="ml-2 flex-shrink-0">
+                          Has Video
+                        </Badge>
+                      )}
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
 
           {selectedSong && (

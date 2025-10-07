@@ -175,7 +175,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                 </div>
                 <div>
                   <Label htmlFor="key">Key</Label>
-                  <Select value={formData.key} onValueChange={(value) => setFormData(prev => ({ ...prev, key: value }))}>
+                  <Select value={formData.key || 'C Major'} onValueChange={(value) => setFormData(prev => ({ ...prev, key: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -204,7 +204,7 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
                 </div>
                 <div>
                   <Label htmlFor="difficulty">Difficulty</Label>
-                  <Select value={formData.difficulty} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
+                  <Select value={formData.difficulty || 'Beginner'} onValueChange={(value) => setFormData(prev => ({ ...prev, difficulty: value }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
