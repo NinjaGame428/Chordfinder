@@ -93,7 +93,10 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
       .select(`
         id,
         created_at,
-        songs!inner(title, artist)
+        songs!inner(
+          title,
+          artists!inner(name)
+        )
       `)
       .eq('user_id', userId)
       .not('song_id', 'is', null)
@@ -103,7 +106,7 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
     if (recentFavorites) {
       recentFavorites.forEach((fav: any) => {
         const songTitle = fav.songs?.title || 'Unknown Song';
-        const songArtist = fav.songs?.artist || 'Unknown Artist';
+        const songArtist = fav.songs?.artists?.name || 'Unknown Artist';
         
         activities.push({
           id: fav.id,
@@ -152,7 +155,10 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
         id,
         rating,
         created_at,
-        songs!inner(title, artist)
+        songs!inner(
+          title,
+          artists!inner(name)
+        )
       `)
       .eq('user_id', userId)
       .not('song_id', 'is', null)
@@ -162,7 +168,7 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
     if (recentRatings) {
       recentRatings.forEach((rating: any) => {
         const songTitle = rating.songs?.title || 'Unknown Song';
-        const songArtist = rating.songs?.artist || 'Unknown Artist';
+        const songArtist = rating.songs?.artists?.name || 'Unknown Artist';
         const ratingValue = rating.rating || 0;
         
         activities.push({
@@ -203,9 +209,13 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
         songs!inner(
           id,
           title,
-          artist,
+          artist_id,
           genre,
-          key_signature
+          key_signature,
+          artists!inner(
+            id,
+            name
+          )
         )
       `)
       .eq('user_id', userId)
@@ -220,7 +230,7 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
     return data?.map((fav: any) => ({
       id: fav.songs?.id || '',
       title: fav.songs?.title || 'Unknown Song',
-      artist: fav.songs?.artist || 'Unknown Artist',
+      artist: fav.songs?.artists?.name || 'Unknown Artist',
       genre: fav.songs?.genre || 'Unknown Genre',
       key_signature: fav.songs?.key_signature || 'Unknown Key',
       created_at: fav.created_at
