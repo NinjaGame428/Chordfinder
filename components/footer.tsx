@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
               <span className="text-xl font-bold">PhinAccords</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Découvrez des accords de musique gospel, des paroles et des ressources pour le culte.
+              Découvrez les accords de musique gospel, paroles et ressources pour l'adoration.
             </p>
           </div>
 
@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
               <li><Link href="/songs" className="text-muted-foreground hover:text-primary transition-colors">Chansons</Link></li>
               <li><Link href="/chords" className="text-muted-foreground hover:text-primary transition-colors">Accords</Link></li>
               <li><Link href="/artists" className="text-muted-foreground hover:text-primary transition-colors">Artistes</Link></li>
-              <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">À propos</Link></li>
+              <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">À Propos</Link></li>
             </ul>
           </div>
 
@@ -57,7 +57,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Heavenkeys Ltd. Tous droits réservés.
+            © 2024 Heavenkeys Ltd. Tous droits réservés.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
             <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Confidentialité</Link>

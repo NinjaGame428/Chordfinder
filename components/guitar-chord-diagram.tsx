@@ -43,6 +43,15 @@ const GuitarChordDiagram = ({
     }
   };
 
+  const getDifficultyText = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return 'Facile';
+      case 'Medium': return 'Moyen';
+      case 'Hard': return 'Difficile';
+      default: return difficulty;
+    }
+  };
+
   const stringNames = ['E', 'A', 'D', 'G', 'B', 'e'];
   const fretNumbers = [1, 2, 3, 4];
 
@@ -56,7 +65,7 @@ const GuitarChordDiagram = ({
           </div>
           <div className="flex items-center gap-2">
             <Badge className={getDifficultyColor(difficulty)}>
-              {difficulty}
+              {getDifficultyText(difficulty)}
             </Badge>
             <Button
               variant="outline"
@@ -211,15 +220,15 @@ const GuitarChordDiagram = ({
           <div className="flex gap-2">
             <Button size="sm" variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Save
+              Sauvegarder
             </Button>
             <Button size="sm" variant="outline">
               <Printer className="h-4 w-4 mr-2" />
-              Print
+              Imprimer
             </Button>
             <Button size="sm" variant="outline">
               <Share2 className="h-4 w-4 mr-2" />
-              Share
+              Partager
             </Button>
           </div>
         </div>

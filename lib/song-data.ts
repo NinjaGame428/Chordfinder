@@ -19,6 +19,7 @@ export interface Song {
   downloads: number;
   rating: number;
   description: string;
+  slug?: string;
   // YouTube fields
   url?: string;
   thumbnail?: string;

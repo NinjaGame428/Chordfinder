@@ -30,15 +30,18 @@ const PianoChordDiagram = ({
   onStop,
   isPlaying = false
 }: PianoChordDiagramProps) => {
-  // Full octave from C to B, including sharps/flats
-  const octaveNotes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  // Full octave from C to B, including sharps/flats - French notation
+  const octaveNotes = ['Do', 'Do#', 'Ré', 'Ré#', 'Mi', 'Fa', 'Fa#', 'Sol', 'Sol#', 'La', 'La#', 'Si'];
   
-  // Normalize note names (handle enharmonic equivalents)
+  // Normalize note names (handle enharmonic equivalents) - French notation
   const normalizeNote = (note: string): string => {
     const enharmonic: { [key: string]: string } = {
-      'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#',
-      'E#': 'F', 'B#': 'C', 'Fb': 'E', 'Cb': 'B',
-      'F##': 'G', 'C##': 'D', 'G##': 'A', 'D##': 'E', 'A##': 'B'
+      'Db': 'Do#', 'Eb': 'Ré#', 'Gb': 'Fa#', 'Ab': 'Sol#', 'Bb': 'La#',
+      'E#': 'Fa', 'B#': 'Do', 'Fb': 'Mi', 'Cb': 'Si',
+      'F##': 'Sol', 'C##': 'Ré', 'G##': 'La', 'D##': 'Mi', 'A##': 'Si',
+      // French equivalents
+      'C': 'Do', 'D': 'Ré', 'E': 'Mi', 'F': 'Fa', 'G': 'Sol', 'A': 'La', 'B': 'Si',
+      'C#': 'Do#', 'D#': 'Ré#', 'F#': 'Fa#', 'G#': 'Sol#', 'A#': 'La#'
     };
     return enharmonic[note] || note;
   };
@@ -49,6 +52,15 @@ const PianoChordDiagram = ({
       case 'Medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'Hard': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getDifficultyText = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return 'Facile';
+      case 'Medium': return 'Moyen';
+      case 'Hard': return 'Difficile';
+      default: return difficulty;
     }
   };
 
@@ -75,7 +87,7 @@ const PianoChordDiagram = ({
           </div>
           <div className="flex items-center gap-2">
             <Badge className={getDifficultyColor(difficulty)}>
-              {difficulty}
+              {getDifficultyText(difficulty)}
             </Badge>
             <Button
               variant="outline"
@@ -194,15 +206,15 @@ const PianoChordDiagram = ({
           <div className="flex gap-2">
             <Button size="sm" variant="outline">
               <Download className="h-4 w-4 mr-2" />
-              Save
+              Sauvegarder
             </Button>
             <Button size="sm" variant="outline">
               <Printer className="h-4 w-4 mr-2" />
-              Print
+              Imprimer
             </Button>
             <Button size="sm" variant="outline">
               <Share2 className="h-4 w-4 mr-2" />
-              Share
+              Partager
             </Button>
           </div>
         </div>

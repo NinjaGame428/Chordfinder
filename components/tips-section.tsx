@@ -6,37 +6,37 @@ const TipsSection = () => {
   const tips = [
     {
       icon: <BookOpen className="h-6 w-6" />,
-      title: "Reading Chord Charts",
-      description: "Learn how to read chord charts effectively. Start with basic major and minor chords, then progress to more complex progressions.",
-      category: "Beginner"
+      title: "Lire les Grilles d'Accords",
+      description: "Apprenez à lire les grilles d'accords efficacement. Commencez par les accords majeurs et mineurs de base, puis progressez vers des progressions plus complexes.",
+      category: "Débutant"
     },
     {
       icon: <Lightbulb className="h-6 w-6" />,
-      title: "Transposing Songs",
-      description: "Master the art of transposing songs to different keys. Essential skill for adapting songs to your vocal range or instrument.",
-      category: "Intermediate"
+      title: "Transposer les Chansons",
+      description: "Maîtrisez l'art de transposer les chansons dans différentes tonalités. Compétence essentielle pour adapter les chansons à votre tessiture ou instrument.",
+      category: "Intermédiaire"
     },
     {
       icon: <Users className="h-6 w-6" />,
-      title: "Leading Worship",
-      description: "Tips for leading worship effectively. Learn about song flow, key changes, and engaging your congregation.",
-      category: "Advanced"
+      title: "Diriger l'Adoration",
+      description: "Conseils pour diriger l'adoration efficacement. Apprenez sur le flux des chansons, les changements de tonalité et l'engagement de votre congrégation.",
+      category: "Avancé"
     },
     {
       icon: <Music className="h-6 w-6" />,
-      title: "Chord Progressions",
-      description: "Understand common gospel chord progressions and how to create smooth transitions between songs in your set.",
-      category: "Intermediate"
+      title: "Progressions d'Accords",
+      description: "Comprenez les progressions d'accords gospel communes et comment créer des transitions fluides entre les chansons de votre set.",
+      category: "Intermédiaire"
     }
   ];
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case "Beginner":
+      case "Débutant":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "Intermediate":
+      case "Intermédiaire":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "Advanced":
+      case "Avancé":
         return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
@@ -48,10 +48,10 @@ const TipsSection = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl xs:text-4xl font-bold tracking-tight">
-            Tips & Resources
+            Conseils & Ressources
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Enhance your worship ministry with our curated tips and resources for gospel music
+            Améliorez votre ministère d'adoration avec nos conseils et ressources organisés pour la musique gospel
           </p>
         </div>
 

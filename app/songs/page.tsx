@@ -101,6 +101,7 @@ const SongsPage = () => {
             downloads: song.downloads || 0,
             rating: song.rating || 0,
             description: song.description || '',
+            slug: song.slug,
             language: 'en',
             captions_available: false
           }));
@@ -228,7 +229,7 @@ const SongsPage = () => {
                 onSearch={(query) => setSearchQuery(query)}
                 onResultSelect={(result) => {
                   // Navigate to the selected song using slug
-                  const slug = result.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                  const slug = result.slug || result.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                   window.location.href = `/songs/${slug}`;
                 }}
                 showFilters={true}
@@ -363,7 +364,7 @@ const SongsPage = () => {
                                   variant="outline"
                                   asChild
                                 >
-                                   <Link href={`/songs/${song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                                   <Link href={`/songs/${song.slug || song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                                     <Music className="mr-2 h-4 w-4" />
                                     View Chords
                                     <ExternalLink className="ml-2 h-4 w-4" />
@@ -435,7 +436,7 @@ const SongsPage = () => {
                                   variant="outline"
                                   asChild
                                 >
-                                  <Link href={`/songs/${song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                                  <Link href={`/songs/${song.slug || song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                                     <Music className="h-4 w-4 mr-2" />
                                     View Chords
                                   </Link>

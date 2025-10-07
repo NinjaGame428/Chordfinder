@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { ChordEditor } from '@/components/ui/chord-editor';
 import { 
   Save, 
   X, 
@@ -20,6 +22,16 @@ import {
   Piano,
   Upload
 } from 'lucide-react';
+
+interface Chord {
+  name: string;
+  type: 'major' | 'minor' | 'diminished' | 'augmented' | 'suspended' | 'seventh' | 'major7' | 'minor7' | 'dim7' | 'aug7';
+  root: string;
+  bass?: string;
+  capo?: number;
+  fingering?: string;
+  diagram?: string;
+}
 
 interface SongData {
   id: number;
@@ -33,20 +45,12 @@ interface SongData {
   youtube_id?: string;
   slug: string;
   chords: {
-    piano: {
-      primary: string[];
-      progression: string;
-      variations: string[];
-    };
-    guitar: {
-      primary: string[];
-      capo: number;
-      tuning: string;
-      chord_diagrams: Record<string, string>;
-    };
+    piano: Chord[];
+    guitar: Chord[];
   };
   song_structure: Record<string, string[]>;
-  lyrics?: Array<{
+  lyrics: string; // Rich text content
+  lyrics_sections?: Array<{
     section: string;
     lines: Array<{
       chord: string;
@@ -78,17 +82,8 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
     youtube_id: '',
     slug: '',
     chords: {
-      piano: {
-        primary: [],
-        progression: '',
-        variations: []
-      },
-      guitar: {
-        primary: [],
-        capo: 0,
-        tuning: 'Standard (EADGBE)',
-        chord_diagrams: {}
-      }
+      piano: [],
+      guitar: []
     },
     song_structure: {
       intro: [],
@@ -97,103 +92,12 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
       bridge: [],
       outro: []
     },
-    lyrics: []
+    lyrics: '',
+    lyrics_sections: []
   });
-
-  const [newChord, setNewChord] = useState('');
-  const [newLyricSection, setNewLyricSection] = useState('');
-  const [newLyricLine, setNewLyricLine] = useState({ chord: '', text: '' });
 
   const handleSave = () => {
     onSave(formData);
-  };
-
-  const addPianoChord = () => {
-    if (newChord.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        chords: {
-          ...prev.chords,
-          piano: {
-            ...prev.chords.piano,
-            primary: [...prev.chords.piano.primary, newChord.trim()]
-          }
-        }
-      }));
-      setNewChord('');
-    }
-  };
-
-  const removePianoChord = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      chords: {
-        ...prev.chords,
-        piano: {
-          ...prev.chords.piano,
-          primary: prev.chords.piano.primary.filter((_, i) => i !== index)
-        }
-      }
-    }));
-  };
-
-  const addGuitarChord = () => {
-    if (newChord.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        chords: {
-          ...prev.chords,
-          guitar: {
-            ...prev.chords.guitar,
-            primary: [...prev.chords.guitar.primary, newChord.trim()]
-          }
-        }
-      }));
-      setNewChord('');
-    }
-  };
-
-  const removeGuitarChord = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      chords: {
-        ...prev.chords,
-        guitar: {
-          ...prev.chords.guitar,
-          primary: prev.chords.guitar.primary.filter((_, i) => i !== index)
-        }
-      }
-    }));
-  };
-
-  const addLyricSection = () => {
-    if (newLyricSection.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        lyrics: [
-          ...(prev.lyrics || []),
-          {
-            section: newLyricSection.trim(),
-            lines: []
-          }
-        ]
-      }));
-      setNewLyricSection('');
-    }
-  };
-
-  const addLyricLine = (sectionIndex: number) => {
-    if (newLyricLine.text.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        lyrics: prev.lyrics?.map((section, index) => 
-          index === sectionIndex 
-            ? { ...section, lines: [...section.lines, { ...newLyricLine }] }
-            : section
-        ) || []
-      }));
-      setNewLyricLine({ chord: '', text: '' });
-    }
   };
 
   return (
@@ -326,123 +230,34 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
 
             {/* Chords */}
             <TabsContent value="chords" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Piano Chords */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Piano className="h-5 w-5 mr-2" />
-                      Piano Chords
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label>Primary Chords</Label>
-                      <div className="flex space-x-2 mt-2">
-                        <Input
-                          value={newChord}
-                          onChange={(e) => setNewChord(e.target.value)}
-                          placeholder="Add chord (e.g., C, G, Am)"
-                        />
-                        <Button onClick={addPianoChord} size="sm">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {formData.chords.piano.primary.map((chord, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center space-x-1">
-                            {chord}
-                            <button onClick={() => removePianoChord(index)}>
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="piano_progression">Progression</Label>
-                      <Input
-                        id="piano_progression"
-                        value={formData.chords.piano.progression}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          chords: {
-                            ...prev.chords,
-                            piano: { ...prev.chords.piano, progression: e.target.value }
-                          }
-                        }))}
-                        placeholder="C - G - Am - F"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Guitar Chords */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Guitar className="h-5 w-5 mr-2" />
-                      Guitar Chords
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label>Primary Chords</Label>
-                      <div className="flex space-x-2 mt-2">
-                        <Input
-                          value={newChord}
-                          onChange={(e) => setNewChord(e.target.value)}
-                          placeholder="Add chord (e.g., C, G, Am)"
-                        />
-                        <Button onClick={addGuitarChord} size="sm">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {formData.chords.guitar.primary.map((chord, index) => (
-                          <Badge key={index} variant="secondary" className="flex items-center space-x-1">
-                            {chord}
-                            <button onClick={() => removeGuitarChord(index)}>
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="capo">Capo</Label>
-                        <Input
-                          id="capo"
-                          type="number"
-                          value={formData.chords.guitar.capo}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            chords: {
-                              ...prev.chords,
-                              guitar: { ...prev.chords.guitar, capo: parseInt(e.target.value) }
-                            }
-                          }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="tuning">Tuning</Label>
-                        <Input
-                          id="tuning"
-                          value={formData.chords.guitar.tuning}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            chords: {
-                              ...prev.chords,
-                              guitar: { ...prev.chords.guitar, tuning: e.target.value }
-                            }
-                          }))}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              <Tabs defaultValue="piano" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="piano">Piano Chords</TabsTrigger>
+                  <TabsTrigger value="guitar">Guitar Chords</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="piano">
+                  <ChordEditor
+                    chords={formData.chords.piano}
+                    onChordsChange={(chords) => setFormData(prev => ({
+                      ...prev,
+                      chords: { ...prev.chords, piano: chords }
+                    }))}
+                    instrument="piano"
+                  />
+                </TabsContent>
+                
+                <TabsContent value="guitar">
+                  <ChordEditor
+                    chords={formData.chords.guitar}
+                    onChordsChange={(chords) => setFormData(prev => ({
+                      ...prev,
+                      chords: { ...prev.chords, guitar: chords }
+                    }))}
+                    instrument="guitar"
+                  />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             {/* Song Structure */}
@@ -470,81 +285,25 @@ export const AdminSongEditor: React.FC<AdminSongEditorProps> = ({
             {/* Lyrics */}
             <TabsContent value="lyrics" className="space-y-4">
               <div className="space-y-4">
-                <div className="flex space-x-2">
-                  <Input
-                    value={newLyricSection}
-                    onChange={(e) => setNewLyricSection(e.target.value)}
-                    placeholder="Section name (e.g., Verse 1, Chorus)"
+                <div>
+                  <Label htmlFor="lyrics">Song Lyrics</Label>
+                  <RichTextEditor
+                    content={formData.lyrics}
+                    onChange={(content) => setFormData(prev => ({ ...prev, lyrics: content }))}
+                    placeholder="Enter song lyrics with chords..."
+                    className="mt-2"
                   />
-                  <Button onClick={addLyricSection}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Section
-                  </Button>
                 </div>
                 
-                {formData.lyrics?.map((section, sectionIndex) => (
-                  <Card key={sectionIndex}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{section.section}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {section.lines.map((line, lineIndex) => (
-                        <div key={lineIndex} className="flex items-center space-x-2">
-                          <Input
-                            value={line.chord}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              lyrics: prev.lyrics?.map((s, sIndex) => 
-                                sIndex === sectionIndex 
-                                  ? { ...s, lines: s.lines.map((l, lIndex) => 
-                                      lIndex === lineIndex ? { ...l, chord: e.target.value } : l
-                                    )}
-                                  : s
-                              ) || []
-                            }))}
-                            placeholder="Chord"
-                            className="w-20"
-                          />
-                          <Input
-                            value={line.text}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              lyrics: prev.lyrics?.map((s, sIndex) => 
-                                sIndex === sectionIndex 
-                                  ? { ...s, lines: s.lines.map((l, lIndex) => 
-                                      lIndex === lineIndex ? { ...l, text: e.target.value } : l
-                                    )}
-                                  : s
-                              ) || []
-                            }))}
-                            placeholder="Lyrics"
-                            className="flex-1"
-                          />
-                          <Button size="sm" variant="outline">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      <div className="flex space-x-2">
-                        <Input
-                          value={newLyricLine.chord}
-                          onChange={(e) => setNewLyricLine(prev => ({ ...prev, chord: e.target.value }))}
-                          placeholder="Chord"
-                          className="w-20"
-                        />
-                        <Input
-                          value={newLyricLine.text}
-                          onChange={(e) => setNewLyricLine(prev => ({ ...prev, text: e.target.value }))}
-                          placeholder="Add new line"
-                          className="flex-1"
-                        />
-                        <Button onClick={() => addLyricLine(sectionIndex)}>
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="text-sm text-muted-foreground">
+                  <p>💡 <strong>Tips:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 mt-2">
+                    <li>Use the <strong>Music</strong> button to insert chord symbols like [C], [Am], [F#m7]</li>
+                    <li>Format text with <strong>bold</strong>, <em>italic</em>, or <u>underline</u> for emphasis</li>
+                    <li>Use alignment tools to center choruses or verses</li>
+                    <li>Create lists for multiple verses or sections</li>
+                  </ul>
+                </div>
               </div>
             </TabsContent>
 

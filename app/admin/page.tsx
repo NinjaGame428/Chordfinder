@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,14 +17,117 @@ import {
   Upload,
   Download,
   Users,
-  BarChart3
+  BarChart3,
+  RefreshCw
 } from 'lucide-react';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
+import { AdminSongEditor } from '@/components/AdminSongEditor';
 import Link from 'next/link';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showSongEditor, setShowSongEditor] = useState(false);
+  const [editingSong, setEditingSong] = useState<any>(null);
+  const [songs, setSongs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Fetch songs from database
+  const fetchSongs = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/songs');
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
+      }
+      const data = await response.json();
+      setSongs(data.songs || []);
+      setError(null);
+      setSuccessMessage(null);
+    } catch (err) {
+      console.error('Error fetching songs:', err);
+      setError('Failed to load songs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSongs();
+  }, []);
+
+  const handleSaveSong = async (song: any) => {
+    try {
+      const url = editingSong ? `/api/songs/${editingSong.id}` : '/api/songs';
+      const method = editingSong ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(song),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save song');
+      }
+
+      const result = await response.json();
+      console.log('Song saved successfully:', result);
+      
+      setShowSongEditor(false);
+      setEditingSong(null);
+      setSuccessMessage(editingSong ? 'Song updated successfully!' : 'Song created successfully!');
+      
+      // Refresh the songs list
+      await fetchSongs();
+    } catch (error) {
+      console.error('Error saving song:', error);
+      setError('Failed to save song. Please try again.');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setShowSongEditor(false);
+    setEditingSong(null);
+  };
+
+  const handleEditSong = (song: any) => {
+    setEditingSong(song);
+    setShowSongEditor(true);
+  };
+
+  const handleAddSong = () => {
+    setEditingSong(null);
+    setShowSongEditor(true);
+  };
+
+  const handleDeleteSong = async (songId: string) => {
+    if (!confirm('Are you sure you want to delete this song?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/songs/${songId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete song');
+      }
+
+      setSuccessMessage('Song deleted successfully!');
+      
+      // Refresh the songs list
+      await fetchSongs();
+    } catch (error) {
+      console.error('Error deleting song:', error);
+      setError('Failed to delete song. Please try again.');
+    }
+  };
 
   return (
     <>
@@ -39,6 +142,31 @@ const AdminPage = () => {
               </p>
             </div>
 
+            {/* Notifications */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800">{error}</p>
+                <button 
+                  onClick={() => setError(null)}
+                  className="mt-2 text-sm text-red-600 hover:text-red-800"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            
+            {successMessage && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800">{successMessage}</p>
+                <button 
+                  onClick={() => setSuccessMessage(null)}
+                  className="mt-2 text-sm text-green-600 hover:text-green-800"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                   <Card>
@@ -46,7 +174,7 @@ const AdminPage = () => {
                 <div className="flex items-center space-x-4">
                   <Music className="h-8 w-8 text-primary" />
                   <div>
-                    <p className="text-2xl font-bold">10</p>
+                    <p className="text-2xl font-bold">{songs.length}</p>
                     <p className="text-sm text-muted-foreground">Songs in Collection</p>
                   </div>
                 </div>
@@ -110,22 +238,23 @@ const AdminPage = () => {
                     </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">Nalingi Yo</p>
-                          <p className="text-sm text-muted-foreground">Dena Mwana</p>
-                        </div>
-                        <Badge variant="secondary">Published</Badge>
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">Je suis victorieux</p>
-                          <p className="text-sm text-muted-foreground">Dena Mwana</p>
-                        </div>
-                        <Badge variant="secondary">Published</Badge>
-                        </div>
-                      </div>
-                    </CardContent>
+                      {loading ? (
+                        <div className="text-center py-4 text-muted-foreground">Loading...</div>
+                      ) : songs.length === 0 ? (
+                        <div className="text-center py-4 text-muted-foreground">No songs yet</div>
+                      ) : (
+                        songs.slice(0, 3).map((song) => (
+                          <div key={song.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div>
+                              <p className="font-medium">{song.title}</p>
+                              <p className="text-sm text-muted-foreground">{song.artists?.name || 'Unknown Artist'}</p>
+                            </div>
+                            <Badge variant="secondary">Published</Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </CardContent>
                   </Card>
 
                   <Card>
@@ -170,48 +299,64 @@ const AdminPage = () => {
                         Edit, add, or remove songs from your collection
                       </CardDescription>
                       </div>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                          Add Song
-                        </Button>
+                    <div className="flex space-x-2">
+                      <Button onClick={handleAddSong}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Song
+                      </Button>
+                      <Button variant="outline" onClick={fetchSongs} disabled={loading}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        Refresh
+                      </Button>
+                    </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-4">
-                            <div>
-                          <p className="font-medium">Nalingi Yo</p>
-                          <p className="text-sm text-muted-foreground">Dena Mwana • C Major • Beginner</p>
-                            </div>
+                    {loading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-muted-foreground">Loading songs...</div>
+                      </div>
+                    ) : error ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-red-500">{error}</div>
+                      </div>
+                    ) : songs.length === 0 ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="text-muted-foreground">No songs found. Add your first song!</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {songs.map((song) => (
+                          <div key={song.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div>
+                                <p className="font-medium">{song.title}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {song.artists?.name || 'Unknown Artist'} • {song.key_signature || 'No Key'} • {song.tempo ? `${song.tempo} BPM` : 'No BPM'}
+                                </p>
+                              </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleEditSong(song)}
+                              >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                        <Button size="sm" variant="outline">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleDeleteSong(song.id)}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </div>
-                    <div className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <p className="font-medium">Je suis victorieux</p>
-                          <p className="text-sm text-muted-foreground">Dena Mwana • D Major • Intermediate</p>
-                        </div>
+                        ))}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button size="sm" variant="outline">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
+                    )}
+                  </CardContent>
               </Card>
             </TabsContent>
 
@@ -363,6 +508,19 @@ const AdminPage = () => {
         </div>
       </main>
         <Footer />
+        
+        {/* Song Editor Modal */}
+        {showSongEditor && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+              <AdminSongEditor
+                song={editingSong || undefined}
+                onSave={handleSaveSong}
+                onCancel={handleCancelEdit}
+              />
+            </div>
+          </div>
+        )}
     </>
   );
 };

@@ -111,10 +111,10 @@ const ChordDisplayPage = () => {
   };
 
   const keys = [
-    "All Keys", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"
+    "Toutes les Tonalités", "Do", "Do#", "Ré", "Ré#", "Mi", "Fa", "Fa#", "Sol", "Sol#", "La", "La#", "Si"
   ];
 
-  const difficulties = ["All Levels", "Easy", "Medium", "Hard"];
+  const difficulties = ["Tous les Niveaux", "Facile", "Moyen", "Difficile"];
 
   // Fetch chords from Supabase
   useEffect(() => {
@@ -592,13 +592,13 @@ const ChordDisplayPage = () => {
           <div className="flex items-center justify-center gap-2 mb-4">
             <Sparkles className="h-8 w-8 text-primary" />
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              {t('chord.allKeys')}
+              Tous les Accords Gospel
             </h1>
             <Sparkles className="h-8 w-8 text-primary" />
           </div>
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Master every chord with interactive diagrams, finger positions, and audio guides. 
-            Perfect for guitarists and pianists of all levels.
+            Maîtrisez chaque accord avec des diagrammes interactifs, positions des doigts et guides audio. 
+            Parfait pour les guitaristes et pianistes de tous niveaux.
           </p>
           
           {/* Quick Stats */}
@@ -608,7 +608,7 @@ const ChordDisplayPage = () => {
                 <Guitar className="h-8 w-8 text-primary" />
                 <div>
                   <div className="text-2xl font-bold">{chords.length}</div>
-                  <div className="text-sm text-muted-foreground">Guitar Chords</div>
+                  <div className="text-sm text-muted-foreground">Accords de Guitare</div>
                 </div>
               </div>
             </Card>
@@ -617,7 +617,7 @@ const ChordDisplayPage = () => {
                 <Piano className="h-8 w-8 text-primary" />
                 <div>
                   <div className="text-2xl font-bold">{chords.length}</div>
-                  <div className="text-sm text-muted-foreground">Piano Chords</div>
+                  <div className="text-sm text-muted-foreground">Accords de Piano</div>
                 </div>
               </div>
             </Card>
@@ -748,11 +748,11 @@ const ChordDisplayPage = () => {
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="guitar" className="flex items-center gap-2">
                 <Guitar className="h-4 w-4" />
-                {t('chord.guitar')}
+                Guitare
               </TabsTrigger>
               <TabsTrigger value="piano" className="flex items-center gap-2">
                 <Piano className="h-4 w-4" />
-                {t('chord.piano')}
+                Piano
               </TabsTrigger>
             </TabsList>
 
@@ -760,7 +760,7 @@ const ChordDisplayPage = () => {
               {isLoading ? (
                 <div className="text-center py-20">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                  <p className="mt-4 text-muted-foreground">Loading guitar chords...</p>
+                  <p className="mt-4 text-muted-foreground">Chargement des accords de guitare...</p>
                 </div>
               ) : filteredChords.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -812,7 +812,7 @@ const ChordDisplayPage = () => {
               {isLoading ? (
                 <div className="text-center py-20">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                  <p className="mt-4 text-muted-foreground">Loading piano chords...</p>
+                  <p className="mt-4 text-muted-foreground">Chargement des accords de piano...</p>
                 </div>
               ) : filteredChords.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

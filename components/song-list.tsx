@@ -101,7 +101,7 @@ const SongList = () => {
             Chansons Gospel Populaires
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explorez notre collection de chansons gospel bien-aimées avec grilles d'accords et ressources
+            Explorez notre collection organisée de chansons gospel bien-aimées avec grilles d'accords et ressources
           </p>
         </div>
 
@@ -152,7 +152,7 @@ const SongList = () => {
                 >
                   <Link href={`/songs/${song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                     <Music className="mr-2 h-4 w-4" />
-                    View Chords
+                    Voir les Accords
                     <ExternalLink className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -166,7 +166,7 @@ const SongList = () => {
           <div className="text-center mt-12">
             <Button size="lg" className="rounded-full" asChild>
               <Link href="/songs">
-                View All Songs
+                Voir Toutes les Chansons
                 <ExternalLink className="ml-2 h-5 w-5" />
               </Link>
             </Button>

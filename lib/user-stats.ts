@@ -190,7 +190,8 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
 // Fetch user's favorite songs
 export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]> => {
   if (!supabase) {
-    throw new Error('Supabase not configured');
+    console.error('Supabase not configured');
+    return [];
   }
   
   try {
@@ -211,7 +212,10 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
       .not('song_id', 'is', null)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error in fetchFavoriteSongs:', error);
+      return [];
+    }
 
     return data?.map((fav: any) => ({
       id: fav.songs?.id || '',

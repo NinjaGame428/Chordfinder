@@ -14,18 +14,18 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "PhinAccords - Accords de Musique Gospel et Ressources",
+  title: "PhinAccords - Accords de Musique Gospel & Ressources",
   description:
-    "Trouvez des accords de musique gospel, des paroles et des ressources pour le culte. Soutenir les passionnés de musique gospel avec des collections de chansons et des grilles d'accords.",
+    "Trouvez les accords de musique gospel, paroles et ressources pour l'adoration. Soutenir les passionnés de musique gospel avec des collections de chansons et grilles d'accords.",
   keywords: [
     "Musique Gospel",
     "Grilles d'Accords",
-    "Musique de Louange",
+    "Musique d'Adoration",
     "Accords Gospel",
     "Musique Chrétienne",
     "Musique d'Église",
     "Chants de Louange",
-    "Chansons de Culte",
+    "Chants d'Adoration",
     "Ressources Gospel",
     "Ministère Musical",
     "PhinAccords",
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
     siteName: "PhinAccords",
     locale: "fr_FR",
     url: "https://heavenkeys-chords-finder-ofisx6lin-jackmichaels-projects.vercel.app",
-    title: "PhinAccords - Accords de Musique Gospel et Ressources",
+    title: "PhinAccords - Accords de Musique Gospel & Ressources",
     description:
-      "Trouvez des accords de musique gospel, des paroles et des ressources pour le culte. Soutenir les passionnés de musique gospel avec des collections de chansons et des grilles d'accords.",
+      "Trouvez les accords de musique gospel, paroles et ressources pour l'adoration. Soutenir les passionnés de musique gospel avec des collections de chansons et grilles d'accords.",
     images: [
       {
         url: "/og-image.jpg",
@@ -101,7 +101,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <LanguageProvider>
           <FavoritesProvider>

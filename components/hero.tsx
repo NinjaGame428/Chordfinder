@@ -24,10 +24,10 @@ const Hero = () => {
             Ressources de Musique Gospel 🎵
           </Badge>
           <h1 className="mt-6 max-w-[30ch] text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold !leading-[1.2] tracking-tight">
-            Trouvez des Accords et Ressources Gospel
+            Trouvez les Accords de Musique Gospel & Ressources
           </h1>
           <p className="mt-6 max-w-[70ch] xs:text-lg text-muted-foreground">
-            Découvrez des grilles d'accords, des paroles et des ressources pour votre ministère de louange. 
+            Découvrez les grilles d'accords, paroles et ressources pour votre ministère d'adoration. 
             Soutenir les passionnés de musique gospel avec des collections organisées et des progressions d'accords faciles à suivre.
           </p>
           
@@ -51,7 +51,7 @@ const Hero = () => {
                   className="w-full sm:w-auto rounded-full text-base"
                   asChild
                 >
-                  <Link href="/songs">
+                  <Link href="/register">
                     <Music className="mr-2 h-5 w-5" /> Parcourir les Chansons
                   </Link>
                 </Button>

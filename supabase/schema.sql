@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS public.songs (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   title TEXT NOT NULL,
   artist TEXT NOT NULL,
+  slug TEXT UNIQUE,
   genre TEXT,
   key_signature TEXT,
   tempo INTEGER,
@@ -91,6 +92,7 @@ CREATE TABLE IF NOT EXISTS public.ratings (
 CREATE INDEX IF NOT EXISTS idx_songs_artist ON public.songs(artist);
 CREATE INDEX IF NOT EXISTS idx_songs_genre ON public.songs(genre);
 CREATE INDEX IF NOT EXISTS idx_songs_key_signature ON public.songs(key_signature);
+CREATE INDEX IF NOT EXISTS idx_songs_slug ON public.songs(slug);
 CREATE INDEX IF NOT EXISTS idx_resources_type ON public.resources(type);
 CREATE INDEX IF NOT EXISTS idx_resources_category ON public.resources(category);
 CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON public.favorites(user_id);
