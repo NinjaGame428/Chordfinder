@@ -25,7 +25,6 @@ interface SongData {
   title: string;
   artist_id: string;
   artist_name?: string;
-  genre: string;
   key_signature: string;
   tempo: number | string;
   lyrics: string;
@@ -45,7 +44,6 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
     title: '',
     artist_id: '',
     artist_name: '',
-    genre: '',
     key_signature: '',
     tempo: '',
     lyrics: '',
@@ -90,7 +88,6 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         title: song.title || '',
         artist_id: song.artist_id || '',
         artist_name: song.artists?.name || song.artist || '',
-        genre: song.genre || '',
         key_signature: song.key_signature || '',
         tempo: song.tempo || '',
         lyrics: lyricsText,
@@ -174,7 +171,6 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         body: JSON.stringify({
           title: songData.title,
           artist_id: songData.artist_id,
-          genre: songData.genre,
           key_signature: songData.key_signature,
           tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
           lyrics: songData.lyrics,
@@ -314,16 +310,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="genre">Genre</Label>
-              <Input
-                id="genre"
-                value={songData.genre}
-                onChange={(e) => setSongData({ ...songData, genre: e.target.value })}
-                placeholder="e.g., Gospel"
-              />
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="key">Key</Label>
               <Input

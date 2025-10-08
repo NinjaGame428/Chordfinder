@@ -53,7 +53,6 @@ const SongsPage = () => {
   const [newSong, setNewSong] = useState({
     title: '',
     artist_id: '',
-    genre: '',
     key_signature: '',
     tempo: '',
     lyrics: '',
@@ -169,7 +168,6 @@ ${songData.lyrics || 'No lyrics available'}
         setNewSong({
           title: '',
           artist_id: '',
-          genre: '',
           key_signature: '',
           tempo: '',
           lyrics: '',
@@ -451,16 +449,7 @@ ${songData.lyrics || 'No lyrics available'}
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="genre">Genre</Label>
-                <Input
-                  id="genre"
-                  value={newSong.genre}
-                  onChange={(e) => setNewSong({ ...newSong, genre: e.target.value })}
-                  placeholder="e.g., Gospel"
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="key">Key</Label>
                 <Input

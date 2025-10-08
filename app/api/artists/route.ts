@@ -8,18 +8,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, bio, genre } = body;
+    const { name, bio } = body;
 
     // Validate required fields
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Artist name is required' }, { status: 400 });
     }
 
-    // Create artist data
+    // Create artist data - only use columns that exist
     const artistData = {
       name: name.trim(),
       bio: bio || null,
-      genre: genre || null,
     };
 
     const { data: artist, error } = await supabase

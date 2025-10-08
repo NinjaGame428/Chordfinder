@@ -49,7 +49,6 @@ export async function PUT(
     const { 
       title, 
       english_title, 
-      album, 
       year, 
       key,
       key_signature,
@@ -60,8 +59,7 @@ export async function PUT(
       slug,
       chords,
       lyrics,
-      artist_id,
-      genre
+      artist_id
     } = body;
 
     // Validate required fields
@@ -69,15 +67,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // Update song data
+    // Update song data - only use columns that exist
     const updateData: any = {
       title,
       english_title: english_title || null,
-      album: album || null,
       year: year || null,
       key_signature: key_signature || key || null,
       tempo: tempo || bpm || null,
-      genre: genre || null,
       lyrics: lyrics || null,
       updated_at: new Date().toISOString()
     };

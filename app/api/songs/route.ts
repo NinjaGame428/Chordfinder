@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     const { 
       title, 
       english_title, 
-      album, 
       year, 
       key,
       key_signature,
@@ -51,8 +50,7 @@ export async function POST(request: NextRequest) {
       slug,
       chords,
       lyrics,
-      artist_id,
-      genre
+      artist_id
     } = body;
 
     // Validate required fields
@@ -64,14 +62,12 @@ export async function POST(request: NextRequest) {
     const songData = {
       title,
       english_title: english_title || null,
-      album: album || null,
       year: year || null,
       key_signature: key_signature || key || null,
       tempo: tempo || bpm || null,
       chords: chords ? JSON.stringify(chords) : null,
       lyrics: lyrics || null,
       artist_id,
-      genre: genre || null,
       // Generate slug if not provided
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     };
