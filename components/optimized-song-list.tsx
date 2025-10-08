@@ -13,7 +13,7 @@ import LazyLoad from "@/components/lazy-load";
 interface OptimizedSongListProps {
   songs: Song[];
   onToggleFavorite: (song: Song) => void;
-  isFavorite: (id: string) => boolean;
+  isFavorite: (id: number) => boolean;
   viewMode: 'grid' | 'list';
   getDifficultyColor: (difficulty: string) => string;
 }
@@ -40,7 +40,7 @@ const OptimizedSongList: React.FC<OptimizedSongListProps> = ({
     const processed = songs.map(song => ({
       ...song,
       displayTitle: song.title.length > 50 ? `${song.title.substring(0, 50)}...` : song.title,
-      isFav: isFavorite(song.id.toString())
+      isFav: isFavorite(song.id)
     }));
     
     PerformanceMonitor.endTiming('song-processing');
