@@ -699,7 +699,6 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
                 <CardContent>
                   <div
                     ref={editorRef}
-                    onKeyDown={handleKeyDown}
                     className="min-h-[600px] p-6 space-y-8"
                   >
                     {songData.sections.length === 0 ? (
@@ -740,6 +739,7 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
                               newSections[index].content = e.target.value;
                               setSongData(prev => ({ ...prev, sections: newSections }));
                             }}
+                            onKeyDown={handleKeyDown}
                             placeholder="Enter lyrics here... Use Ctrl+K to insert chords"
                             className="min-h-[200px] font-mono text-base resize-none border-0 focus:ring-0 p-0"
                             disabled={!isEditMode}

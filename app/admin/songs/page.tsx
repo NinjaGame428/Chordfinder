@@ -52,6 +52,64 @@ const SongsPage = () => {
     }
   };
 
+  const handleDeleteSong = async (songId: string) => {
+    if (!confirm('Are you sure you want to delete this song?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/songs/${songId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setSongs(songs.filter(song => song.id !== songId));
+        alert('Song deleted successfully');
+      } else {
+        alert('Failed to delete song');
+      }
+    } catch (error) {
+      console.error('Error deleting song:', error);
+      alert('Failed to delete song');
+    }
+  };
+
+  const handleDownloadSong = async (song: Song) => {
+    try {
+      const response = await fetch(`/api/songs/${song.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const songData = data.song || data;
+        
+        // Create text format for download
+        const textContent = `
+Title: ${songData.title}
+Artist: ${songData.artists?.name || songData.artist || 'Unknown'}
+Key: ${songData.key_signature || 'N/A'}
+Tempo: ${songData.tempo || 'N/A'} BPM
+Genre: ${songData.genre || 'N/A'}
+
+Lyrics:
+${songData.lyrics || 'No lyrics available'}
+        `.trim();
+
+        // Create blob and download
+        const blob = new Blob([textContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${songData.title.replace(/[^a-z0-9]/gi, '_')}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Error downloading song:', error);
+      alert('Failed to download song');
+    }
+  };
+
   useEffect(() => {
     fetchSongs();
   }, []);
@@ -167,13 +225,25 @@ const SongsPage = () => {
                           variant="outline" 
                           size="sm"
                           onClick={() => router.push(`/admin/songs/${song.id}/edit`)}
+                          title="Edit song"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDownloadSong(song)}
+                          title="Download song"
+                        >
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteSong(song.id)}
+                          title="Delete song"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
