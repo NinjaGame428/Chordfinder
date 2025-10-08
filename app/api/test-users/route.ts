@@ -43,7 +43,7 @@ export async function GET() {
     console.log(`Found ${users.length} users in database`);
     
     // Also check auth users
-    let authUsers = [];
+    let authUsers: any[] = [];
     try {
       const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
       if (!authError && authData?.users) {

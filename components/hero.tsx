@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Music, Plus, MessageCircle, Search } from "lucide-react";
 import Link from "next/link";
 import React, { useState } from "react";

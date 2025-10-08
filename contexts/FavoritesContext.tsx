@@ -85,7 +85,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   const isSongFavorite = (songId: number | string) => {
-    return favoriteSongs.some(song => song.id === Number(songId));
+    return favoriteSongs.some(song => song.id === songId);
   };
 
   const isResourceFavorite = (resourceId: string) => {

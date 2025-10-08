@@ -30,6 +30,7 @@ interface User {
   status?: string;
   created_at: string;
   last_sign_in_at?: string;
+  last_activity_at?: string;
   is_banned?: boolean;
   ban_reason?: string;
   locationInfo?: {

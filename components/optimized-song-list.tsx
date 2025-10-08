@@ -40,7 +40,7 @@ const OptimizedSongList: React.FC<OptimizedSongListProps> = ({
     const processed = songs.map(song => ({
       ...song,
       displayTitle: song.title.length > 50 ? `${song.title.substring(0, 50)}...` : song.title,
-      isFav: isFavorite(song.id)
+      isFav: isFavorite(song.id.toString())
     }));
     
     PerformanceMonitor.endTiming('song-processing');
@@ -182,13 +182,13 @@ const OptimizedSongList: React.FC<OptimizedSongListProps> = ({
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visibleSongs.map((song) => (
-            <SongCard key={song.id} song={song} />
+            <SongCard key={song.id} song={song as any} />
           ))}
         </div>
       ) : (
         <div className="space-y-4">
           {visibleSongs.map((song) => (
-            <SongCard key={song.id} song={song} />
+            <SongCard key={song.id} song={song as any} />
           ))}
         </div>
       )}

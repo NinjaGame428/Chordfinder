@@ -123,7 +123,7 @@ const YouTubeVideoFinder: React.FC<YouTubeVideoFinderProps> = ({
           );
 
           // Update selected song
-          setSelectedSong(prev => ({ ...prev, youtube_id: extractedId }));
+          setSelectedSong((prev: any) => ({ ...prev, youtube_id: extractedId }));
         }
 
         onVideoIdUpdate?.(selectedSong.id, extractedId);

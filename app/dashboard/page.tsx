@@ -185,7 +185,7 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user.firstName || 'User'}!</h1>
+            <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.firstName || 'User'}!</h1>
             <p className="text-muted-foreground">
               Manage your profile, view your activity, and access your saved content.
             </p>
@@ -286,13 +286,13 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {new Date(user.joinDate).toLocaleDateString('en-US', { 
+                      {user?.joinDate ? new Date(user.joinDate).toLocaleDateString('en-US', { 
                         month: 'short', 
                         year: 'numeric' 
-                      })}
+                      }) : 'N/A'}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {Math.floor((Date.now() - new Date(user.joinDate).getTime()) / (1000 * 60 * 60 * 24))} {t('song.daysAgo')}
+                      {user?.joinDate ? Math.floor((Date.now() - new Date(user.joinDate).getTime()) / (1000 * 60 * 60 * 24)) : 0} {t('song.daysAgo')}
                     </p>
                   </CardContent>
                 </Card>
@@ -408,16 +408,16 @@ export default function DashboardPage() {
                 <CardContent className="space-y-6">
                   <div className="flex items-center space-x-6">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={user.avatar} alt={`${user.firstName} ${user.lastName}`} />
+                      <AvatarImage src={user?.avatar} alt={`${user?.firstName || ''} ${user?.lastName || ''}`} />
                       <AvatarFallback className="text-lg">
-                        {(user.firstName || 'U')[0]}{(user.lastName || 'U')[0]}
+                        {(user?.firstName || 'U')[0]}{(user?.lastName || 'U')[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="text-lg font-semibold">{user.firstName} {user.lastName}</h3>
-                      <p className="text-muted-foreground">{user.email}</p>
+                      <h3 className="text-lg font-semibold">{user?.firstName || ''} {user?.lastName || ''}</h3>
+                      <p className="text-muted-foreground">{user?.email || ''}</p>
                       <Badge variant="secondary" className="mt-1">
-                        Member since {new Date(user.joinDate).toLocaleDateString()}
+                        Member since {user?.joinDate ? new Date(user.joinDate).toLocaleDateString() : 'N/A'}
                       </Badge>
                     </div>
                   </div>
@@ -551,7 +551,7 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">Choose your preferred language</p>
                       </div>
                       <select 
-                        value={user.preferences?.language || 'en'}
+                        value={user?.preferences?.language || 'en'}
                         onChange={(e) => handlePreferenceChange('language', e.target.value)}
                         className="px-3 py-2 border rounded-md"
                       >
@@ -566,7 +566,7 @@ export default function DashboardPage() {
                         <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
                       </div>
                       <select 
-                        value={user.preferences?.theme || 'system'}
+                        value={user?.preferences?.theme || 'system'}
                         onChange={(e) => handlePreferenceChange('theme', e.target.value)}
                         className="px-3 py-2 border rounded-md"
                       >
@@ -583,7 +583,7 @@ export default function DashboardPage() {
                       </div>
                       <input
                         type="checkbox"
-                        checked={user.preferences?.notifications || false}
+                        checked={user?.preferences?.notifications || false}
                         onChange={(e) => handlePreferenceChange('notifications', e.target.checked)}
                         className="h-4 w-4"
                       />

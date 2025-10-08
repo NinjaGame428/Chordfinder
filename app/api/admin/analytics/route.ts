@@ -33,25 +33,25 @@ export async function GET() {
         bounceRate: 0
       },
       geographic: {
-        usersByCountry: [],
-        usersByCity: [],
-        topCountries: []
+        usersByCountry: [] as Array<{ country: string; count: number }>,
+        usersByCity: [] as Array<{ city: string; count: number }>,
+        topCountries: [] as Array<{ country: string; count: number }>
       },
       device: {
-        usersByDevice: [],
-        usersByBrowser: [],
-        usersByOS: []
+        usersByDevice: [] as Array<{ device: string; count: number }>,
+        usersByBrowser: [] as Array<{ browser: string; count: number }>,
+        usersByOS: [] as Array<{ os: string; count: number }>
       },
       content: {
-        mostPopularSongs: [],
-        mostPopularArtists: [],
+        mostPopularSongs: [] as Array<{ title: string; downloads: number; rating: number }>,
+        mostPopularArtists: [] as Array<{ name: string }>,
         totalDownloads: 0,
         averageRating: 0
       },
       recentActivity: {
-        recentSignups: [],
-        recentSessions: [],
-        recentActivities: []
+        recentSignups: [] as Array<{ full_name: string; email: string; created_at: string }>,
+        recentSessions: [] as Array<{ device_type: string; country: string; created_at: string }>,
+        recentActivities: [] as Array<{ activity_type: string; description: string; created_at: string }>
       }
     };
 
