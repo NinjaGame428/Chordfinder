@@ -234,6 +234,8 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
       const song = responseData.song || responseData;
       
       console.log('Song data loaded:', song);
+      console.log('Song lyrics:', song.lyrics);
+      console.log('Song lyrics type:', typeof song.lyrics);
       
       // Transform database song to editor format
       const transformedData: SongData = {
@@ -243,10 +245,10 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
         key: song.key_signature || 'C',
         tempo: song.tempo || 120,
         timeSignature: song.time_signature || '4/4',
-        sections: song.sections || [],
+        sections: [],  // Will be populated below
         version: song.version || 1,
         lastSaved: song.updated_at || new Date().toISOString(),
-        tags: song.tags || [],
+        tags: Array.isArray(song.tags) ? song.tags : [],
         difficulty: song.difficulty || 'beginner',
         genre: song.genre || '',
         mood: song.mood || '',
@@ -258,15 +260,34 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
         // Try to parse as sections
         try {
           const sections = typeof song.lyrics === 'string' ? JSON.parse(song.lyrics) : song.lyrics;
-          if (Array.isArray(sections)) {
-            transformedData.sections = sections;
+          if (Array.isArray(sections) && sections.length > 0) {
+            // Validate each section has required properties
+            transformedData.sections = sections.map((section, idx) => ({
+              type: section.type || 'verse',
+              label: section.label || `Section ${idx + 1}`,
+              content: section.content || '',
+              chords: Array.isArray(section.chords) ? section.chords : [],
+              id: section.id || `section-${Date.now()}-${idx}`,
+              order: typeof section.order === 'number' ? section.order : idx
+            }));
+          } else {
+            // If not valid array, create verse from lyrics string
+            transformedData.sections = [{
+              type: 'verse',
+              label: 'Verse 1',
+              content: typeof song.lyrics === 'string' ? song.lyrics : '',
+              chords: [],
+              id: `section-${Date.now()}`,
+              order: 0
+            }];
           }
-        } catch {
-          // If not JSON, create a single verse section
+        } catch (error) {
+          console.error('Error parsing lyrics:', error);
+          // If parsing fails, create a single verse section
           transformedData.sections = [{
             type: 'verse',
             label: 'Verse 1',
-            content: song.lyrics,
+            content: typeof song.lyrics === 'string' ? song.lyrics : '',
             chords: [],
             id: `section-${Date.now()}`,
             order: 0
@@ -274,8 +295,8 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
         }
       }
       
-      // If no sections exist, create a default one
-      if (transformedData.sections.length === 0) {
+      // Ensure we always have at least one section
+      if (!Array.isArray(transformedData.sections) || transformedData.sections.length === 0) {
         transformedData.sections = [{
           type: 'verse',
           label: 'Verse 1',
@@ -763,7 +784,7 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
                     ref={editorRef}
                     className="min-h-[600px] p-6 space-y-8"
                   >
-                    {songData.sections.length === 0 ? (
+                    {!songData.sections || songData.sections.length === 0 ? (
                       <div className="text-center text-muted-foreground py-12">
                         <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No sections yet. Add a section to get started.</p>
