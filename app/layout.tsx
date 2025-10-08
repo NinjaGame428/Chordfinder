@@ -1,7 +1,7 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-import { Geist } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
@@ -9,7 +9,7 @@ import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PerformanceOptimizer } from "@/components/performance-optimizer";
 
-const geistSans = Geist({
+const inter = Inter({
   subsets: ["latin"],
 });
 
@@ -102,7 +102,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
+      <body className={`${inter.className} antialiased`}>
         <LanguageProvider>
           <FavoritesProvider>
             <NotificationProvider>
