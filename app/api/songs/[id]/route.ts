@@ -51,14 +51,17 @@ export async function PUT(
       english_title, 
       album, 
       year, 
-      key, 
-      bpm, 
+      key,
+      key_signature,
+      bpm,
+      tempo,
       difficulty, 
       youtube_id, 
       slug,
       chords,
       lyrics,
-      artist_id 
+      artist_id,
+      genre
     } = body;
 
     // Validate required fields
@@ -72,15 +75,16 @@ export async function PUT(
       english_title: english_title || null,
       album: album || null,
       year: year || null,
-      key_signature: key || null,
-      tempo: bpm || null,
+      key_signature: key_signature || key || null,
+      tempo: tempo || bpm || null,
+      genre: genre || null,
       lyrics: lyrics || null,
       updated_at: new Date().toISOString()
     };
 
     // Add chords if provided
     if (chords) {
-      updateData.chords = JSON.stringify(chords);
+      updateData.chords = typeof chords === 'string' ? chords : JSON.stringify(chords);
     }
 
     // Add artist_id if provided
@@ -88,9 +92,11 @@ export async function PUT(
       updateData.artist_id = artist_id;
     }
 
-    // Add slug if provided
+    // Add slug if provided or generate from title
     if (slug) {
       updateData.slug = slug;
+    } else if (title) {
+      updateData.slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 
     const { data: song, error } = await supabase

@@ -1,6 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export async function POST(request: NextRequest) {
+  try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
+    }
+
+    const body = await request.json();
+    const { name, bio, genre } = body;
+
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return NextResponse.json({ error: 'Artist name is required' }, { status: 400 });
+    }
+
+    // Create artist data
+    const artistData = {
+      name: name.trim(),
+      bio: bio || null,
+      genre: genre || null,
+    };
+
+    const { data: artist, error } = await supabase
+      .from('artists')
+      .insert([artistData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating artist:', error);
+      return NextResponse.json({ error: 'Failed to create artist' }, { status: 500 });
+    }
+
+    return NextResponse.json({ artist }, { status: 201 });
+  } catch (error) {
+    console.error('Error in POST /api/artists:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function GET() {
   try {
     if (!supabase) {
@@ -21,6 +60,9 @@ export async function GET() {
     // Get song count for each artist
     const artistsWithCounts = await Promise.all(
       (artists || []).map(async (artist) => {
+        if (!supabase) {
+          return { ...artist, song_count: 0 };
+        }
         const { count } = await supabase
           .from('songs')
           .select('*', { count: 'exact', head: true })

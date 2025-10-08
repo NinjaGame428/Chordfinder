@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Save, Loader2, Plus, Search } from 'lucide-react';
 
 interface SimpleSongEditorProps {
   songId: string;
@@ -29,6 +37,10 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [artists, setArtists] = useState<Array<{ id: string; name: string }>>([]);
+  const [filteredArtists, setFilteredArtists] = useState<Array<{ id: string; name: string }>>([]);
+  const [artistSearchQuery, setArtistSearchQuery] = useState('');
+  const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
+  const [newArtistName, setNewArtistName] = useState('');
   const [songData, setSongData] = useState<SongData>({
     title: '',
     artist_id: '',
@@ -98,9 +110,56 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       if (response.ok) {
         const data = await response.json();
         setArtists(data.artists || []);
+        setFilteredArtists(data.artists || []);
       }
     } catch (error) {
       console.error('Error loading artists:', error);
+    }
+  };
+
+  // Filter artists based on search
+  useEffect(() => {
+    if (artistSearchQuery) {
+      const filtered = artists.filter(artist =>
+        artist.name.toLowerCase().includes(artistSearchQuery.toLowerCase())
+      );
+      setFilteredArtists(filtered);
+    } else {
+      setFilteredArtists(artists);
+    }
+  }, [artistSearchQuery, artists]);
+
+  // Add new artist
+  const handleAddArtist = async () => {
+    if (!newArtistName.trim()) {
+      alert('Please enter an artist name');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/artists', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newArtistName.trim() }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert('Artist added successfully!');
+        setIsAddArtistModalOpen(false);
+        setNewArtistName('');
+        await loadArtists();
+        // Auto-select the new artist
+        if (data.artist) {
+          setSongData({ ...songData, artist_id: data.artist.id });
+        }
+      } else {
+        const error = await response.json();
+        alert(`Failed to add artist: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error adding artist:', error);
+      alert('Failed to add artist');
     }
   };
 
@@ -213,20 +272,46 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="artist">Artist</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="artist">Artist</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddArtistModalOpen(true)}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add New
+              </Button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search artists..."
+                value={artistSearchQuery}
+                onChange={(e) => setArtistSearchQuery(e.target.value)}
+                className="pl-10 mb-2"
+              />
+            </div>
             <select
               id="artist"
               value={songData.artist_id}
               onChange={(e) => setSongData({ ...songData, artist_id: e.target.value })}
-              className="px-3 py-2 border rounded-md bg-background"
+              className="px-3 py-2 border rounded-md bg-background max-h-40"
+              size={5}
             >
               <option value="">Select an artist</option>
-              {artists.map((artist) => (
+              {filteredArtists.map((artist) => (
                 <option key={artist.id} value={artist.id}>
                   {artist.name}
                 </option>
               ))}
             </select>
+            {filteredArtists.length === 0 && artistSearchQuery && (
+              <p className="text-sm text-muted-foreground">
+                No artists found. Click "Add New" to create one.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">
@@ -302,6 +387,47 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
           )}
         </Button>
       </div>
+
+      {/* Add Artist Modal */}
+      <Dialog open={isAddArtistModalOpen} onOpenChange={setIsAddArtistModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Artist</DialogTitle>
+            <DialogDescription>
+              Enter the name of the artist you want to add
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="new-artist-name">Artist Name</Label>
+              <Input
+                id="new-artist-name"
+                value={newArtistName}
+                onChange={(e) => setNewArtistName(e.target.value)}
+                placeholder="Enter artist name"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddArtist();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsAddArtistModalOpen(false);
+              setNewArtistName('');
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddArtist}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Artist
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -336,15 +336,14 @@ const SongDetailsPage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Music className="h-5 w-5 mr-2" />
-                    Lyrics
+                    Lyrics & Chords
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {song.lyrics ? (
-                    <div 
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{ __html: song.lyrics }}
-                    />
+                    <div className="font-mono text-sm whitespace-pre-wrap leading-relaxed">
+                      {song.lyrics}
+                    </div>
                   ) : (
                     <div className="text-center py-8">
                       <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
