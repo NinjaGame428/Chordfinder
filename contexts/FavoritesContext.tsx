@@ -27,7 +27,7 @@ interface FavoritesContextType {
   removeSongFromFavorites: (songId: number) => void;
   addResourceToFavorites: (resource: Omit<FavoriteResource, 'addedAt'>) => void;
   removeResourceFromFavorites: (resourceId: string) => void;
-  isSongFavorite: (songId: number | string) => boolean;
+  isSongFavorite: (songId: number) => boolean;
   isResourceFavorite: (resourceId: string) => boolean;
   clearAllFavorites: () => void;
 }
@@ -84,7 +84,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setFavoriteResources(prev => prev.filter(resource => resource.id !== resourceId));
   };
 
-  const isSongFavorite = (songId: number | string) => {
+  const isSongFavorite = (songId: number) => {
     return favoriteSongs.some(song => song.id === songId);
   };
 
