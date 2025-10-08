@@ -213,9 +213,50 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
     try {
       const response = await fetch(`/api/songs/${songId}`);
       if (response.ok) {
-        const data = await response.json();
-        setSongData(data);
-        setVersionHistory([data]);
+        const responseData = await response.json();
+        const song = responseData.song || responseData;
+        
+        // Transform database song to editor format
+        const transformedData: SongData = {
+          id: song.id,
+          title: song.title || '',
+          artist: song.artists?.name || song.artist || '',
+          key: song.key_signature || 'C',
+          tempo: song.tempo || 120,
+          timeSignature: song.time_signature || '4/4',
+          sections: song.sections || [],
+          version: song.version || 1,
+          lastSaved: song.updated_at || new Date().toISOString(),
+          tags: song.tags || [],
+          difficulty: song.difficulty || 'beginner',
+          genre: song.genre || '',
+          mood: song.mood || '',
+          language: song.language || 'en'
+        };
+        
+        // Parse lyrics and chords if they exist
+        if (song.lyrics) {
+          // Try to parse as sections
+          try {
+            const sections = typeof song.lyrics === 'string' ? JSON.parse(song.lyrics) : song.lyrics;
+            if (Array.isArray(sections)) {
+              transformedData.sections = sections;
+            }
+          } catch {
+            // If not JSON, create a single verse section
+            transformedData.sections = [{
+              type: 'verse',
+              label: 'Verse 1',
+              content: song.lyrics,
+              chords: [],
+              id: `section-${Date.now()}`,
+              order: 0
+            }];
+          }
+        }
+        
+        setSongData(transformedData);
+        setVersionHistory([transformedData]);
       }
     } catch (error) {
       console.error('Error loading song:', error);
@@ -233,11 +274,29 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
       setSongData(updatedSong);
       setVersionHistory(prev => [updatedSong, ...prev.slice(0, 9)]);
       
-      await fetch(`/api/songs/${songId}`, {
+      // Transform editor format to database format
+      const dbFormat = {
+        title: updatedSong.title,
+        artist: updatedSong.artist,
+        key: updatedSong.key,
+        bpm: updatedSong.tempo,
+        difficulty: updatedSong.difficulty,
+        lyrics: JSON.stringify(updatedSong.sections),
+        chords: JSON.stringify(updatedSong.sections.flatMap(s => s.chords)),
+        genre: updatedSong.genre,
+        mood: updatedSong.mood,
+        language: updatedSong.language
+      };
+      
+      const response = await fetch(`/api/songs/${songId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedSong)
+        body: JSON.stringify(dbFormat)
       });
+      
+      if (response.ok) {
+        console.log('Song saved successfully');
+      }
     } catch (error) {
       console.error('Error saving song:', error);
     }
@@ -640,25 +699,59 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
                 <CardContent>
                   <div
                     ref={editorRef}
-                    contentEditable={isEditMode}
                     onKeyDown={handleKeyDown}
-                    className="min-h-[600px] p-6 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    style={{
-                      fontFamily: 'Inter, system-ui, sans-serif',
-                      lineHeight: '2',
-                      fontSize: '16px'
-                    }}
+                    className="min-h-[600px] p-6 space-y-8"
                   >
-                    {songData.sections.map((section, index) => (
-                      <div key={section.id} className="mb-8">
-                        <div className="font-bold text-xl mb-4 text-primary border-b-2 border-primary pb-2">
-                          {section.label}
-                        </div>
-                        <div className="whitespace-pre-wrap text-gray-700">
-                          {section.content || 'Click here to add lyrics...'}
-                        </div>
+                    {songData.sections.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-12">
+                        <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No sections yet. Add a section to get started.</p>
                       </div>
-                    ))}
+                    ) : (
+                      songData.sections.map((section, index) => (
+                        <div key={section.id} className="border rounded-lg p-4 bg-card">
+                          <div className="flex items-center justify-between mb-4">
+                            <Input
+                              value={section.label}
+                              onChange={(e) => {
+                                const newSections = [...songData.sections];
+                                newSections[index].label = e.target.value;
+                                setSongData(prev => ({ ...prev, sections: newSections }));
+                              }}
+                              className="font-bold text-xl border-0 focus:ring-0 p-0 h-auto"
+                              disabled={!isEditMode}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const newSections = songData.sections.filter((_, i) => i !== index);
+                                setSongData(prev => ({ ...prev, sections: newSections }));
+                              }}
+                              disabled={!isEditMode}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={section.content}
+                            onChange={(e) => {
+                              const newSections = [...songData.sections];
+                              newSections[index].content = e.target.value;
+                              setSongData(prev => ({ ...prev, sections: newSections }));
+                            }}
+                            placeholder="Enter lyrics here... Use Ctrl+K to insert chords"
+                            className="min-h-[200px] font-mono text-base resize-none border-0 focus:ring-0 p-0"
+                            disabled={!isEditMode}
+                            style={{
+                              fontFamily: 'Inter, system-ui, sans-serif',
+                              lineHeight: '2',
+                              fontSize: '16px'
+                            }}
+                          />
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
