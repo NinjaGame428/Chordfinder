@@ -801,13 +801,13 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
                     ref={editorRef}
                     className="min-h-[600px] p-6 space-y-8"
                   >
-                    {!songData.sections || songData.sections.length === 0 ? (
+                    {!songData?.sections || songData.sections.length === 0 ? (
                       <div className="text-center text-muted-foreground py-12">
                         <Music className="h-12 w-12 mx-auto mb-4 opacity-50" />
                         <p>No sections yet. Add a section to get started.</p>
                       </div>
                     ) : (
-                      songData.sections.map((section, index) => (
+                      (songData?.sections || []).map((section, index) => (
                         <div key={section.id} className="border rounded-lg p-4 bg-card">
                           <div className="flex items-center justify-between mb-4">
                             <Input
