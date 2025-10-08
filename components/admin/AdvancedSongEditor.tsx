@@ -166,6 +166,8 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
     language: 'en'
   });
   
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(true);
   const [currentSection, setCurrentSection] = useState(0);
   const [selectedChord, setSelectedChord] = useState<string>('');
@@ -210,56 +212,87 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
   }, [autoSave, songData]);
 
   const loadSongData = async () => {
+    if (!songId || songId === '{songId}') {
+      setLoadError('Invalid song ID');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      setIsLoading(true);
+      setLoadError(null);
+      
+      console.log('Loading song with ID:', songId);
+      
       const response = await fetch(`/api/songs/${songId}`);
-      if (response.ok) {
-        const responseData = await response.json();
-        const song = responseData.song || responseData;
-        
-        // Transform database song to editor format
-        const transformedData: SongData = {
-          id: song.id,
-          title: song.title || '',
-          artist: song.artists?.name || song.artist || '',
-          key: song.key_signature || 'C',
-          tempo: song.tempo || 120,
-          timeSignature: song.time_signature || '4/4',
-          sections: song.sections || [],
-          version: song.version || 1,
-          lastSaved: song.updated_at || new Date().toISOString(),
-          tags: song.tags || [],
-          difficulty: song.difficulty || 'beginner',
-          genre: song.genre || '',
-          mood: song.mood || '',
-          language: song.language || 'en'
-        };
-        
-        // Parse lyrics and chords if they exist
-        if (song.lyrics) {
-          // Try to parse as sections
-          try {
-            const sections = typeof song.lyrics === 'string' ? JSON.parse(song.lyrics) : song.lyrics;
-            if (Array.isArray(sections)) {
-              transformedData.sections = sections;
-            }
-          } catch {
-            // If not JSON, create a single verse section
-            transformedData.sections = [{
-              type: 'verse',
-              label: 'Verse 1',
-              content: song.lyrics,
-              chords: [],
-              id: `section-${Date.now()}`,
-              order: 0
-            }];
-          }
-        }
-        
-        setSongData(transformedData);
-        setVersionHistory([transformedData]);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load song: ${response.status} ${response.statusText}`);
       }
+      
+      const responseData = await response.json();
+      const song = responseData.song || responseData;
+      
+      console.log('Song data loaded:', song);
+      
+      // Transform database song to editor format
+      const transformedData: SongData = {
+        id: song.id,
+        title: song.title || '',
+        artist: song.artists?.name || song.artist || '',
+        key: song.key_signature || 'C',
+        tempo: song.tempo || 120,
+        timeSignature: song.time_signature || '4/4',
+        sections: song.sections || [],
+        version: song.version || 1,
+        lastSaved: song.updated_at || new Date().toISOString(),
+        tags: song.tags || [],
+        difficulty: song.difficulty || 'beginner',
+        genre: song.genre || '',
+        mood: song.mood || '',
+        language: song.language || 'en'
+      };
+      
+      // Parse lyrics and chords if they exist
+      if (song.lyrics) {
+        // Try to parse as sections
+        try {
+          const sections = typeof song.lyrics === 'string' ? JSON.parse(song.lyrics) : song.lyrics;
+          if (Array.isArray(sections)) {
+            transformedData.sections = sections;
+          }
+        } catch {
+          // If not JSON, create a single verse section
+          transformedData.sections = [{
+            type: 'verse',
+            label: 'Verse 1',
+            content: song.lyrics,
+            chords: [],
+            id: `section-${Date.now()}`,
+            order: 0
+          }];
+        }
+      }
+      
+      // If no sections exist, create a default one
+      if (transformedData.sections.length === 0) {
+        transformedData.sections = [{
+          type: 'verse',
+          label: 'Verse 1',
+          content: '',
+          chords: [],
+          id: `section-${Date.now()}`,
+          order: 0
+        }];
+      }
+      
+      setSongData(transformedData);
+      setVersionHistory([transformedData]);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error loading song:', error);
+      setLoadError(error instanceof Error ? error.message : 'Failed to load song');
+      setIsLoading(false);
     }
   };
 
@@ -499,6 +532,35 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
         return 'max-w-6xl mx-auto';
     }
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading song...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="bg-destructive/10 border border-destructive rounded-lg p-6 mb-4">
+            <h2 className="text-lg font-semibold text-destructive mb-2">Error Loading Song</h2>
+            <p className="text-muted-foreground">{loadError}</p>
+          </div>
+          <Button onClick={() => window.history.back()}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-background ${getDeviceClasses()}`}>
