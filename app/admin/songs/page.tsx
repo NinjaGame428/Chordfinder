@@ -1,11 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { 
   Music, 
   Search,
@@ -34,6 +44,20 @@ const SongsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGenre, setFilterGenre] = useState('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [artists, setArtists] = useState<Array<{ id: string; name: string }>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Form state for adding a song
+  const [newSong, setNewSong] = useState({
+    title: '',
+    artist_id: '',
+    genre: '',
+    key_signature: '',
+    tempo: '',
+    lyrics: '',
+  });
 
   // Fetch songs
   const fetchSongs = async () => {
@@ -110,8 +134,95 @@ ${songData.lyrics || 'No lyrics available'}
     }
   };
 
+  // Fetch artists
+  const fetchArtists = async () => {
+    try {
+      const response = await fetch('/api/artists');
+      if (response.ok) {
+        const data = await response.json();
+        setArtists(data.artists || []);
+      }
+    } catch (error) {
+      console.error('Error fetching artists:', error);
+    }
+  };
+
+  const handleAddSong = async () => {
+    if (!newSong.title || !newSong.artist_id) {
+      alert('Please fill in title and artist');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/songs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newSong,
+          tempo: newSong.tempo ? parseInt(newSong.tempo) : null,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Song added successfully');
+        setIsAddModalOpen(false);
+        setNewSong({
+          title: '',
+          artist_id: '',
+          genre: '',
+          key_signature: '',
+          tempo: '',
+          lyrics: '',
+        });
+        fetchSongs();
+      } else {
+        alert('Failed to add song');
+      }
+    } catch (error) {
+      console.error('Error adding song:', error);
+      alert('Failed to add song');
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const songs = JSON.parse(text);
+      
+      if (!Array.isArray(songs)) {
+        alert('Invalid file format. Expected an array of songs.');
+        return;
+      }
+
+      let successCount = 0;
+      for (const song of songs) {
+        try {
+          const response = await fetch('/api/songs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(song),
+          });
+          if (response.ok) successCount++;
+        } catch (err) {
+          console.error('Error importing song:', err);
+        }
+      }
+
+      alert(`Successfully imported ${successCount} out of ${songs.length} songs`);
+      setIsImportModalOpen(false);
+      fetchSongs();
+    } catch (error) {
+      console.error('Error importing file:', error);
+      alert('Failed to import file. Please check the format.');
+    }
+  };
+
   useEffect(() => {
     fetchSongs();
+    fetchArtists();
   }, []);
 
   // Filter songs based on search and genre
@@ -138,11 +249,11 @@ ${songData.lyrics || 'No lyrics available'}
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                   <Upload className="h-4 w-4 mr-2" />
                   Import
                 </Button>
-                <Button>
+                <Button onClick={() => setIsAddModalOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Song
                 </Button>
@@ -304,6 +415,119 @@ ${songData.lyrics || 'No lyrics available'}
           </div>
         </div>
       </main>
+
+      {/* Add Song Modal */}
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Song</DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a new song to your collection
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={newSong.title}
+                onChange={(e) => setNewSong({ ...newSong, title: e.target.value })}
+                placeholder="Enter song title"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="artist">Artist *</Label>
+              <select
+                id="artist"
+                value={newSong.artist_id}
+                onChange={(e) => setNewSong({ ...newSong, artist_id: e.target.value })}
+                className="px-3 py-2 border rounded-md bg-background"
+              >
+                <option value="">Select an artist</option>
+                {artists.map((artist) => (
+                  <option key={artist.id} value={artist.id}>
+                    {artist.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="genre">Genre</Label>
+                <Input
+                  id="genre"
+                  value={newSong.genre}
+                  onChange={(e) => setNewSong({ ...newSong, genre: e.target.value })}
+                  placeholder="e.g., Gospel"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="key">Key</Label>
+                <Input
+                  id="key"
+                  value={newSong.key_signature}
+                  onChange={(e) => setNewSong({ ...newSong, key_signature: e.target.value })}
+                  placeholder="e.g., C"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tempo">Tempo (BPM)</Label>
+                <Input
+                  id="tempo"
+                  type="number"
+                  value={newSong.tempo}
+                  onChange={(e) => setNewSong({ ...newSong, tempo: e.target.value })}
+                  placeholder="e.g., 120"
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lyrics">Lyrics</Label>
+              <Textarea
+                id="lyrics"
+                value={newSong.lyrics}
+                onChange={(e) => setNewSong({ ...newSong, lyrics: e.target.value })}
+                placeholder="Enter song lyrics..."
+                rows={8}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddSong}>Add Song</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Modal */}
+      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Import Songs</DialogTitle>
+            <DialogDescription>
+              Upload a JSON file containing an array of songs
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Expected format: An array of song objects with fields like title, artist_id, genre, key_signature, tempo, and lyrics.
+            </p>
+            <Input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsImportModalOpen(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };

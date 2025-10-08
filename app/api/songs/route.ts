@@ -42,14 +42,17 @@ export async function POST(request: NextRequest) {
       english_title, 
       album, 
       year, 
-      key, 
-      bpm, 
+      key,
+      key_signature,
+      bpm,
+      tempo,
       difficulty, 
       youtube_id, 
       slug,
       chords,
       lyrics,
-      artist_id 
+      artist_id,
+      genre
     } = body;
 
     // Validate required fields
@@ -63,11 +66,12 @@ export async function POST(request: NextRequest) {
       english_title: english_title || null,
       album: album || null,
       year: year || null,
-      key_signature: key || null,
-      tempo: bpm || null,
+      key_signature: key_signature || key || null,
+      tempo: tempo || bpm || null,
       chords: chords ? JSON.stringify(chords) : null,
       lyrics: lyrics || null,
       artist_id,
+      genre: genre || null,
       // Generate slug if not provided
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     };

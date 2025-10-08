@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { AdvancedSongEditor } from '@/components/admin/AdvancedSongEditor';
+import { SimpleSongEditor } from '@/components/admin/SimpleSongEditor';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
 const SongEditPage = () => {
@@ -31,7 +31,7 @@ const SongEditPage = () => {
 
   return (
     <AdminLayout>
-      <AdvancedSongEditor songId={songId} />
+      <SimpleSongEditor songId={songId} />
     </AdminLayout>
   );
 };
