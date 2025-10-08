@@ -20,7 +20,9 @@ import {
   X,
   Shield,
   Database,
-  Activity
+  Activity,
+  Youtube,
+  BookOpen
 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -40,7 +42,7 @@ const adminNavigationItems = [
     name: "Dashboard",
     href: "/admin",
     icon: LayoutDashboard,
-    description: "Admin overview and stats"
+    description: "Admin overview and statistics"
   },
   {
     name: "Songs",
@@ -49,34 +51,55 @@ const adminNavigationItems = [
     description: "Manage song library"
   },
   {
-    name: "Chord Editor",
-    href: "/admin/chord-editor",
-    icon: FileText,
-    description: "Edit songs with chords"
+    name: "Artists",
+    href: "/admin/artists",
+    icon: Users,
+    description: "Artist management"
   },
   {
-    name: "Users",
-    href: "/admin/users",
-    icon: Users,
-    description: "User management"
+    name: "Resources",
+    href: "/admin/resources",
+    icon: BookOpen,
+    description: "Learning resources"
   },
   {
     name: "Analytics",
     href: "/admin/analytics",
     icon: BarChart3,
-    description: "Site analytics"
+    description: "Site analytics and reports"
   },
   {
-    name: "Emails",
-    href: "/admin/emails",
-    icon: Mail,
-    description: "Email management"
+    name: "YouTube",
+    href: "/admin/youtube",
+    icon: Youtube,
+    description: "YouTube video management"
   },
   {
     name: "Settings",
     href: "/admin/settings",
     icon: Settings,
-    description: "Admin settings"
+    description: "Application settings"
+  }
+];
+
+const adminQuickActions = [
+  {
+    name: "Add Song",
+    href: "/admin/songs",
+    icon: Music,
+    description: "Add new song to collection"
+  },
+  {
+    name: "Import YouTube",
+    href: "/admin/youtube",
+    icon: Youtube,
+    description: "Import videos from YouTube"
+  },
+  {
+    name: "View Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
+    description: "Check site performance"
   }
 ];
 
@@ -203,10 +226,34 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
                 <Separator className="my-6" />
 
-                {/* Quick Stats */}
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Quick Actions
+                  </div>
+                  {adminQuickActions.map((action) => {
+                    const Icon = action.icon;
+                    
+                    return (
+                      <Link
+                        key={action.name}
+                        href={action.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{action.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Admin Stats */}
                 <div className="space-y-3">
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Quick Stats
+                    Admin Stats
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">

@@ -6,11 +6,29 @@ export async function GET() {
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
     }
-    
+
     // Fetch total songs
     const { count: totalSongs } = await supabase
       .from('songs')
       .select('*', { count: 'exact', head: true });
+
+    // Fetch total artists
+    const { count: totalArtists } = await supabase
+      .from('artists')
+      .select('*', { count: 'exact', head: true });
+
+    // Fetch total users
+    const { count: totalUsers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+
+    // Fetch total resources
+    const { count: totalResources } = await supabase
+      .from('resources')
+      .select('*', { count: 'exact', head: true });
+
+    // Fetch active users (example: users logged in within the last 24 hours, or simply total users for now)
+    const activeUsers = totalUsers; // Placeholder for actual active user logic
 
     // Fetch songs with YouTube videos (checking for youtube_id field or description containing YouTube)
     let youtubeVideos = 0;
@@ -30,35 +48,10 @@ export async function GET() {
           .ilike('description', '%YouTube%');
         youtubeVideos = count || 0;
       } catch (fallbackError) {
-        console.log('Fallback YouTube count also failed');
-        youtubeVideos = 0;
+        console.log('Fallback for YouTube videos count failed:', fallbackError);
+        youtubeVideos = 0; // Default to 0 if both fail
       }
     }
-
-    // Fetch total artists
-    const { count: totalArtists } = await supabase
-      .from('artists')
-      .select('*', { count: 'exact', head: true });
-
-    // Fetch total users
-    const { count: totalUsers } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true });
-
-    // Fetch total resources
-    const { count: totalResources } = await supabase
-      .from('resources')
-      .select('*', { count: 'exact', head: true });
-
-    // Fetch active users (users who have been active within last 30 days)
-    // Since we don't have last_sign_in_at, we'll use created_at as a proxy
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const { count: activeUsers } = await supabase
-      .from('users')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', thirtyDaysAgo.toISOString());
 
     // Fetch chord collections (piano + guitar chords)
     let totalCollections = 0;
@@ -71,7 +64,7 @@ export async function GET() {
       totalCollections = (pianoChords.count || 0) + (guitarChords.count || 0);
     } catch (error) {
       console.log('Chord tables not found, using default collection count');
-      totalCollections = 1; // Default to 1 collection if tables don't exist
+      totalCollections = 1; // Default to 1 if tables are not found
     }
 
     const stats = {
@@ -84,9 +77,9 @@ export async function GET() {
       collections: totalCollections
     };
 
-    return NextResponse.json({ stats });
+    return NextResponse.json({ stats }, { status: 200 });
   } catch (error) {
-    console.error('Error in GET /api/admin/stats:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching admin stats:', error);
+    return NextResponse.json({ error: 'Failed to fetch admin statistics' }, { status: 500 });
   }
 }

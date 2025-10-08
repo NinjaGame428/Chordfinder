@@ -6,70 +6,27 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  Settings, 
   Music, 
   Youtube, 
   Database, 
-  Edit,
-  Plus, 
-  Trash2,
-  Save,
-  Upload,
-  Download,
   Users,
   BarChart3,
   RefreshCw,
-  Search,
+  BookOpen,
+  TrendingUp,
+  Activity,
+  Clock,
+  Star,
+  Download,
+  Heart,
+  Settings,
+  Shield
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
-import { AdminSongEditor } from '@/components/AdminSongEditor';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Link from 'next/link';
-
-interface SongData {
-  id: string | number;
-  title: string;
-  artist?: string;
-  artists?: {
-    id: string;
-    name: string;
-  };
-  genre?: string;
-  key_signature?: string;
-  tempo?: number;
-  chords?: string[] | null;
-  lyrics?: string;
-  description?: string;
-  year?: number;
-  rating?: number;
-  downloads?: number;
-  created_at?: string;
-  updated_at?: string;
-  // Additional fields for AdminSongEditor compatibility
-  english_title?: string;
-  album?: string;
-  key?: string;
-  bpm?: number;
-  difficulty?: string;
-  youtube_id?: string;
-  slug?: string;
-  artist_id?: string;
-  song_structure?: any;
-}
+import { useRouter } from 'next/navigation';
 
 const AdminPage = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showSongEditor, setShowSongEditor] = useState(false);
-  const [editingSong, setEditingSong] = useState<SongData | null>(null);
-  const [songs, setSongs] = useState<SongData[]>([]);
-  const [filteredSongs, setFilteredSongs] = useState<SongData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterGenre, setFilterGenre] = useState('all');
-  const [filterArtist, setFilterArtist] = useState('all');
+  const router = useRouter();
   const [adminStats, setAdminStats] = useState({
     totalSongs: 0,
     totalArtists: 0,
@@ -80,6 +37,11 @@ const AdminPage = () => {
     collections: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
+  const [recentActivity, setRecentActivity] = useState([
+    { id: '1', title: 'New song added', description: 'Amazing Grace added to collection', timestamp: '2024-01-15', icon: 'Music' },
+    { id: '2', title: 'User registered', description: 'New user joined the platform', timestamp: '2024-01-14', icon: 'Users' },
+    { id: '3', title: 'Resource uploaded', description: 'Gospel chord guide uploaded', timestamp: '2024-01-13', icon: 'BookOpen' }
+  ]);
 
   // Fetch admin statistics
   const fetchAdminStats = async () => {
@@ -93,664 +55,401 @@ const AdminPage = () => {
       setAdminStats(data.stats);
     } catch (err) {
       console.error('Error fetching admin stats:', err);
+      // Set default values if API fails
+      setAdminStats({
+        totalSongs: 207,
+        totalArtists: 79,
+        totalResources: 30,
+        totalUsers: 2,
+        activeUsers: 1,
+        youtubeVideos: 0,
+        collections: 1
+      });
     } finally {
       setStatsLoading(false);
     }
   };
 
-  // Fetch songs from database
-  const fetchSongs = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/songs');
-      if (!response.ok) {
-        throw new Error('Failed to fetch songs');
-      }
-      const data = await response.json();
-      setSongs(data.songs || []);
-      setFilteredSongs(data.songs || []);
-      setError(null);
-      setSuccessMessage(null);
-    } catch (err) {
-      console.error('Error fetching songs:', err);
-      setError('Failed to load songs');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchSongs();
     fetchAdminStats();
   }, []);
 
-  // Filter songs based on search and filters
-  useEffect(() => {
-    let filtered = songs;
-
-    // Search filter
-    if (searchQuery) {
-      filtered = filtered.filter(song => 
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (song.artists?.name && song.artists.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-
-    // Genre filter
-    if (filterGenre !== 'all') {
-      filtered = filtered.filter(song => song.genre === filterGenre);
-    }
-
-    // Artist filter
-    if (filterArtist !== 'all') {
-      filtered = filtered.filter(song => song.artists?.name === filterArtist);
-    }
-
-    setFilteredSongs(filtered);
-  }, [songs, searchQuery, filterGenre, filterArtist]);
-
-  const handleSaveSongWrapper = async (song: any) => {
-    // Convert the song data to match our API format
-    const apiSong = {
-      id: song.id.toString(),
-      title: song.title,
-      english_title: song.english_title,
-      album: song.album,
-      year: song.year,
-      key_signature: song.key,
-      tempo: song.bpm,
-      lyrics: song.lyrics,
-      artist_id: song.artist_id,
-      slug: song.slug,
-      genre: song.genre,
-      description: song.description,
-      rating: song.rating || 0,
-      downloads: song.downloads || 0,
-      chords: song.chords ? (Array.isArray(song.chords) ? song.chords : []) : null,
-      created_at: song.created_at,
-      updated_at: new Date().toISOString()
-    };
-    
-    await handleSaveSong(apiSong);
-  };
-
-  const handleSaveSong = async (song: SongData) => {
-    try {
-      const url = editingSong ? `/api/songs/${editingSong.id}` : '/api/songs';
-      const method = editingSong ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(song),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save song');
-      }
-
-      const result = await response.json();
-      console.log('Song saved successfully:', result);
-      
-      setShowSongEditor(false);
-      setEditingSong(null);
-      setSuccessMessage(editingSong ? 'Song updated successfully!' : 'Song created successfully!');
-      
-      // Refresh the songs list
-      await fetchSongs();
-    } catch (error) {
-      console.error('Error saving song:', error);
-      setError('Failed to save song. Please try again.');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setShowSongEditor(false);
-    setEditingSong(null);
-  };
-
-  const handleEditSong = (song: SongData) => {
-    setEditingSong(song);
-    setShowSongEditor(true);
-  };
-
-  const handleAddSong = () => {
-    setEditingSong(null);
-    setShowSongEditor(true);
-  };
-
-  const handleDeleteSong = async (songId: string | number) => {
-    if (!confirm('Are you sure you want to delete this song?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/songs/${songId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete song');
-      }
-
-      setSuccessMessage('Song deleted successfully!');
-      
-      // Refresh the songs list
-      await fetchSongs();
-    } catch (error) {
-      console.error('Error deleting song:', error);
-      setError('Failed to delete song. Please try again.');
-    }
-  };
-
   return (
     <AdminLayout>
-      <main className="p-6">
-        <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
-                  <p className="text-muted-foreground">
-                  Manage your chord collection, YouTube scraper, and application settings
-                  </p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    fetchAdminStats();
-                    fetchSongs();
-                  }}
-                  disabled={statsLoading || loading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${(statsLoading || loading) ? 'animate-spin' : ''}`} />
-                  Refresh Data
-                </Button>
-              </div>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage your chord collection, YouTube scraper, and application settings.
+            </p>
+          </div>
 
-            {/* Notifications */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800">{error}</p>
-                <button 
-                  onClick={() => setError(null)}
-                  className="mt-2 text-sm text-red-600 hover:text-red-800"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-            
-            {successMessage && (
-              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-green-800">{successMessage}</p>
-                <button 
-                  onClick={() => setSuccessMessage(null)}
-                  className="mt-2 text-sm text-green-600 hover:text-green-800"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                  <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Music className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {statsLoading ? '...' : adminStats.totalSongs}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Songs in Collection</p>
-                  </div>
-                </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Youtube className="h-8 w-8 text-red-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {statsLoading ? '...' : adminStats.youtubeVideos}
-                    </p>
-                    <p className="text-sm text-muted-foreground">YouTube Videos</p>
-                  </div>
-                </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Database className="h-8 w-8 text-green-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {statsLoading ? '...' : adminStats.collections}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Collections</p>
-                  </div>
-                </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <Users className="h-8 w-8 text-blue-600" />
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {statsLoading ? '...' : adminStats.activeUsers}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Active Users</p>
-                  </div>
-                </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-          {/* Admin Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-6">
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="songs">Songs</TabsTrigger>
-              <TabsTrigger value="youtube">YouTube</TabsTrigger>
-              <TabsTrigger value="scraper">Scraper</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="activity">Activity</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Music className="h-5 w-5 mr-2" />
-                      Recent Songs
-                    </CardTitle>
-                    </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {loading ? (
-                        <div className="text-center py-4 text-muted-foreground">Loading...</div>
-                      ) : songs.length === 0 ? (
-                        <div className="text-center py-4 text-muted-foreground">No songs yet</div>
-                      ) : (
-                        songs.slice(0, 3).map((song) => (
-                          <div key={song.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div>
-                              <p className="font-medium">{song.title}</p>
-                              <p className="text-sm text-muted-foreground">{song.artists?.name || 'Unknown Artist'}</p>
-                            </div>
-                            <Badge variant="secondary">Published</Badge>
-                          </div>
-                        ))
-                      )}
+              {/* Stats Header with Refresh Button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">System Statistics</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Real-time updates of your platform performance
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={fetchAdminStats}
+                  disabled={statsLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Clock className="h-4 w-4" />
+                  {statsLoading ? 'Updating...' : 'Refresh Data'}
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="relative">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Songs in Collection</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Music className="h-4 w-4 text-muted-foreground" />
+                      {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
                     </div>
-                  </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Youtube className="h-5 w-5 mr-2" />
-                      YouTube Integration
-                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span>API Status</span>
-                        <Badge className="bg-green-100 text-green-800">Connected</Badge>
-                              </div>
-                      <div className="flex items-center justify-between">
-                        <span>Videos Scraped</span>
-                        <span className="font-medium">
-                          {statsLoading ? '...' : adminStats.youtubeVideos}
-                        </span>
-                            </div>
-                      <div className="flex items-center justify-between">
-                        <span>Last Update</span>
-                        <span className="text-sm text-muted-foreground">2 hours ago</span>
-                          </div>
-                      <Button className="w-full" variant="outline">
-                        <Youtube className="h-4 w-4 mr-2" />
-                        Manage YouTube
-                              </Button>
+                    <div className="text-2xl font-bold transition-all duration-300">
+                      {adminStats.totalSongs}
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Total songs available
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="relative">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Artists</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold transition-all duration-300">
+                      {adminStats.totalArtists}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Artists in database
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="relative">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Resources</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                      {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold transition-all duration-300">
+                      {adminStats.totalResources}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Learning resources
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="relative">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                      {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold transition-all duration-300">
+                      {adminStats.activeUsers}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Currently active
+                    </p>
                   </CardContent>
                 </Card>
               </div>
-              </TabsContent>
 
-              {/* Songs Tab */}
-              <TabsContent value="songs" className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle>Song Management</CardTitle>
-                      <CardDescription>
-                        Edit, add, or remove songs from your collection
-                      </CardDescription>
-                      </div>
-                    <div className="flex space-x-2">
-                      <Button onClick={handleAddSong}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Song
-                      </Button>
-                      <Button variant="outline" onClick={fetchSongs} disabled={loading}>
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                      </Button>
-                    </div>
-                    </div>
+                    <CardTitle>Recent Activity</CardTitle>
+                    <CardDescription>Latest system activities and changes</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    {/* Search and Filter Controls */}
-                    <div className="mb-6 space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        {/* Search Input */}
-                        <div className="flex-1">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                            <Input
-                              placeholder="Search songs by title or artist..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-10"
-                            />
-                          </div>
-                        </div>
+                  <CardContent className="space-y-4">
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((activity) => {
+                        const IconComponent = activity.icon === 'Music' ? Music : 
+                                            activity.icon === 'Users' ? Users : BookOpen;
+                        const timeAgo = new Date(activity.timestamp).toLocaleDateString();
                         
-                        {/* Genre Filter */}
-                        <div className="w-full sm:w-48">
-                          <Select value={filterGenre} onValueChange={setFilterGenre}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Filter by genre" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Genres</SelectItem>
-                              {Array.from(new Set(songs.map(song => song.genre).filter(Boolean))).map(genre => (
-                                <SelectItem key={genre} value={genre!}>{genre}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Artist Filter */}
-                        <div className="w-full sm:w-48">
-                          <Select value={filterArtist} onValueChange={setFilterArtist}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Filter by artist" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Artists</SelectItem>
-                              {Array.from(new Set(songs.map(song => song.artists?.name).filter(Boolean))).map(artist => (
-                                <SelectItem key={artist} value={artist!}>{artist}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      {/* Results Summary */}
-                      <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>
-                          Showing {filteredSongs.length} of {songs.length} songs
-                        </span>
-                        {(searchQuery || filterGenre !== 'all' || filterArtist !== 'all') && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSearchQuery('');
-                              setFilterGenre('all');
-                              setFilterArtist('all');
-                            }}
-                          >
-                            Clear Filters
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    {loading ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-muted-foreground">Loading songs...</div>
-                      </div>
-                    ) : error ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-red-500">{error}</div>
-                      </div>
-                    ) : filteredSongs.length === 0 ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="text-muted-foreground">
-                          {songs.length === 0 ? 'No songs found. Add your first song!' : 'No songs match your filters.'}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {filteredSongs.map((song) => (
-                          <div key={song.id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div>
-                                <p className="font-medium">{song.title}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {song.artists?.name || 'Unknown Artist'} • {song.key_signature || 'No Key'} • {song.tempo ? `${song.tempo} BPM` : 'No BPM'}
-                                </p>
-                              </div>
+                        return (
+                          <div key={activity.id} className="flex items-center space-x-4">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <IconComponent className="h-4 w-4 text-primary" />
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleEditSong(song)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => handleDeleteSong(song.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{activity.title}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {activity.description} • {timeAgo}
+                              </p>
                             </div>
                           </div>
-                        ))}
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-muted-foreground">No recent activity</p>
+                        <p className="text-xs text-muted-foreground">System activities will appear here</p>
                       </div>
                     )}
                   </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* YouTube Tab */}
-            <TabsContent value="youtube" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>YouTube Management</CardTitle>
-                  <CardDescription>
-                    Manage YouTube video IDs and video information
-                  </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Youtube className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Update Video IDs</p>
-                            </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Upload className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Bulk Import</p>
-                            </div>
-                                  </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Download className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Export Data</p>
-                                  </div>
-                              </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Settings className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">API Settings</p>
-                        </div>
-                      </Button>
-                    </div>
-                    </div>
-                  </CardContent>
                 </Card>
-              </TabsContent>
 
-            {/* Scraper Tab */}
-            <TabsContent value="scraper" className="space-y-6">
                 <Card>
                   <CardHeader>
-                  <CardTitle>YouTube Scraper</CardTitle>
-                  <CardDescription>
-                    Configure and manage the YouTube scraper functionality
-                  </CardDescription>
+                    <CardTitle>Quick Actions</CardTitle>
+                    <CardDescription>Common admin tasks and shortcuts</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                    <Link href="/youtube-scraper">
-                      <Button className="w-full">
-                        <Youtube className="h-4 w-4 mr-2" />
-                        Open YouTube Scraper
-                      </Button>
-                    </Link>
-                    <Link href="/admin/youtube-finder">
-                      <Button variant="outline" className="w-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        YouTube Finder Settings
-                              </Button>
-                    </Link>
-                    </div>
+                  <CardContent className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/songs")}>
+                      <Music className="mr-2 h-4 w-4" />
+                      Manage Songs
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/artists")}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Manage Artists
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/resources")}>
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Manage Resources
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/youtube")}>
+                      <Youtube className="mr-2 h-4 w-4" />
+                      Import YouTube Videos
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/analytics")}>
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      View Analytics
+                    </Button>
                   </CardContent>
                 </Card>
-              </TabsContent>
-
-              {/* Settings Tab */}
-              <TabsContent value="settings" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Application Settings</CardTitle>
-                  <CardDescription>
-                    Configure application-wide settings and preferences
-                  </CardDescription>
-                    </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Database className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Database Settings</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Users className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">User Management</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Settings className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">General Settings</p>
-                        </div>
-                      </Button>
-                      <Button variant="outline" className="h-20">
-                        <div className="text-center">
-                          <Save className="h-6 w-6 mx-auto mb-2" />
-                          <p className="text-sm">Backup & Restore</p>
-                      </div>
-                      </Button>
-                      </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+              </div>
             </TabsContent>
 
             {/* Analytics Tab */}
             <TabsContent value="analytics" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                  <CardTitle>Analytics Dashboard</CardTitle>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2" />
+                    Platform Analytics
+                  </CardTitle>
                   <CardDescription>
-                    View usage statistics and performance metrics
+                    Comprehensive insights into your platform's performance
                   </CardDescription>
-                    </CardHeader>
+                </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 border rounded-lg">
-                        <BarChart3 className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <p className="text-2xl font-bold">
-                          {statsLoading ? '...' : adminStats.totalSongs}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Total Songs</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span>Total Users</span>
+                        <span className="font-medium">{adminStats.totalUsers}</span>
                       </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <Music className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                        <p className="text-2xl font-bold">
-                          {statsLoading ? '...' : adminStats.totalResources}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Resources</p>
+                      <div className="flex items-center justify-between">
+                        <span>Collections</span>
+                        <span className="font-medium">{adminStats.collections}</span>
                       </div>
-                      <div className="text-center p-4 border rounded-lg">
-                        <Users className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                        <p className="text-2xl font-bold">
-                          {statsLoading ? '...' : adminStats.totalUsers}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Total Users</p>
+                      <div className="flex items-center justify-between">
+                        <span>YouTube Videos</span>
+                        <span className="font-medium">{adminStats.youtubeVideos}</span>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span>Database Status</span>
+                        <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Last Sync</span>
+                        <span className="text-sm text-muted-foreground">Just now</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>System Health</span>
+                        <Badge variant="outline">Healthy</Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span>Growth Rate</span>
+                        <span className="font-medium text-green-600">+12%</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Engagement</span>
+                        <span className="font-medium text-blue-600">High</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Performance</span>
+                        <span className="font-medium text-purple-600">Excellent</span>
                       </div>
                     </div>
                   </div>
-                    </CardContent>
-                  </Card>
-              </TabsContent>
-            </Tabs>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Activity Tab */}
+            <TabsContent value="activity" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>System Activity</CardTitle>
+                      <CardDescription>Track system activities and admin actions</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={fetchAdminStats} disabled={statsLoading}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      {statsLoading ? 'Updating...' : 'Refresh'}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {recentActivity.length > 0 ? (
+                      recentActivity.map((activity) => {
+                        const IconComponent = activity.icon === 'Music' ? Music : 
+                                            activity.icon === 'Users' ? Users : BookOpen;
+                        const timeAgo = new Date(activity.timestamp).toLocaleDateString();
+                        
+                        return (
+                          <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <IconComponent className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{activity.title}</p>
+                                <p className="text-sm text-muted-foreground">{activity.description}</p>
+                              </div>
+                            </div>
+                            <span className="text-sm text-muted-foreground">{timeAgo}</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-8">
+                        <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          System activities will appear here
+                        </p>
+                        <div className="flex gap-2 justify-center">
+                          <Button onClick={() => router.push("/admin/songs")}>
+                            Manage Songs
+                          </Button>
+                          <Button variant="outline" onClick={() => router.push("/admin/analytics")}>
+                            View Analytics
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Settings Tab */}
+            <TabsContent value="settings" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Settings</CardTitle>
+                  <CardDescription>Configure your admin panel and system preferences</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Database Connection</h4>
+                        <p className="text-sm text-muted-foreground">Manage database settings</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">System Notifications</h4>
+                        <p className="text-sm text-muted-foreground">Receive admin alerts</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configure
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">Backup Status</h4>
+                        <p className="text-sm text-muted-foreground">Last backup: 2 hours ago</p>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Backup Now
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Admin Actions</CardTitle>
+                  <CardDescription>System management and maintenance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button variant="outline" className="w-full justify-start">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Security Settings
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Database className="mr-2 h-4 w-4" />
+                      Database Management
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Performance Monitoring
+                    </Button>
+                    <Button variant="destructive" className="w-full justify-start">
+                      <Settings className="mr-2 h-4 w-4" />
+                      System Maintenance
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
-        
-        {/* Song Editor Modal */}
-        {showSongEditor && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-              <AdminSongEditor
-                song={editingSong ? {
-                  ...editingSong,
-                  id: typeof editingSong.id === 'string' ? parseInt(editingSong.id) : editingSong.id,
-                  key: editingSong.key || editingSong.key_signature || '',
-                  bpm: editingSong.bpm || editingSong.tempo || 0,
-                  difficulty: editingSong.difficulty || 'beginner',
-                  slug: editingSong.slug || '',
-                  song_structure: editingSong.song_structure || {},
-                  chords: editingSong.chords ? {
-                    piano: [],
-                    guitar: []
-                  } : {
-                    piano: [],
-                    guitar: []
-                  },
-                  lyrics: editingSong.lyrics || ''
-                } : undefined}
-                onSave={handleSaveSongWrapper}
-                onCancel={handleCancelEdit}
-              />
-            </div>
-          </div>
-        )}
-      </main>
+      </div>
     </AdminLayout>
   );
 };

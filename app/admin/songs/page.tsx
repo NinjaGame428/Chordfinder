@@ -1,66 +1,50 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Music, 
-  Plus, 
-  Search, 
-  Filter, 
-  Edit, 
-  Trash2, 
-  RefreshCw,
-  Youtube,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Filter,
   Download,
-  Star,
-  Calendar
+  Upload
 } from 'lucide-react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 
 interface Song {
   id: string;
   title: string;
-  artist: string;
-  key: string;
-  tempo: number;
-  time_signature: string;
-  genre: string;
-  difficulty: string;
-  youtube_id?: string;
-  created_at: string;
-  updated_at: string;
+  artist?: string;
+  genre?: string;
+  key_signature?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export default function AdminSongs() {
+const SongsPage = () => {
   const [songs, setSongs] = useState<Song[]>([]);
-  const [filteredSongs, setFilteredSongs] = useState<Song[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterGenre, setFilterGenre] = useState('all');
 
-  const genres = ['Gospel', 'Worship', 'Contemporary', 'Traditional', 'Hymn', 'Other'];
-  const difficulties = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
-
+  // Fetch songs
   const fetchSongs = async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/songs');
-      if (response.ok) {
-        const data = await response.json();
-        setSongs(data.songs || []);
-        setFilteredSongs(data.songs || []);
-        setError(null);
-      } else {
-        const errorData = await response.json();
-        setError(`Failed to fetch songs: ${errorData.error || 'Unknown error'}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
       }
-    } catch (error) {
-      console.error('Error fetching songs:', error);
-      setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const data = await response.json();
+      setSongs(data.songs || []);
+    } catch (err) {
+      console.error('Error fetching songs:', err);
     } finally {
       setLoading(false);
     }
@@ -70,252 +54,170 @@ export default function AdminSongs() {
     fetchSongs();
   }, []);
 
-  // Filter songs based on search and filters
-  useEffect(() => {
-    let filtered = songs;
+  // Filter songs based on search and genre
+  const filteredSongs = songs.filter(song => {
+    const matchesSearch = song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (song.artist && song.artist.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesGenre = filterGenre === 'all' || song.genre === filterGenre;
+    return matchesSearch && matchesGenre;
+  });
 
-    if (searchTerm) {
-      filtered = filtered.filter(song =>
-        song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedGenre) {
-      filtered = filtered.filter(song => song.genre === selectedGenre);
-    }
-
-    if (selectedDifficulty) {
-      filtered = filtered.filter(song => song.difficulty === selectedDifficulty);
-    }
-
-    setFilteredSongs(filtered);
-  }, [songs, searchTerm, selectedGenre, selectedDifficulty]);
-
-  const handleEditSong = (song: Song) => {
-    // TODO: Implement song editing
-    console.log('Edit song:', song);
-  };
-
-  const handleDeleteSong = (songId: string) => {
-    // TODO: Implement song deletion
-    console.log('Delete song:', songId);
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Beginner': return 'bg-green-100 text-green-800';
-      case 'Intermediate': return 'bg-yellow-100 text-yellow-800';
-      case 'Advanced': return 'bg-orange-100 text-orange-800';
-      case 'Expert': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const genres = ['all', ...Array.from(new Set(songs.map(song => song.genre).filter(Boolean)))];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Song Management</h1>
-          <p className="text-muted-foreground">
-            Manage your chord collection, add new songs, and organize your music library
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Song
-          </Button>
-          <Button onClick={fetchSongs} variant="outline">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
+    <AdminLayout>
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Song Management</h1>
+                <p className="text-muted-foreground">
+                  Manage your song collection, edit details, and organize content
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import
+                </Button>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Song
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>
-            Filter songs by title, artist, genre, or difficulty
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          {/* Filters */}
+          <div className="mb-6 flex gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search songs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
             <select
-              value={selectedGenre}
-              onChange={(e) => setSelectedGenre(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={filterGenre}
+              onChange={(e) => setFilterGenre(e.target.value)}
+              className="px-3 py-2 border rounded-md bg-background"
             >
-              <option value="">All Genres</option>
               {genres.map(genre => (
-                <option key={genre} value={genre}>{genre}</option>
+                <option key={genre} value={genre}>
+                  {genre === 'all' ? 'All Genres' : genre}
+                </option>
               ))}
             </select>
-            <select
-              value={selectedDifficulty}
-              onChange={(e) => setSelectedDifficulty(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Difficulties</option>
-              {difficulties.map(difficulty => (
-                <option key={difficulty} value={difficulty}>{difficulty}</option>
-              ))}
-            </select>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedGenre('');
-                setSelectedDifficulty('');
-              }}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Clear Filters
-            </Button>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Songs Table */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Songs ({filteredSongs.length})</CardTitle>
-              <CardDescription>
-                Your complete song collection
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Loading songs...</div>
-          ) : filteredSongs.length === 0 ? (
-            <div className="text-center py-8">
-              <Music className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium text-muted-foreground mb-2">No songs found</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                {songs.length === 0 
-                  ? "You haven't added any songs yet. Click 'Add Song' to get started."
-                  : "No songs match your current filters. Try adjusting your search criteria."
-                }
-              </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your First Song
-              </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">Song</th>
-                    <th className="text-left p-3">Artist</th>
-                    <th className="text-left p-3">Key</th>
-                    <th className="text-left p-3">Genre</th>
-                    <th className="text-left p-3">Difficulty</th>
-                    <th className="text-left p-3">YouTube</th>
-                    <th className="text-left p-3">Created</th>
-                    <th className="text-left p-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSongs.map((song) => (
-                    <tr key={song.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">
-                        <div>
-                          <p className="font-medium">{song.title}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="outline">{song.tempo} BPM</Badge>
-                            <Badge variant="outline">{song.time_signature}</Badge>
-                          </div>
+          {/* Songs List */}
+          <div className="grid gap-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredSongs.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">No songs found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchQuery || filterGenre !== 'all' 
+                      ? 'Try adjusting your search or filter criteria'
+                      : 'Start by adding your first song to the collection'
+                    }
+                  </p>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add First Song
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredSongs.map((song) => (
+                <Card key={song.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold">{song.title}</h3>
+                          {song.genre && (
+                            <Badge variant="secondary">{song.genre}</Badge>
+                          )}
+                          {song.key_signature && (
+                            <Badge variant="outline">{song.key_signature}</Badge>
+                          )}
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <p className="font-medium">{song.artist}</p>
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="secondary">{song.key}</Badge>
-                      </td>
-                      <td className="p-3">
-                        <Badge variant="outline">{song.genre}</Badge>
-                      </td>
-                      <td className="p-3">
-                        <Badge className={getDifficultyColor(song.difficulty)}>
-                          {song.difficulty}
-                        </Badge>
-                      </td>
-                      <td className="p-3">
-                        {song.youtube_id ? (
-                          <div className="flex items-center space-x-1">
-                            <Youtube className="h-4 w-4 text-red-600" />
-                            <span className="text-sm text-green-600">Available</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">No video</span>
+                        {song.artist && (
+                          <p className="text-muted-foreground">by {song.artist}</p>
                         )}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{new Date(song.created_at).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                          <span>Created: {new Date(song.created_at || '').toLocaleDateString()}</span>
+                          <span>Updated: {new Date(song.updated_at || '').toLocaleDateString()}</span>
                         </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex space-x-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditSong(song)}
-                            title="Edit Song"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteSong(song.id)}
-                            title="Delete Song"
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <Music className="h-8 w-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold">{songs.length}</p>
+                    <p className="text-sm text-muted-foreground">Total Songs</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <Filter className="h-8 w-8 text-blue-600" />
+                  <div>
+                    <p className="text-2xl font-bold">{genres.length - 1}</p>
+                    <p className="text-sm text-muted-foreground">Genres</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <Search className="h-8 w-8 text-green-600" />
+                  <div>
+                    <p className="text-2xl font-bold">{filteredSongs.length}</p>
+                    <p className="text-sm text-muted-foreground">Filtered Results</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    </AdminLayout>
   );
-}
+};
+
+export default SongsPage;
