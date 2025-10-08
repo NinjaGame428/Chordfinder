@@ -57,6 +57,12 @@ const adminNavigationItems = [
     description: "Artist management"
   },
   {
+    name: "Users",
+    href: "/admin/users",
+    icon: Shield,
+    description: "User management"
+  },
+  {
     name: "Resources",
     href: "/admin/resources",
     icon: BookOpen,
@@ -149,10 +155,10 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
         {/* Sidebar */}
         <div className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+          fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full lg:h-screen">
             {/* Sidebar Header */}
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
@@ -308,7 +314,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
           </div>
 
           {/* Page Content */}
-          <div className="min-h-screen">
+          <div className="min-h-screen pt-[80px]">
             {children}
           </div>
         </div>

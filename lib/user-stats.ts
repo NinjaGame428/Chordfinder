@@ -81,105 +81,102 @@ export const fetchUserStats = async (userId: string): Promise<UserStats> => {
 // Fetch recent activity
 export const fetchRecentActivity = async (userId: string): Promise<RecentActivity[]> => {
   if (!supabase) {
-    throw new Error('Supabase not configured');
+    return [];
   }
   
   try {
     const activities: RecentActivity[] = [];
 
-    // Get recent favorites
-    const { data: recentFavorites } = await supabase
-      .from('favorites')
-      .select(`
-        id,
-        created_at,
-        songs!inner(
-          title,
-          artists!inner(name)
-        )
-      `)
-      .eq('user_id', userId)
-      .not('song_id', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(3);
+    // Get recent favorites - silently fail if table doesn't exist
+    try {
+      const { data: recentFavorites, error: favError } = await supabase
+        .from('favorites')
+        .select(`
+          id,
+          created_at,
+          song_id
+        `)
+        .eq('user_id', userId)
+        .not('song_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(3);
 
-    if (recentFavorites) {
-      recentFavorites.forEach((fav: any) => {
-        const songTitle = fav.songs?.title || 'Unknown Song';
-        const songArtist = fav.songs?.artists?.name || 'Unknown Artist';
-        
-        activities.push({
-          id: fav.id,
-          type: 'favorite',
-          title: `Added "${songTitle}" to favorites`,
-          description: `by ${songArtist}`,
-          timestamp: fav.created_at,
-          icon: 'Heart'
+      if (!favError && recentFavorites) {
+        recentFavorites.forEach((fav: any) => {
+          activities.push({
+            id: fav.id,
+            type: 'favorite',
+            title: `Added a song to favorites`,
+            description: `Recently favorited`,
+            timestamp: fav.created_at,
+            icon: 'Heart'
+          });
         });
-      });
+      }
+    } catch (err) {
+      // Silently ignore if favorites table doesn't exist
     }
 
-    // Get recent downloads
-    const { data: recentDownloads } = await supabase
-      .from('favorites')
-      .select(`
-        id,
-        created_at,
-        resources!inner(title, type)
-      `)
-      .eq('user_id', userId)
-      .not('resource_id', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(3);
+    // Get recent downloads - silently fail if table doesn't exist
+    try {
+      const { data: recentDownloads, error: downloadError } = await supabase
+        .from('downloads')
+        .select(`
+          id,
+          created_at,
+          resource_id
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(3);
 
-    if (recentDownloads) {
-      recentDownloads.forEach((download: any) => {
-        const resourceTitle = download.resources?.title || 'Unknown Resource';
-        const resourceType = download.resources?.type || 'Unknown Type';
-        
-        activities.push({
-          id: download.id,
-          type: 'download',
-          title: `Downloaded "${resourceTitle}"`,
-          description: `${resourceType} resource`,
-          timestamp: download.created_at,
-          icon: 'Download'
+      if (!downloadError && recentDownloads) {
+        recentDownloads.forEach((download: any) => {
+          activities.push({
+            id: download.id,
+            type: 'download',
+            title: `Downloaded a resource`,
+            description: `Recently downloaded`,
+            timestamp: download.created_at,
+            icon: 'Download'
+          });
         });
-      });
+      }
+    } catch (err) {
+      // Silently ignore if downloads table doesn't exist
     }
 
-    // Get recent ratings
-    const { data: recentRatings } = await supabase
-      .from('ratings')
-      .select(`
-        id,
-        rating,
-        created_at,
-        songs!inner(
-          title,
-          artists!inner(name)
-        )
-      `)
-      .eq('user_id', userId)
-      .not('song_id', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(3);
+    // Get recent ratings - silently fail if table doesn't exist
+    try {
+      const { data: recentRatings, error: ratingError } = await supabase
+        .from('ratings')
+        .select(`
+          id,
+          rating,
+          created_at,
+          song_id
+        `)
+        .eq('user_id', userId)
+        .not('song_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(3);
 
-    if (recentRatings) {
-      recentRatings.forEach((rating: any) => {
-        const songTitle = rating.songs?.title || 'Unknown Song';
-        const songArtist = rating.songs?.artists?.name || 'Unknown Artist';
-        const ratingValue = rating.rating || 0;
-        
-        activities.push({
-          id: rating.id,
-          type: 'rating',
-          title: `Rated "${songTitle}" ${ratingValue} stars`,
-          description: `by ${songArtist}`,
-          timestamp: rating.created_at,
-          icon: 'Star'
+      if (!ratingError && recentRatings) {
+        recentRatings.forEach((rating: any) => {
+          const ratingValue = rating.rating || 0;
+          
+          activities.push({
+            id: rating.id,
+            type: 'rating',
+            title: `Rated a song ${ratingValue} stars`,
+            description: `Recently rated`,
+            timestamp: rating.created_at,
+            icon: 'Star'
+          });
         });
-      });
+      }
+    } catch (err) {
+      // Silently ignore if ratings table doesn't exist
     }
 
     // Sort by timestamp and return latest 5
@@ -188,7 +185,7 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
       .slice(0, 5);
 
   } catch (error) {
-    console.error('Error fetching recent activity:', error);
+    // Silently return empty array on any error
     return [];
   }
 };
@@ -196,48 +193,69 @@ export const fetchRecentActivity = async (userId: string): Promise<RecentActivit
 // Fetch user's favorite songs
 export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]> => {
   if (!supabase) {
-    console.error('Supabase not configured');
     return [];
   }
   
   try {
+    // First check if the favorites table exists
     const { data, error } = await supabase
       .from('favorites')
       .select(`
         id,
         created_at,
-        songs!inner(
-          id,
-          title,
-          artist_id,
-          genre,
-          key_signature,
-          artists!inner(
-            id,
-            name
-          )
-        )
+        song_id
       `)
       .eq('user_id', userId)
-      .not('song_id', 'is', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(10);
 
     if (error) {
-      console.error('Database error in fetchFavoriteSongs:', error);
+      // If table doesn't exist or there's a schema error, return empty array silently
       return [];
     }
 
-    return data?.map((fav: any) => ({
-      id: fav.songs?.id || '',
-      title: fav.songs?.title || 'Unknown Song',
-      artist: fav.songs?.artists?.name || 'Unknown Artist',
-      genre: fav.songs?.genre || 'Unknown Genre',
-      key_signature: fav.songs?.key_signature || 'Unknown Key',
-      created_at: fav.created_at
-    })) || [];
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // Get song details for each favorite
+    const songIds = data.map(fav => fav.song_id).filter(Boolean);
+    
+    if (songIds.length === 0) {
+      return [];
+    }
+
+    const { data: songs, error: songsError } = await supabase
+      .from('songs')
+      .select(`
+        id,
+        title,
+        artist_id,
+        genre,
+        key_signature
+      `)
+      .in('id', songIds);
+
+    if (songsError) {
+      // Could not fetch song details, return empty array
+      return [];
+    }
+
+    // Map favorites with song details
+    return data.map((fav: any) => {
+      const song = songs?.find(s => s.id === fav.song_id);
+      return {
+        id: song?.id || fav.song_id || '',
+        title: song?.title || 'Unknown Song',
+        artist: 'Unknown Artist',
+        genre: song?.genre || 'Unknown Genre',
+        key_signature: song?.key_signature || 'Unknown Key',
+        created_at: fav.created_at
+      };
+    }).filter(fav => fav.id);
 
   } catch (error) {
-    console.error('Error fetching favorite songs:', error);
+    // Silently return empty array on any error
     return [];
   }
 };
@@ -245,40 +263,68 @@ export const fetchFavoriteSongs = async (userId: string): Promise<FavoriteSong[]
 // Fetch user's downloaded resources
 export const fetchDownloadedResources = async (userId: string): Promise<DownloadedResource[]> => {
   if (!supabase) {
-    throw new Error('Supabase not configured');
+    return [];
   }
   
   try {
+    // Check if downloads table exists
     const { data, error } = await supabase
-      .from('favorites')
+      .from('downloads')
       .select(`
         id,
         created_at,
-        resources!inner(
-          id,
-          title,
-          type,
-          category,
-          file_size
-        )
+        resource_id
       `)
       .eq('user_id', userId)
-      .not('resource_id', 'is', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    if (error) throw error;
+    if (error) {
+      // Downloads table not available, return empty array silently
+      return [];
+    }
 
-    return data?.map((download: any) => ({
-      id: download.resources?.id || '',
-      title: download.resources?.title || 'Unknown Resource',
-      type: download.resources?.type || 'Unknown Type',
-      category: download.resources?.category || 'Unknown Category',
-      file_size: download.resources?.file_size || 0,
-      created_at: download.created_at
-    })) || [];
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // Get resource details
+    const resourceIds = data.map(d => d.resource_id).filter(Boolean);
+    
+    if (resourceIds.length === 0) {
+      return [];
+    }
+
+    const { data: resources, error: resourcesError } = await supabase
+      .from('resources')
+      .select(`
+        id,
+        title,
+        type,
+        category,
+        file_size
+      `)
+      .in('id', resourceIds);
+
+    if (resourcesError) {
+      // Could not fetch resource details, return empty array
+      return [];
+    }
+
+    return data.map((download: any) => {
+      const resource = resources?.find(r => r.id === download.resource_id);
+      return {
+        id: resource?.id || download.resource_id || '',
+        title: resource?.title || 'Unknown Resource',
+        type: resource?.type || 'Unknown Type',
+        category: resource?.category || 'Unknown Category',
+        file_size: resource?.file_size || 0,
+        created_at: download.created_at
+      };
+    }).filter(d => d.id);
 
   } catch (error) {
-    console.error('Error fetching downloaded resources:', error);
+    // Silently return empty array on any error
     return [];
   }
 };

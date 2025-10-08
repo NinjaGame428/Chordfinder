@@ -240,6 +240,10 @@ const AdminPage = () => {
                       <Users className="mr-2 h-4 w-4" />
                       Manage Artists
                     </Button>
+                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/users")}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Manage Users
+                    </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/resources")}>
                       <BookOpen className="mr-2 h-4 w-4" />
                       Manage Resources

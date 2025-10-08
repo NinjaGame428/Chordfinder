@@ -1,0 +1,851 @@
+'use client';
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { 
+  Music, 
+  Save, 
+  Undo, 
+  Redo, 
+  Eye, 
+  Edit3, 
+  Plus, 
+  Minus,
+  Download,
+  Upload,
+  Copy,
+  Scissors,
+  Palette,
+  Type,
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  ChevronDown,
+  Settings,
+  History,
+  Smartphone,
+  Monitor,
+  Tablet,
+  Check,
+  X,
+  Zap,
+  BookOpen,
+  Key,
+  Play,
+  Pause,
+  Search,
+  Filter,
+  SortAsc,
+  SortDesc,
+  MoreHorizontal,
+  Trash2,
+  Edit,
+  EyeOff,
+  Maximize,
+  Minimize,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+  RotateCw,
+  Move,
+  GripVertical,
+  Lock,
+  Unlock,
+  Star,
+  Heart,
+  Share2,
+  MessageSquare,
+  Clock,
+  Calendar,
+  Tag,
+  Folder,
+  FileText,
+  Image,
+  Video,
+  Mic,
+  MicOff,
+  Headphones,
+  Radio,
+  Disc3,
+  Disc2,
+  Disc,
+  SkipBack,
+  SkipForward,
+  Shuffle,
+  Repeat,
+  Repeat1
+} from 'lucide-react';
+
+interface Chord {
+  name: string;
+  position: number;
+  line: number;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  size?: 'small' | 'medium' | 'large';
+}
+
+interface SongSection {
+  type: 'verse' | 'chorus' | 'bridge' | 'intro' | 'outro' | 'pre-chorus' | 'interlude';
+  label: string;
+  content: string;
+  chords: Chord[];
+  id: string;
+  order: number;
+}
+
+interface SongData {
+  id: string;
+  title: string;
+  artist: string;
+  key: string;
+  tempo: number;
+  timeSignature: string;
+  sections: SongSection[];
+  version: number;
+  lastSaved: string;
+  tags: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  genre: string;
+  mood: string;
+  language: string;
+}
+
+const commonChords = [
+  'C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B',
+  'Cm', 'C#m', 'Dbm', 'Dm', 'D#m', 'Ebm', 'Em', 'Fm', 'F#m', 'Gbm', 'Gm', 'G#m', 'Abm', 'Am', 'A#m', 'Bbm', 'Bm',
+  'C7', 'C#7', 'Db7', 'D7', 'D#7', 'Eb7', 'E7', 'F7', 'F#7', 'Gb7', 'G7', 'G#7', 'Ab7', 'A7', 'A#7', 'Bb7', 'B7',
+  'Cmaj7', 'C#maj7', 'Dbmaj7', 'Dmaj7', 'D#maj7', 'Ebmaj7', 'Emaj7', 'Fmaj7', 'F#maj7', 'Gbmaj7', 'Gmaj7', 'G#maj7', 'Abmaj7', 'Amaj7', 'A#maj7', 'Bbmaj7', 'Bmaj7',
+  'Cm7', 'C#m7', 'Dbm7', 'Dm7', 'D#m7', 'Ebm7', 'Em7', 'Fm7', 'F#m7', 'Gbm7', 'Gm7', 'G#m7', 'Abm7', 'Am7', 'A#m7', 'Bbm7', 'Bm7',
+  'Csus2', 'Csus4', 'Cadd9', 'Cdim', 'Caug', 'C6', 'C9', 'C11', 'C13', 'Cmaj9', 'Cm9', 'C7sus4', 'C7#5', 'C7b5'
+];
+
+const chordColors = [
+  '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
+  '#F97316', '#6366F1', '#14B8A6', '#F43F5E', '#8B5A2B', '#059669', '#DC2626', '#7C3AED'
+];
+
+const sectionTypes = [
+  { type: 'intro', label: 'Intro', icon: Play },
+  { type: 'verse', label: 'Verse', icon: Type },
+  { type: 'pre-chorus', label: 'Pre-Chorus', icon: ChevronDown },
+  { type: 'chorus', label: 'Chorus', icon: Music },
+  { type: 'bridge', label: 'Bridge', icon: Move },
+  { type: 'interlude', label: 'Interlude', icon: Pause },
+  { type: 'outro', label: 'Outro', icon: SkipForward }
+];
+
+export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
+  const [songData, setSongData] = useState<SongData>({
+    id: songId,
+    title: '',
+    artist: '',
+    key: 'C',
+    tempo: 120,
+    timeSignature: '4/4',
+    sections: [],
+    version: 1,
+    lastSaved: new Date().toISOString(),
+    tags: [],
+    difficulty: 'beginner',
+    genre: '',
+    mood: '',
+    language: 'en'
+  });
+  
+  const [isEditMode, setIsEditMode] = useState(true);
+  const [currentSection, setCurrentSection] = useState(0);
+  const [selectedChord, setSelectedChord] = useState<string>('');
+  const [chordSuggestions, setChordSuggestions] = useState<string[]>([]);
+  const [showChordPanel, setShowChordPanel] = useState(false);
+  const [transposeAmount, setTransposeAmount] = useState(0);
+  const [chordColor, setChordColor] = useState('#3B82F6');
+  const [autoSave, setAutoSave] = useState(true);
+  const [versionHistory, setVersionHistory] = useState<SongData[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [showSettings, setShowSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [chordValidation, setChordValidation] = useState(true);
+  const [showChordLibrary, setShowChordLibrary] = useState(false);
+  const [selectedChordColor, setSelectedChordColor] = useState('#3B82F6');
+  const [chordSize, setChordSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [chordBold, setChordBold] = useState(false);
+  const [chordItalic, setChordItalic] = useState(false);
+  
+  const editorRef = useRef<HTMLDivElement>(null);
+  const chordInputRef = useRef<HTMLInputElement>(null);
+  const autoSaveRef = useRef<NodeJS.Timeout>();
+
+  // Load song data
+  useEffect(() => {
+    loadSongData();
+  }, [songId]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (autoSave) {
+      autoSaveRef.current = setInterval(() => {
+        saveSong();
+      }, 30000);
+    }
+    return () => {
+      if (autoSaveRef.current) {
+        clearInterval(autoSaveRef.current);
+      }
+    };
+  }, [autoSave, songData]);
+
+  const loadSongData = async () => {
+    try {
+      const response = await fetch(`/api/songs/${songId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSongData(data);
+        setVersionHistory([data]);
+      }
+    } catch (error) {
+      console.error('Error loading song:', error);
+    }
+  };
+
+  const saveSong = async () => {
+    try {
+      const updatedSong = {
+        ...songData,
+        version: songData.version + 1,
+        lastSaved: new Date().toISOString()
+      };
+      
+      setSongData(updatedSong);
+      setVersionHistory(prev => [updatedSong, ...prev.slice(0, 9)]);
+      
+      await fetch(`/api/songs/${songId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedSong)
+      });
+    } catch (error) {
+      console.error('Error saving song:', error);
+    }
+  };
+
+  const handleChordInput = (value: string) => {
+    setSelectedChord(value);
+    if (value.length > 0) {
+      const suggestions = commonChords.filter(chord => 
+        chord.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 8);
+      setChordSuggestions(suggestions);
+    } else {
+      setChordSuggestions([]);
+    }
+  };
+
+  const validateChord = (chordName: string): boolean => {
+    return commonChords.includes(chordName);
+  };
+
+  const insertChord = (chordName: string) => {
+    if (editorRef.current) {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const chordElement = document.createElement('span');
+        chordElement.className = 'chord-marker';
+        chordElement.style.color = selectedChordColor;
+        chordElement.style.fontWeight = chordBold ? 'bold' : 'normal';
+        chordElement.style.fontStyle = chordItalic ? 'italic' : 'normal';
+        chordElement.style.fontSize = chordSize === 'small' ? '0.8em' : chordSize === 'large' ? '1.2em' : '1em';
+        chordElement.style.backgroundColor = `${selectedChordColor}20`;
+        chordElement.style.padding = '2px 6px';
+        chordElement.style.borderRadius = '4px';
+        chordElement.style.margin = '0 2px';
+        chordElement.style.border = `1px solid ${selectedChordColor}40`;
+        chordElement.contentEditable = 'false';
+        chordElement.textContent = `[${chordName}]`;
+        chordElement.dataset.chord = chordName;
+        
+        // Add validation styling
+        if (chordValidation && !validateChord(chordName)) {
+          chordElement.style.borderColor = '#EF4444';
+          chordElement.style.backgroundColor = '#FEF2F2';
+          chordElement.title = 'Invalid chord - check spelling';
+        }
+        
+        range.insertNode(chordElement);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        setSelectedChord('');
+        setChordSuggestions([]);
+      }
+    }
+  };
+
+  const transposeChords = (semitones: number) => {
+    const chordOrder = ['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'];
+    
+    if (editorRef.current) {
+      const chordElements = editorRef.current.querySelectorAll('.chord-marker');
+      chordElements.forEach(element => {
+        const chordName = element.dataset.chord;
+        if (chordName) {
+          const baseChord = chordName.replace(/[^A-G#b]/g, '');
+          const suffix = chordName.replace(/^[A-G#b]+/, '');
+          const currentIndex = chordOrder.indexOf(baseChord);
+          if (currentIndex !== -1) {
+            const newIndex = (currentIndex + semitones + 12) % 12;
+            const newChord = chordOrder[newIndex] + suffix;
+            element.textContent = `[${newChord}]`;
+            element.dataset.chord = newChord;
+            
+            // Re-validate chord
+            if (chordValidation && !validateChord(newChord)) {
+              element.style.borderColor = '#EF4444';
+              element.style.backgroundColor = '#FEF2F2';
+            } else {
+              element.style.borderColor = `${selectedChordColor}40`;
+              element.style.backgroundColor = `${selectedChordColor}20`;
+            }
+          }
+        }
+      });
+    }
+    
+    setTransposeAmount(transposeAmount + semitones);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case 'k':
+          e.preventDefault();
+          setShowChordPanel(true);
+          chordInputRef.current?.focus();
+          break;
+        case 't':
+          e.preventDefault();
+          // Open transpose dialog
+          break;
+        case 'z':
+          e.preventDefault();
+          // Undo functionality
+          break;
+        case 'y':
+          e.preventDefault();
+          // Redo functionality
+          break;
+        case 's':
+          e.preventDefault();
+          saveSong();
+          break;
+        case 'f':
+          e.preventDefault();
+          setIsFullscreen(!isFullscreen);
+          break;
+      }
+    }
+  };
+
+  const exportSong = (format: 'text' | 'pdf' | 'json' | 'xml') => {
+    switch (format) {
+      case 'text':
+        const textContent = songData.sections.map(section => 
+          `${section.label}\n${section.content}\n`
+        ).join('\n');
+        downloadFile(textContent, `${songData.title}.txt`, 'text/plain');
+        break;
+      case 'json':
+        downloadFile(JSON.stringify(songData, null, 2), `${songData.title}.json`, 'application/json');
+        break;
+      case 'xml':
+        const xmlContent = generateXML(songData);
+        downloadFile(xmlContent, `${songData.title}.xml`, 'application/xml');
+        break;
+      case 'pdf':
+        // PDF export would require a library like jsPDF
+        console.log('PDF export not implemented yet');
+        break;
+    }
+  };
+
+  const generateXML = (song: SongData): string => {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<song>
+  <title>${song.title}</title>
+  <artist>${song.artist}</artist>
+  <key>${song.key}</key>
+  <tempo>${song.tempo}</tempo>
+  <timeSignature>${song.timeSignature}</timeSignature>
+  <sections>
+    ${song.sections.map(section => `
+    <section type="${section.type}" label="${section.label}">
+      <content><![CDATA[${section.content}]]></content>
+    </section>`).join('')}
+  </sections>
+</song>`;
+  };
+
+  const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const addSection = (type: SongSection['type']) => {
+    const newSection: SongSection = {
+      type,
+      label: type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' '),
+      content: '',
+      chords: [],
+      id: `section-${Date.now()}`,
+      order: songData.sections.length
+    };
+    setSongData(prev => ({
+      ...prev,
+      sections: [...prev.sections, newSection]
+    }));
+  };
+
+  const getDeviceClasses = () => {
+    if (isFullscreen) return 'fixed inset-0 z-50 bg-background';
+    
+    switch (deviceView) {
+      case 'mobile':
+        return 'max-w-sm mx-auto';
+      case 'tablet':
+        return 'max-w-2xl mx-auto';
+      default:
+        return 'max-w-6xl mx-auto';
+    }
+  };
+
+  return (
+    <div className={`min-h-screen bg-background ${getDeviceClasses()}`}>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Advanced Song Editor</h1>
+                <p className="text-muted-foreground">
+                  Professional chord placement and editing system with advanced features
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={isEditMode ? "default" : "outline"}
+                  onClick={() => setIsEditMode(true)}
+                  size="sm"
+                >
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Edit Mode
+                </Button>
+                <Button
+                  variant={!isEditMode ? "default" : "outline"}
+                  onClick={() => setIsEditMode(false)}
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview Mode
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  size="sm"
+                >
+                  {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {/* Enhanced Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 p-4 bg-muted rounded-lg mb-4">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowChordPanel(!showChordPanel)}>
+                  <Music className="h-4 w-4 mr-2" />
+                  Chords
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowChordLibrary(!showChordLibrary)}>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Library
+                </Button>
+              </div>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => transposeChords(-1)}>
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium px-2 min-w-[40px] text-center">{transposeAmount}</span>
+                <Button variant="outline" size="sm" onClick={() => transposeChords(1)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setTransposeAmount(0)}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm">
+                  <Bold className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Italic className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Underline className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <AlignLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <AlignCenter className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm">
+                  <AlignRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setDeviceView('desktop')}>
+                  <Monitor className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setDeviceView('tablet')}>
+                  <Tablet className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setDeviceView('mobile')}>
+                  <Smartphone className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <Separator orientation="vertical" className="h-6" />
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={saveSong}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowHistory(true)}>
+                  <History className="h-4 w-4 mr-2" />
+                  History
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowSettings(true)}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </div>
+            </div>
+
+            {/* Song Metadata */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={songData.title}
+                  onChange={(e) => setSongData(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Song title"
+                />
+              </div>
+              <div>
+                <Label htmlFor="artist">Artist</Label>
+                <Input
+                  id="artist"
+                  value={songData.artist}
+                  onChange={(e) => setSongData(prev => ({ ...prev, artist: e.target.value }))}
+                  placeholder="Artist name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="key">Key</Label>
+                <select
+                  id="key"
+                  value={songData.key}
+                  onChange={(e) => setSongData(prev => ({ ...prev, key: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-md"
+                >
+                  {['C', 'C#', 'Db', 'D', 'D#', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'G#', 'Ab', 'A', 'A#', 'Bb', 'B'].map(key => (
+                    <option key={key} value={key}>{key}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="tempo">Tempo (BPM)</Label>
+                <Input
+                  id="tempo"
+                  type="number"
+                  value={songData.tempo}
+                  onChange={(e) => setSongData(prev => ({ ...prev, tempo: parseInt(e.target.value) }))}
+                  placeholder="120"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Main Editor */}
+            <div className="lg:col-span-3">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Song Content</CardTitle>
+                      <CardDescription>
+                        {isEditMode ? 'Edit your song with advanced chord placement' : 'Preview the final formatted output'}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        <Key className="h-3 w-3 mr-1" />
+                        {songData.key}
+                      </Badge>
+                      <Badge variant="secondary">
+                        v{songData.version}
+                      </Badge>
+                      <Badge variant="outline">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {songData.tempo} BPM
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    ref={editorRef}
+                    contentEditable={isEditMode}
+                    onKeyDown={handleKeyDown}
+                    className="min-h-[600px] p-6 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    style={{
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      lineHeight: '2',
+                      fontSize: '16px'
+                    }}
+                  >
+                    {songData.sections.map((section, index) => (
+                      <div key={section.id} className="mb-8">
+                        <div className="font-bold text-xl mb-4 text-primary border-b-2 border-primary pb-2">
+                          {section.label}
+                        </div>
+                        <div className="whitespace-pre-wrap text-gray-700">
+                          {section.content || 'Click here to add lyrics...'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Enhanced Sidebar */}
+            <div className="space-y-4">
+              {/* Chord Panel */}
+              {showChordPanel && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Chord Insertion</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="chord-input">Insert Chord</Label>
+                      <div className="relative">
+                        <Input
+                          ref={chordInputRef}
+                          id="chord-input"
+                          value={selectedChord}
+                          onChange={(e) => handleChordInput(e.target.value)}
+                          placeholder="Type chord name..."
+                          className="pr-8"
+                        />
+                        {chordSuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 bg-background border rounded-md shadow-lg z-10 mt-1">
+                            {chordSuggestions.map((chord, index) => (
+                              <button
+                                key={index}
+                                className="w-full text-left px-3 py-2 hover:bg-muted"
+                                onClick={() => insertChord(chord)}
+                              >
+                                {chord}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label>Chord Styling</Label>
+                      <div className="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                          <Label className="text-xs">Color</Label>
+                          <div className="flex gap-1">
+                            {chordColors.slice(0, 8).map((color, index) => (
+                              <button
+                                key={index}
+                                className="w-6 h-6 rounded border-2"
+                                style={{ backgroundColor: color }}
+                                onClick={() => setSelectedChordColor(color)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-xs">Size</Label>
+                          <select
+                            value={chordSize}
+                            onChange={(e) => setChordSize(e.target.value as 'small' | 'medium' | 'large')}
+                            className="w-full px-2 py-1 text-sm border rounded"
+                          >
+                            <option value="small">Small</option>
+                            <option value="medium">Medium</option>
+                            <option value="large">Large</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          variant={chordBold ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setChordBold(!chordBold)}
+                        >
+                          <Bold className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant={chordItalic ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setChordItalic(!chordItalic)}
+                        >
+                          <Italic className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Chord Library */}
+              {showChordLibrary && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Chord Library</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-2">
+                      {commonChords.slice(0, 20).map((chord, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => insertChord(chord)}
+                          className="text-xs"
+                        >
+                          {chord}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Section Management */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Song Sections</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {sectionTypes.map((section) => {
+                    const Icon = section.icon;
+                    return (
+                      <Button
+                        key={section.type}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addSection(section.type as SongSection['type'])}
+                        className="w-full justify-start"
+                      >
+                        <Icon className="h-4 w-4 mr-2" />
+                        Add {section.label}
+                      </Button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              {/* Export Options */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Export</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportSong('text')}
+                    className="w-full justify-start"
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export as Text
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportSong('json')}
+                    className="w-full justify-start"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export as JSON
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportSong('xml')}
+                    className="w-full justify-start"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export as XML
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => exportSong('pdf')}
+                    className="w-full justify-start"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export as PDF
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
