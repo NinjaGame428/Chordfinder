@@ -192,24 +192,26 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
   const chordInputRef = useRef<HTMLInputElement>(null);
   const autoSaveRef = useRef<NodeJS.Timeout>();
 
-  // Load song data
+  // Load song data - only on mount or when songId changes
   useEffect(() => {
-    loadSongData();
+    if (songId && songId !== '{songId}') {
+      loadSongData();
+    }
   }, [songId]);
 
-  // Auto-save functionality
+  // Auto-save functionality - disabled by default for better performance
   useEffect(() => {
-    if (autoSave) {
+    if (autoSave && songData.title) {
       autoSaveRef.current = setInterval(() => {
         saveSong();
-      }, 30000);
+      }, 60000); // Changed to 60s for better performance
     }
     return () => {
       if (autoSaveRef.current) {
         clearInterval(autoSaveRef.current);
       }
     };
-  }, [autoSave, songData]);
+  }, [autoSave]); // Removed songData dependency to prevent constant re-renders
 
   const loadSongData = async () => {
     if (!songId || songId === '{songId}') {
@@ -233,27 +235,29 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
       const responseData = await response.json();
       const song = responseData.song || responseData;
       
-      console.log('Song data loaded:', song);
+      console.log('Song data loaded:', JSON.stringify(song, null, 2));
       console.log('Song lyrics:', song.lyrics);
       console.log('Song lyrics type:', typeof song.lyrics);
       
-      // Transform database song to editor format
+      // Transform database song to editor format - with extra safety
       const transformedData: SongData = {
-        id: song.id,
-        title: song.title || '',
-        artist: song.artists?.name || song.artist || '',
-        key: song.key_signature || 'C',
-        tempo: song.tempo || 120,
-        timeSignature: song.time_signature || '4/4',
+        id: song?.id || songId,
+        title: song?.title || 'Untitled',
+        artist: song?.artists?.name || song?.artist || 'Unknown Artist',
+        key: song?.key_signature || 'C',
+        tempo: parseInt(song?.tempo) || 120,
+        timeSignature: song?.time_signature || '4/4',
         sections: [],  // Will be populated below
-        version: song.version || 1,
-        lastSaved: song.updated_at || new Date().toISOString(),
-        tags: Array.isArray(song.tags) ? song.tags : [],
-        difficulty: song.difficulty || 'beginner',
-        genre: song.genre || '',
-        mood: song.mood || '',
-        language: song.language || 'en'
+        version: parseInt(song?.version) || 1,
+        lastSaved: song?.updated_at || new Date().toISOString(),
+        tags: Array.isArray(song?.tags) ? song.tags : [],
+        difficulty: song?.difficulty || 'beginner',
+        genre: song?.genre || '',
+        mood: song?.mood || '',
+        language: song?.language || 'en'
       };
+      
+      console.log('Transformed data before sections:', JSON.stringify(transformedData, null, 2));
       
       // Parse lyrics and chords if they exist
       if (song.lyrics) {
@@ -297,6 +301,7 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
       
       // Ensure we always have at least one section
       if (!Array.isArray(transformedData.sections) || transformedData.sections.length === 0) {
+        console.log('No sections found, creating default section');
         transformedData.sections = [{
           type: 'verse',
           label: 'Verse 1',
@@ -307,8 +312,20 @@ export const AdvancedSongEditor = ({ songId }: { songId: string }) => {
         }];
       }
       
-      setSongData(transformedData);
-      setVersionHistory([transformedData]);
+      console.log('Final transformed data with sections:', JSON.stringify(transformedData, null, 2));
+      console.log('Sections array is:', Array.isArray(transformedData.sections) ? 'ARRAY' : 'NOT ARRAY');
+      console.log('Sections length:', transformedData.sections?.length);
+      
+      // Update state safely
+      try {
+        setSongData(transformedData);
+        setVersionHistory([transformedData]);
+        console.log('State updated successfully');
+      } catch (stateError) {
+        console.error('Error setting state:', stateError);
+        throw stateError;
+      }
+      
       setIsLoading(false);
     } catch (error) {
       console.error('Error loading song:', error);
