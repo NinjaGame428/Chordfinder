@@ -224,24 +224,36 @@ ${songData.lyrics || 'No lyrics available'}
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => router.push(`/admin/songs/${song.id}/edit`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log('Edit button clicked for song:', song.id);
+                            router.push(`/admin/songs/${song.id}/edit`);
+                          }}
                           title="Edit song"
+                          className="hover:bg-primary hover:text-primary-foreground cursor-pointer"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDownloadSong(song)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownloadSong(song);
+                          }}
                           title="Download song"
+                          className="hover:bg-primary hover:text-primary-foreground cursor-pointer"
                         >
                           <Download className="h-4 w-4" />
                         </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteSong(song.id)}
+                          className="text-destructive hover:bg-destructive hover:text-destructive-foreground cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSong(song.id);
+                          }}
                           title="Delete song"
                         >
                           <Trash2 className="h-4 w-4" />
