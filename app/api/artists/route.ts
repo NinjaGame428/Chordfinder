@@ -28,13 +28,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating artist:', error);
-      return NextResponse.json({ error: 'Failed to create artist' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create artist', details: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ artist }, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/artists:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -52,20 +50,14 @@ export async function GET() {
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('Error fetching artists:', error);
       return NextResponse.json({ error: 'Failed to fetch artists' }, { status: 500 });
     }
 
-    // Return artists without song counts for faster loading
-    // Song counts can be added later if needed for specific pages
     const response = NextResponse.json({ artists: artists || [] });
-    
-    // Add caching headers for better performance
     response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     
     return response;
   } catch (error) {
-    console.error('Error in GET /api/artists:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

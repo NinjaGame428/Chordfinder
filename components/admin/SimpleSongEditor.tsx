@@ -93,7 +93,6 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         lyrics: lyricsText,
       });
     } catch (error) {
-      console.error('Error loading song:', error);
       setLoadError('Failed to load song data');
     } finally {
       setIsLoading(false);
@@ -110,7 +109,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         setFilteredArtists(data.artists || []);
       }
     } catch (error) {
-      console.error('Error loading artists:', error);
+      // Silent fail
     }
   };
 
@@ -155,7 +154,6 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         alert(`Failed to add artist: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Error adding artist:', error);
       alert('Failed to add artist');
     }
   };
@@ -181,12 +179,10 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         alert('Song saved successfully!');
       } else {
         const errorData = await response.json();
-        console.error('Save error:', errorData);
         const errorMsg = errorData.details || errorData.error || 'Unknown error';
-        alert(`Failed to save song: ${errorMsg}\n\nCheck console for details.`);
+        alert(`Failed to save song: ${errorMsg}`);
       }
     } catch (error) {
-      console.error('Error saving song:', error);
       alert('Failed to save song');
     } finally {
       setIsSaving(false);

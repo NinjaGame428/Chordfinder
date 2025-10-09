@@ -19,13 +19,14 @@ export async function GET() {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching songs:', error);
       return NextResponse.json({ error: 'Failed to fetch songs' }, { status: 500 });
     }
 
-    return NextResponse.json({ songs });
+    const response = NextResponse.json({ songs });
+    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+    
+    return response;
   } catch (error) {
-    console.error('Error in GET /api/songs:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -81,13 +82,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating song:', error);
-      return NextResponse.json({ error: 'Failed to create song' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to create song', details: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ song }, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/songs:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
