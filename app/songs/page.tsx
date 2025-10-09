@@ -468,6 +468,19 @@ const SongsPage = () => {
                   </div>
                 )}
               </>
+            ) : supabaseSongs.length === 0 ? (
+              <div className="text-center py-12">
+                <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-xl font-semibold mb-2">No songs in database</h3>
+                <p className="text-muted-foreground mb-4">
+                  The admin needs to add songs to the database first.
+                </p>
+                <Link href="/admin/songs">
+                  <Button variant="outline" className="rounded-full">
+                    Go to Admin Panel
+                  </Button>
+                </Link>
+              </div>
             ) : (
               <div className="text-center py-12">
                 <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
