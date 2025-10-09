@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Save, Loader2, Plus, Search, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Search, CheckCircle2, XCircle, ExternalLink } from 'lucide-react';
 
 interface SimpleSongEditorProps {
   songId: string;
@@ -207,10 +207,13 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       if (response.ok) {
         const result = await response.json();
         console.log('✅ Admin: Song saved successfully:', result);
-        showNotification('Song saved successfully!', 'success');
+        showNotification('Song saved successfully! View it on the public page.', 'success');
         
         // Reload song data to confirm save
         await loadSongData();
+        
+        // Log the public URL for easy access
+        console.log('🔗 Public page:', `${window.location.origin}/songs/${songId}`);
       } else {
         const errorData = await response.json();
         const errorMsg = errorData.details || errorData.error || 'Unknown error';
@@ -370,24 +373,60 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       {/* Lyrics Editor */}
       <Card>
         <CardHeader>
-          <CardTitle>Lyrics & Chords</CardTitle>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lyrics & Chords</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add lyrics and chords that will be displayed on the public song page
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/songs/${songId}`, '_blank')}
+              className="gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Preview Public Page
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {/* Instructions */}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">Formatting Guide:</h4>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+              <li>• Use <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">[Section Name]</code> for sections (e.g., [Verse 1], [Chorus])</li>
+              <li>• Write chords on their own line above lyrics (e.g., C G Am F)</li>
+              <li>• Use spaces to align chords with lyrics</li>
+              <li>• Leave blank lines between sections for spacing</li>
+            </ul>
+          </div>
+
+          {/* Editor */}
           <Textarea
             value={songData.lyrics}
             onChange={(e) => setSongData({ ...songData, lyrics: e.target.value })}
-            placeholder="Enter lyrics and chords here...&#10;&#10;Example:&#10;[Verse 1]&#10;C          G&#10;Amazing grace, how sweet the sound&#10;Am         F&#10;That saved a wretch like me"
-            rows={20}
-            className="font-mono text-base"
+            placeholder="Enter lyrics and chords here...&#10;&#10;Example:&#10;[Verse 1]&#10;C          G&#10;Amazing grace, how sweet the sound&#10;Am         F&#10;That saved a wretch like me&#10;&#10;[Chorus]&#10;G          C&#10;How great thou art"
+            rows={25}
+            className="font-mono text-base resize-y"
             style={{
               fontFamily: 'Monaco, Consolas, "Courier New", monospace',
               lineHeight: '1.8',
-              fontSize: '15px'
+              fontSize: '15px',
+              minHeight: '400px'
             }}
           />
-          <p className="text-sm text-muted-foreground mt-2">
-            Use square brackets for sections (e.g., [Verse 1], [Chorus]) and write chords above lyrics.
-          </p>
+          
+          {/* Stats */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              {songData.lyrics ? songData.lyrics.split('\n').length : 0} lines • {songData.lyrics ? songData.lyrics.length : 0} characters
+            </span>
+            <span className="text-xs">
+              Changes will be visible on the public page after saving
+            </span>
+          </div>
         </CardContent>
       </Card>
 
