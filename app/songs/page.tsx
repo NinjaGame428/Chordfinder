@@ -243,9 +243,8 @@ const SongsPage = () => {
                 placeholder="Search for songs, artists, chords, or lyrics..."
                 onSearch={(query) => setSearchQuery(query)}
                 onResultSelect={(result) => {
-                  // Navigate to the selected song using slug
-                  const slug = result.slug || result.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                  window.location.href = `/songs/${slug}`;
+                  // Navigate to the selected song using ID (fastest and most reliable)
+                  window.location.href = `/songs/${result.id}`;
                 }}
                 showFilters={true}
                 showSort={true}
@@ -379,7 +378,7 @@ const SongsPage = () => {
                                   variant="outline"
                                   asChild
                                 >
-                                   <Link href={`/songs/${song.slug || song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                                   <Link href={`/songs/${song.id}`}>
                                     <Music className="mr-2 h-4 w-4" />
                                     View Chords
                                     <ExternalLink className="ml-2 h-4 w-4" />
@@ -451,7 +450,7 @@ const SongsPage = () => {
                                   variant="outline"
                                   asChild
                                 >
-                                  <Link href={`/songs/${song.slug || song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                                  <Link href={`/songs/${song.id}`}>
                                     <Music className="h-4 w-4 mr-2" />
                                     View Chords
                                   </Link>

@@ -36,29 +36,17 @@ const SongDetailsPage = () => {
           throw new Error('Database connection not available');
         }
 
-        // First try to find by exact slug match (if slug column exists)
-        let { data: songsData, error: songsError } = await supabase
-          .from('songs')
-          .select(`
-            *,
-            artists (
-              id,
-              name
-            )
-          `)
-          .eq('slug', songSlug);
+        console.log('🔍 Fetching song with slug:', songSlug);
 
-        // If slug column doesn't exist, songsError will contain the error
-        if (songsError && songsError.message.includes('column songs.slug does not exist')) {
-          songsData = null; // Reset to trigger fallback logic
-        } else if (songsError) {
-          throw new Error(`Database error: ${songsError.message}`);
-        }
+        // Try to fetch song by ID if slug looks like a UUID
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(songSlug as string);
+        
+        let songsData = null;
+        let songsError = null;
 
-        // If no exact match, try to find by title slug
-        if (!songsData || songsData.length === 0) {
-          // Get all songs and find by title slug
-          const { data: allSongs, error: allSongsError } = await supabase
+        if (isUUID) {
+          // Fetch by ID directly (fastest)
+          const result = await supabase
             .from('songs')
             .select(`
               *,
@@ -66,37 +54,76 @@ const SongDetailsPage = () => {
                 id,
                 name
               )
-            `);
+            `)
+            .eq('id', songSlug)
+            .single();
+          
+          songsData = result.data ? [result.data] : null;
+          songsError = result.error;
+          console.log('📌 Fetched by ID');
+        } else {
+          // Try slug column first
+          const result = await supabase
+            .from('songs')
+            .select(`
+              *,
+              artists (
+                id,
+                name
+              )
+            `)
+            .eq('slug', songSlug);
+          
+          songsData = result.data;
+          songsError = result.error;
 
-          if (allSongsError) {
-            throw new Error(`Database error: ${allSongsError.message}`);
-          }
-
-          if (allSongs) {
-            const foundSong = allSongs.find((s: any) => 
-              createSlug(s.title) === songSlug
-            );
+          // If slug column doesn't exist or no results, try title matching with ILIKE (case-insensitive)
+          if ((songsError && songsError.message.includes('column songs.slug does not exist')) || 
+              (!songsData || songsData.length === 0)) {
+            console.log('🔄 Trying title match...');
             
-            if (foundSong) {
-              songsData = [foundSong];
-            }
+            // Convert slug back to title format for matching
+            const titleFromSlug = (songSlug as string)
+              .split('-')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+            
+            const titleResult = await supabase
+              .from('songs')
+              .select(`
+                *,
+                artists (
+                  id,
+                  name
+                )
+              `)
+              .ilike('title', `%${titleFromSlug}%`)
+              .limit(1);
+            
+            songsData = titleResult.data;
+            songsError = titleResult.error;
           }
+        }
+
+        if (songsError && !songsError.message.includes('column songs.slug does not exist')) {
+          throw new Error(`Database error: ${songsError.message}`);
         }
 
         if (songsData && songsData.length > 0) {
           const foundSong = songsData[0];
-          console.log('🎵 Song loaded:', {
+          console.log('✅ Song loaded:', {
+            id: foundSong.id,
             title: foundSong.title,
             hasLyrics: !!foundSong.lyrics,
-            lyricsLength: foundSong.lyrics?.length || 0,
-            lyricsPreview: foundSong.lyrics?.substring(0, 100)
+            lyricsLength: foundSong.lyrics?.length || 0
           });
           setSong(foundSong);
         } else {
-          setError(`Song not found for slug: ${songSlug}`);
+          console.error('❌ Song not found for slug:', songSlug);
+          setError(`Song not found`);
         }
       } catch (err) {
-        console.error('Error fetching song:', err);
+        console.error('❌ Error fetching song:', err);
         setError(err instanceof Error ? err.message : 'Failed to load song');
       } finally {
         setIsLoading(false);
