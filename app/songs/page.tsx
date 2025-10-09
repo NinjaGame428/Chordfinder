@@ -59,11 +59,20 @@ const SongsPage = () => {
           .limit(50);
 
         if (songsError) {
+          console.error('❌ Error fetching songs:', songsError);
           setIsLoading(false);
           return;
         }
 
+        console.log('✅ Fetched songs from database:', songsData?.length || 0, 'songs');
+
         if (songsData && songsData.length > 0) {
+          console.log('📋 First song sample:', {
+            id: songsData[0].id,
+            title: songsData[0].title,
+            artist: songsData[0].artists?.name
+          });
+
           const formattedSongs: Song[] = songsData.map((song: any) => ({
             id: song.id,
             title: song.title,
@@ -90,10 +99,13 @@ const SongsPage = () => {
             captions_available: false
           }));
 
+          console.log('✅ Formatted songs:', formattedSongs.length);
           setSupabaseSongs(formattedSongs);
+        } else {
+          console.warn('⚠️ No songs found in database');
         }
       } catch (error) {
-        // Silent fail
+        console.error('❌ Exception while fetching songs:', error);
       } finally {
         setIsLoading(false);
       }
