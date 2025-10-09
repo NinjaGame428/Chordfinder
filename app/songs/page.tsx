@@ -32,20 +32,13 @@ const SongsPage = () => {
   // Fetch songs from Supabase with pagination and caching
   useEffect(() => {
     async function fetchSongs() {
-      console.log('🔄 Starting to fetch songs from Supabase...');
-      
       if (!supabase) {
-        console.error('❌ Supabase client is not initialized!');
-        console.error('Check your .env.local file for NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY');
         setIsLoading(false);
         return;
       }
 
-      console.log('✅ Supabase client is initialized');
-
       try {
-        // Fetch songs with optimized query (only essential fields)
-        console.log('📡 Fetching songs from database...');
+        // Fetch songs with artists in a single optimized query
         const { data: songsData, error: songsError } = await supabase
           .from('songs')
           .select(`
@@ -56,49 +49,28 @@ const SongsPage = () => {
             key_signature,
             year,
             tempo,
-            chords,
             downloads,
             rating,
             description,
-            slug,
-            created_at
+            created_at,
+            artists (
+              id,
+              name
+            )
           `)
-          .order('created_at', { ascending: false });
-          // Removed limit to show all songs
+          .order('created_at', { ascending: false })
+          .limit(100);
 
         if (songsError) {
-          console.error('❌ Error fetching songs:', songsError);
-          console.error('Error details:', JSON.stringify(songsError, null, 2));
           setIsLoading(false);
           return;
         }
 
-        console.log(`📊 Retrieved ${songsData?.length || 0} songs from database`);
-
         if (songsData && songsData.length > 0) {
-          // Get unique artist IDs
-          const artistIds = [...new Set(songsData.map((song: any) => song.artist_id).filter(Boolean))];
-          console.log(`👥 Fetching ${artistIds.length} unique artists...`);
-          
-          // Fetch artists with optimized query
-          const { data: artistsData, error: artistsError } = await supabase
-            .from('artists')
-            .select('id, name')
-            .in('id', artistIds);
-
-          if (artistsError) {
-            console.error('❌ Error fetching artists:', artistsError);
-          } else {
-            console.log(`✅ Retrieved ${artistsData?.length || 0} artists`);
-          }
-
-          // Create a map of artist IDs to names
-          const artistMap = new Map(artistsData?.map((a: any) => [a.id, a.name]) || []);
-
           const formattedSongs: Song[] = songsData.map((song: any, index: number) => ({
             id: song.id, // Use actual UUID as string
             title: song.title,
-            artist: artistMap.get(song.artist_id) || 'Unknown Artist',
+            artist: song.artists?.name || 'Unknown Artist',
             key: song.key_signature || 'C',
             difficulty: 'Medium',
             category: song.genre || 'Gospel',
@@ -121,18 +93,12 @@ const SongsPage = () => {
             captions_available: false
           }));
 
-          console.log(`✅ Successfully formatted ${formattedSongs.length} songs`);
-          console.log('📝 Sample songs:', formattedSongs.slice(0, 3).map(s => ({ title: s.title, artist: s.artist })));
           setSupabaseSongs(formattedSongs);
-        } else {
-          console.warn('⚠️ No songs found in database. Did you run the import script?');
         }
       } catch (error) {
-        console.error('❌ Unexpected error fetching songs:', error);
-        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+        // Silent fail
       } finally {
         setIsLoading(false);
-        console.log('✨ Finished fetching songs');
       }
     }
 
