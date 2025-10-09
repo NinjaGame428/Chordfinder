@@ -64,30 +64,32 @@ export async function PUT(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // Build update data dynamically - only include fields that have values
+    // Build update data - only use absolutely essential columns
     const updateData: any = {};
     
-    if (title) updateData.title = title;
-    if (artist_id) updateData.artist_id = artist_id;
-    if (lyrics !== undefined) updateData.lyrics = lyrics;
-    
-    // Only add these if they have values
-    if (key_signature || key) {
-      updateData.key_signature = key_signature || key;
-    }
-    if (tempo || bpm) {
-      updateData.tempo = tempo || bpm;
-    }
-    if (chords) {
-      updateData.chords = typeof chords === 'string' ? chords : JSON.stringify(chords);
-    }
-    if (youtube_id) {
-      updateData.youtube_id = youtube_id;
-    }
-    
-    // Generate slug from title
+    // Core fields that should definitely exist
     if (title) {
-      updateData.slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      updateData.title = title;
+    }
+    
+    if (artist_id) {
+      updateData.artist_id = artist_id;
+    }
+    
+    // Always include lyrics even if empty
+    updateData.lyrics = lyrics || '';
+    
+    // Optional fields - only add if they have non-null/non-empty values
+    if (key_signature) {
+      updateData.key_signature = key_signature;
+    } else if (key) {
+      updateData.key_signature = key;
+    }
+    
+    if (tempo) {
+      updateData.tempo = parseInt(tempo.toString());
+    } else if (bpm) {
+      updateData.tempo = parseInt(bpm.toString());
     }
 
     console.log('=== UPDATING SONG ===');
@@ -108,8 +110,24 @@ export async function PUT(
       .single();
 
     if (error) {
-      console.error('Error updating song:', error);
+      console.error('=== UPDATE FAILED ===');
+      console.error('Error:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       console.error('Update data was:', updateData);
+      
+      // Check for column not found error
+      if (error.code === 'PGRST204' && error.message.includes('column')) {
+        const columnMatch = error.message.match(/'([^']+)'/);
+        const columnName = columnMatch ? columnMatch[1] : 'unknown';
+        return NextResponse.json({ 
+          error: 'Database schema error', 
+          details: `Column '${columnName}' does not exist in songs table. Please check your database schema.`,
+          code: error.code,
+          column: columnName
+        }, { status: 500 });
+      }
+      
       return NextResponse.json({ 
         error: 'Failed to update song', 
         details: error.message,
@@ -117,6 +135,9 @@ export async function PUT(
       }, { status: 500 });
     }
 
+    console.log('=== UPDATE SUCCESS ===');
+    console.log('Updated song:', song.id, song.title);
+    
     return NextResponse.json({ song, message: 'Song updated successfully' });
   } catch (error) {
     console.error('Error in PUT /api/songs/[id]:', error);
