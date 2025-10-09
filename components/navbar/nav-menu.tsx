@@ -18,27 +18,27 @@ export const NavMenu = (props: NavigationMenuProps) => {
       <NavigationMenuList className="gap-6 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start">
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/songs">Chansons</Link>
+            <Link href="/songs">Songs</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/chords">Accords</Link>
+            <Link href="/chords">Chords</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/artists">Artistes</Link>
+            <Link href="/artists">Artists</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/about">À Propos</Link>
+            <Link href="/about">About</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/resources">Ressources</Link>
+            <Link href="/resources">Resources</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
