@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Save, Loader2, Plus, Search } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Plus, Search, CheckCircle2, XCircle } from 'lucide-react';
 
 interface SimpleSongEditorProps {
   songId: string;
@@ -40,6 +40,9 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
   const [artistSearchQuery, setArtistSearchQuery] = useState('');
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
   const [newArtistName, setNewArtistName] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [songData, setSongData] = useState<SongData>({
     title: '',
     artist_id: '',
@@ -48,6 +51,16 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
     tempo: '',
     lyrics: '',
   });
+
+  // Show toast notification
+  const showNotification = (message: string, type: 'success' | 'error') => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+  };
 
   // Load song data
   const loadSongData = async () => {
@@ -176,14 +189,14 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       });
 
       if (response.ok) {
-        alert('Song saved successfully!');
+        showNotification('Song saved successfully!', 'success');
       } else {
         const errorData = await response.json();
         const errorMsg = errorData.details || errorData.error || 'Unknown error';
-        alert(`Failed to save song: ${errorMsg}`);
+        showNotification(`Failed to save song: ${errorMsg}`, 'error');
       }
     } catch (error) {
-      alert('Failed to save song');
+      showNotification('Failed to save song', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -414,6 +427,24 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 left-4 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+            toastType === 'success' 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            {toastType === 'success' ? (
+              <CheckCircle2 className="h-5 w-5" />
+            ) : (
+              <XCircle className="h-5 w-5" />
+            )}
+            <span className="font-medium">{toastMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
