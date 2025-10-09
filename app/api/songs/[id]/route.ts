@@ -64,10 +64,12 @@ export async function PUT(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // Build update data - only use absolutely essential columns
-    const updateData: any = {};
+    // Build update data using actual database columns
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
     
-    // Core fields that should definitely exist
+    // Core fields
     if (title) {
       updateData.title = title;
     }
@@ -76,20 +78,22 @@ export async function PUT(
       updateData.artist_id = artist_id;
     }
     
-    // Always include lyrics even if empty
-    updateData.lyrics = lyrics || '';
+    // Lyrics - always save (can be empty string)
+    updateData.lyrics = lyrics !== undefined ? lyrics : null;
     
-    // Optional fields - only add if they have non-null/non-empty values
-    if (key_signature) {
-      updateData.key_signature = key_signature;
-    } else if (key) {
-      updateData.key_signature = key;
+    // Optional fields
+    if (key_signature || key) {
+      updateData.key_signature = key_signature || key;
     }
     
-    if (tempo) {
-      updateData.tempo = parseInt(tempo.toString());
-    } else if (bpm) {
-      updateData.tempo = parseInt(bpm.toString());
+    if (tempo || bpm) {
+      const tempoValue = tempo || bpm;
+      updateData.tempo = tempoValue ? parseInt(tempoValue.toString()) : null;
+    }
+    
+    // Auto-generate slug from title
+    if (title) {
+      updateData.slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 
     console.log('=== UPDATING SONG ===');
