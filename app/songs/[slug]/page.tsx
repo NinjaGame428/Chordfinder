@@ -237,114 +237,92 @@ const SongDetailsPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Chord Progressions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Music className="h-5 w-5 mr-2" />
-                    Chord Progressions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="piano" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="piano">Piano</TabsTrigger>
-                      <TabsTrigger value="guitar">Guitar</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="piano" className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium mb-2">Chords</p>
-                        <div className="flex flex-wrap gap-2">
-                          {song.chords && Array.isArray(song.chords) ? (
-                            song.chords.map((chord: string, index: number) => (
-                              <Badge key={index} variant="secondary" className="text-sm">
-                                {chord}
-                              </Badge>
-                            ))
-                          ) : (
-                            <p className="text-muted-foreground">No chords available</p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium mb-2">Chord Progression</p>
-                        <p className="text-lg font-mono bg-muted p-3 rounded">
-                          {song.chords && Array.isArray(song.chords) ? song.chords.join(' - ') : 'No progression available'}
-                        </p>
-                      </div>
-                    </TabsContent>
-                    <TabsContent value="guitar" className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium mb-2">Chords</p>
-                        <div className="flex flex-wrap gap-2">
-                          {song.chords && Array.isArray(song.chords) ? (
-                            song.chords.map((chord: string, index: number) => (
-                              <Badge key={index} variant="secondary" className="text-sm">
-                                {chord}
-                              </Badge>
-                            ))
-                          ) : (
-                            <p className="text-muted-foreground">No chords available</p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium mb-2">Capo</p>
-                        <p className="text-lg">No capo needed</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium mb-2">Tuning</p>
-                        <p className="text-lg">Standard (EADGBE)</p>
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
 
-              {/* Song Structure */}
+              {/* Lyrics & Chords */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Song Structure</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {song.chords && Array.isArray(song.chords) ? (
-                      <div>
-                        <p className="text-sm font-medium capitalize mb-1">Chord Progression</p>
-                        <div className="flex flex-wrap gap-1">
-                          {song.chords.map((chord: string, index: number) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {chord}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No song structure available</p>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Guitar className="h-5 w-5 mr-2" />
+                      Lyrics & Chords
+                    </div>
+                    {song.key_signature && (
+                      <Badge variant="outline" className="text-sm">
+                        Key: {song.key_signature}
+                      </Badge>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Lyrics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Music className="h-5 w-5 mr-2" />
-                    Lyrics & Chords
                   </CardTitle>
+                  <CardDescription>
+                    Follow along with the chords and lyrics below
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {song.lyrics ? (
-                    <div className="font-mono text-sm whitespace-pre-wrap leading-relaxed bg-muted p-4 rounded-lg">
-                      {song.lyrics}
+                    <div className="space-y-6">
+                      {/* Render lyrics with proper formatting */}
+                      <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="font-mono text-base leading-loose whitespace-pre-wrap">
+                          {song.lyrics.split('\n').map((line: string, index: number) => {
+                            // Check if line is a section header (e.g., [Verse 1], [Chorus])
+                            const isSectionHeader = line.trim().match(/^\[.*\]$/);
+                            // Check if line contains chords (typically uppercase letters and symbols)
+                            const isChordLine = line.trim().match(/^[A-G#b/\s]+$/) && line.trim().length > 0 && !isSectionHeader;
+                            
+                            if (isSectionHeader) {
+                              return (
+                                <div key={index} className="mt-6 mb-3 first:mt-0">
+                                  <span className="inline-block px-3 py-1 bg-primary text-primary-foreground rounded-md font-semibold text-sm">
+                                    {line.trim().replace(/[\[\]]/g, '')}
+                                  </span>
+                                </div>
+                              );
+                            } else if (isChordLine) {
+                              return (
+                                <div key={index} className="text-blue-600 dark:text-blue-400 font-bold tracking-wide">
+                                  {line}
+                                </div>
+                              );
+                            } else if (line.trim() === '') {
+                              return <div key={index} className="h-4" />;
+                            } else {
+                              return (
+                                <div key={index} className="text-slate-700 dark:text-slate-300">
+                                  {line}
+                                </div>
+                              );
+                            }
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Quick Info */}
+                      <div className="flex flex-wrap gap-4 pt-4 border-t">
+                        {song.tempo && (
+                          <div className="flex items-center gap-2">
+                            <Music className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Tempo: <span className="font-semibold text-foreground">{song.tempo} BPM</span>
+                            </span>
+                          </div>
+                        )}
+                        {song.key_signature && (
+                          <div className="flex items-center gap-2">
+                            <Piano className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Key: <span className="font-semibold text-foreground">{song.key_signature}</span>
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">Lyrics not available for this song</p>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        We're working on adding lyrics to all songs in our collection.
+                    <div className="text-center py-12">
+                      <Guitar className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <p className="text-lg font-medium text-muted-foreground mb-2">
+                        Lyrics not available yet
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        We're working on adding lyrics and chords to all songs in our collection.
                       </p>
                     </div>
                   )}
