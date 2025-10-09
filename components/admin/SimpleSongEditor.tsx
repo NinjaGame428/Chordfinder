@@ -97,6 +97,13 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         }
       }
 
+      console.log('📝 Admin: Loading song data:', {
+        title: song.title,
+        hasLyrics: !!lyricsText,
+        lyricsLength: lyricsText?.length || 0,
+        lyricsPreview: lyricsText?.substring(0, 100)
+      });
+
       setSongData({
         title: song.title || '',
         artist_id: song.artist_id || '',
@@ -184,6 +191,13 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         lyrics: songData.lyrics,
       };
 
+      console.log('💾 Admin: Saving song:', {
+        title: payload.title,
+        hasLyrics: !!payload.lyrics,
+        lyricsLength: payload.lyrics?.length || 0,
+        lyricsPreview: payload.lyrics?.substring(0, 100)
+      });
+
       const response = await fetch(`/api/songs/${songId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -192,6 +206,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
 
       if (response.ok) {
         const result = await response.json();
+        console.log('✅ Admin: Song saved successfully:', result);
         showNotification('Song saved successfully!', 'success');
         
         // Reload song data to confirm save

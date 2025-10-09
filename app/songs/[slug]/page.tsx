@@ -85,6 +85,12 @@ const SongDetailsPage = () => {
 
         if (songsData && songsData.length > 0) {
           const foundSong = songsData[0];
+          console.log('🎵 Song loaded:', {
+            title: foundSong.title,
+            hasLyrics: !!foundSong.lyrics,
+            lyricsLength: foundSong.lyrics?.length || 0,
+            lyricsPreview: foundSong.lyrics?.substring(0, 100)
+          });
           setSong(foundSong);
         } else {
           setError(`Song not found for slug: ${songSlug}`);
@@ -257,7 +263,7 @@ const SongDetailsPage = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {song.lyrics ? (
+                  {song.lyrics && song.lyrics.trim().length > 0 ? (
                     <div className="space-y-6">
                       {/* Render lyrics with proper formatting */}
                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
