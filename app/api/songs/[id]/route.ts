@@ -95,6 +95,8 @@ export async function PUT(
       updateData.slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 
+    console.log('Updating song with data:', updateData);
+
     const { data: song, error } = await supabase
       .from('songs')
       .update(updateData)
@@ -110,10 +112,14 @@ export async function PUT(
 
     if (error) {
       console.error('Error updating song:', error);
-      return NextResponse.json({ error: 'Failed to update song' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to update song', 
+        details: error.message 
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ song });
+    console.log('Song updated successfully:', song);
+    return NextResponse.json({ song, message: 'Song updated successfully' });
   } catch (error) {
     console.error('Error in PUT /api/songs/[id]:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -130,6 +136,8 @@ export async function DELETE(
     }
     
     const resolvedParams = await params;
+    console.log('Deleting song with ID:', resolvedParams.id);
+
     const { error } = await supabase
       .from('songs')
       .delete()
@@ -137,9 +145,13 @@ export async function DELETE(
 
     if (error) {
       console.error('Error deleting song:', error);
-      return NextResponse.json({ error: 'Failed to delete song' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to delete song',
+        details: error.message 
+      }, { status: 500 });
     }
 
+    console.log('Song deleted successfully from database');
     return NextResponse.json({ message: 'Song deleted successfully' });
   } catch (error) {
     console.error('Error in DELETE /api/songs/[id]:', error);

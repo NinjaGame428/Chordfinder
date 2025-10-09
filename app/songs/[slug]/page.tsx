@@ -89,6 +89,8 @@ const SongDetailsPage = () => {
         if (songsData && songsData.length > 0) {
           const foundSong = songsData[0];
           console.log('Found song:', foundSong);
+          console.log('Song lyrics:', foundSong.lyrics);
+          console.log('Song artist:', foundSong.artists);
           setSong(foundSong);
         } else {
           console.log('Song not found for slug:', songSlug);
@@ -341,7 +343,7 @@ const SongDetailsPage = () => {
                 </CardHeader>
                 <CardContent>
                   {song.lyrics ? (
-                    <div className="font-mono text-sm whitespace-pre-wrap leading-relaxed">
+                    <div className="font-mono text-sm whitespace-pre-wrap leading-relaxed bg-muted p-4 rounded-lg">
                       {song.lyrics}
                     </div>
                   ) : (
