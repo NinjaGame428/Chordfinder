@@ -292,6 +292,14 @@ const SongDetailsPage = () => {
                 <CardContent>
                   {song.lyrics && song.lyrics.trim().length > 0 ? (
                     <div className="space-y-6">
+                      {/* Info banner */}
+                      <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
+                        <p className="flex items-center gap-2">
+                          <Music className="h-4 w-4" />
+                          <span>Lyrics and chords added by admin • {song.lyrics.split('\n').length} lines</span>
+                        </p>
+                      </div>
+                      
                       {/* Render lyrics with proper formatting */}
                       <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
                         <div className="font-mono text-base leading-loose whitespace-pre-wrap">
@@ -349,14 +357,18 @@ const SongDetailsPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-12">
+                    <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
                       <Guitar className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
                       <p className="text-lg font-medium text-muted-foreground mb-2">
-                        Lyrics not available yet
+                        No lyrics added yet
                       </p>
-                      <p className="text-sm text-muted-foreground">
-                        We're working on adding lyrics and chords to all songs in our collection.
+                      <p className="text-sm text-muted-foreground mb-4">
+                        An admin needs to add lyrics and chords for this song in the admin dashboard.
                       </p>
+                      <div className="inline-flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                        <Music className="h-3 w-3" />
+                        <span>Admin Dashboard → Songs → Edit → Add Lyrics</span>
+                      </div>
                     </div>
                   )}
                 </CardContent>
