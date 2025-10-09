@@ -176,20 +176,26 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
     try {
       setIsSaving(true);
 
+      const payload = {
+        title: songData.title,
+        artist_id: songData.artist_id,
+        key_signature: songData.key_signature,
+        tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
+        lyrics: songData.lyrics,
+      };
+
       const response = await fetch(`/api/songs/${songId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: songData.title,
-          artist_id: songData.artist_id,
-          key_signature: songData.key_signature,
-          tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
-          lyrics: songData.lyrics,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
+        const result = await response.json();
         showNotification('Song saved successfully!', 'success');
+        
+        // Reload song data to confirm save
+        await loadSongData();
       } else {
         const errorData = await response.json();
         const errorMsg = errorData.details || errorData.error || 'Unknown error';

@@ -75,7 +75,10 @@ export async function PUT(
     }
     
     // Lyrics - critical field, always include (can be empty string or null)
-    updateData.lyrics = lyrics || null;
+    // Use !== undefined to allow empty strings to be saved
+    if (lyrics !== undefined) {
+      updateData.lyrics = lyrics;
+    }
     
     // Optional metadata fields
     if (key_signature !== undefined && key_signature !== null && key_signature !== '') {
@@ -89,6 +92,14 @@ export async function PUT(
     } else if (bpm !== undefined && bpm !== null && bpm !== '') {
       updateData.tempo = parseInt(bpm.toString());
     }
+
+    // Log what we're about to save for debugging
+    console.log('💾 Saving song:', {
+      id: resolvedParams.id,
+      title: updateData.title,
+      lyricsLength: updateData.lyrics?.length || 0,
+      hasLyrics: !!updateData.lyrics
+    });
 
     // First, update the song
     const { error: updateError } = await supabase
@@ -135,6 +146,13 @@ export async function PUT(
         details: error.message
       }, { status: 500 });
     }
+
+    // Log successful save
+    console.log('✅ Song saved successfully:', {
+      id: song.id,
+      title: song.title,
+      lyricsLength: song.lyrics?.length || 0
+    });
     
     return NextResponse.json({ song, message: 'Song updated successfully' });
   } catch (error) {
