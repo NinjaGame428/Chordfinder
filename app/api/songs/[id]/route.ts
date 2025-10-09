@@ -74,28 +74,51 @@ export async function PUT(
       updateData.artist_id = artist_id;
     }
     
-    // Lyrics - critical field, always include
-    if (lyrics !== undefined) {
-      updateData.lyrics = lyrics;
-    }
+    // Lyrics - critical field, always include (can be empty string or null)
+    updateData.lyrics = lyrics || null;
     
     // Optional metadata fields
-    if (key_signature !== undefined && key_signature !== null) {
+    if (key_signature !== undefined && key_signature !== null && key_signature !== '') {
       updateData.key_signature = key_signature;
-    } else if (key !== undefined && key !== null) {
+    } else if (key !== undefined && key !== null && key !== '') {
       updateData.key_signature = key;
     }
     
-    if (tempo !== undefined && tempo !== null) {
+    if (tempo !== undefined && tempo !== null && tempo !== '') {
       updateData.tempo = parseInt(tempo.toString());
-    } else if (bpm !== undefined && bpm !== null) {
+    } else if (bpm !== undefined && bpm !== null && bpm !== '') {
       updateData.tempo = parseInt(bpm.toString());
     }
 
-    const { data: song, error } = await supabase
+    // First, update the song
+    const { error: updateError } = await supabase
       .from('songs')
       .update(updateData)
-      .eq('id', resolvedParams.id)
+      .eq('id', resolvedParams.id);
+
+    if (updateError) {
+      // Check for column not found error
+      if (updateError.code === 'PGRST204' && updateError.message.includes('column')) {
+        const columnMatch = updateError.message.match(/'([^']+)'/);
+        const columnName = columnMatch ? columnMatch[1] : 'unknown';
+        return NextResponse.json({ 
+          error: 'Database schema error', 
+          details: `Column '${columnName}' does not exist in songs table`,
+          code: updateError.code,
+          column: columnName
+        }, { status: 500 });
+      }
+      
+      return NextResponse.json({ 
+        error: 'Failed to update song', 
+        details: updateError.message,
+        code: updateError.code
+      }, { status: 500 });
+    }
+
+    // Then, fetch the updated song separately to avoid .single() issues
+    const { data: song, error } = await supabase
+      .from('songs')
       .select(`
         *,
         artists (
@@ -103,25 +126,13 @@ export async function PUT(
           name
         )
       `)
+      .eq('id', resolvedParams.id)
       .single();
 
     if (error) {
-      // Check for column not found error
-      if (error.code === 'PGRST204' && error.message.includes('column')) {
-        const columnMatch = error.message.match(/'([^']+)'/);
-        const columnName = columnMatch ? columnMatch[1] : 'unknown';
-        return NextResponse.json({ 
-          error: 'Database schema error', 
-          details: `Column '${columnName}' does not exist in songs table`,
-          code: error.code,
-          column: columnName
-        }, { status: 500 });
-      }
-      
       return NextResponse.json({ 
-        error: 'Failed to update song', 
-        details: error.message,
-        code: error.code
+        error: 'Failed to fetch updated song', 
+        details: error.message
       }, { status: 500 });
     }
     
