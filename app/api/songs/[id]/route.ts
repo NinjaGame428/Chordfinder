@@ -48,13 +48,10 @@ export async function PUT(
     
     const { 
       title, 
-      english_title, 
-      year, 
       key,
       key_signature,
       bpm,
       tempo,
-      difficulty, 
       youtube_id, 
       slug,
       chords,
@@ -67,11 +64,9 @@ export async function PUT(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // Update song data - only use columns that exist
+    // Update song data - only use columns that exist in database
     const updateData: any = {
       title,
-      english_title: english_title || null,
-      year: year || null,
       key_signature: key_signature || key || null,
       tempo: tempo || bpm || null,
       lyrics: lyrics || null,

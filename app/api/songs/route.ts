@@ -39,13 +39,10 @@ export async function POST(request: NextRequest) {
     
     const { 
       title, 
-      english_title, 
-      year, 
       key,
       key_signature,
       bpm,
       tempo,
-      difficulty, 
       youtube_id, 
       slug,
       chords,
@@ -58,16 +55,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and artist are required' }, { status: 400 });
     }
 
-    // Create song data
+    // Create song data - only use columns that exist in database
     const songData = {
       title,
-      english_title: english_title || null,
-      year: year || null,
       key_signature: key_signature || key || null,
       tempo: tempo || bpm || null,
       chords: chords ? JSON.stringify(chords) : null,
       lyrics: lyrics || null,
       artist_id,
+      youtube_id: youtube_id || null,
       // Generate slug if not provided
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     };
