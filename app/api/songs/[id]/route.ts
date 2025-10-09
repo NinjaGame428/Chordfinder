@@ -98,8 +98,11 @@ export async function PUT(
       id: resolvedParams.id,
       title: updateData.title,
       lyricsLength: updateData.lyrics?.length || 0,
-      hasLyrics: !!updateData.lyrics
+      hasLyrics: !!updateData.lyrics,
+      lyricsPreview: updateData.lyrics ? updateData.lyrics.substring(0, 100) + '...' : 'null'
     });
+    
+    console.log('📦 Full update payload:', JSON.stringify(updateData, null, 2));
 
     // First, update the song
     const { error: updateError } = await supabase
@@ -127,6 +130,8 @@ export async function PUT(
       }, { status: 500 });
     }
 
+    console.log('✅ Update completed, now fetching updated song...');
+
     // Then, fetch the updated song separately to avoid .single() issues
     const { data: song, error } = await supabase
       .from('songs')
@@ -141,17 +146,21 @@ export async function PUT(
       .single();
 
     if (error) {
+      console.error('❌ Failed to fetch updated song:', error);
       return NextResponse.json({ 
         error: 'Failed to fetch updated song', 
         details: error.message
       }, { status: 500 });
     }
 
-    // Log successful save
+    // Log successful save with detailed info
     console.log('✅ Song saved successfully:', {
       id: song.id,
       title: song.title,
-      lyricsLength: song.lyrics?.length || 0
+      lyricsLength: song.lyrics?.length || 0,
+      lyricsType: typeof song.lyrics,
+      lyricsPreview: song.lyrics ? song.lyrics.substring(0, 100) + '...' : 'null',
+      hasLyrics: !!song.lyrics
     });
     
     return NextResponse.json({ song, message: 'Song updated successfully' });

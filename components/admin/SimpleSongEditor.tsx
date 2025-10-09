@@ -91,6 +91,14 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         }
       }
 
+      console.log('📝 Admin: Loaded song data:', {
+        id: song.id,
+        title: song.title,
+        lyricsLength: lyricsText.length,
+        lyricsPreview: lyricsText.substring(0, 100) + '...',
+        hasArtist: !!song.artist_id
+      });
+
       setSongData({
         title: song.title || '',
         artist_id: song.artist_id || '',
@@ -191,7 +199,12 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         lyrics: songData.lyrics.trim() || '',
       };
 
-      console.log('💾 Saving song:', payload);
+      console.log('💾 Admin: Saving song with payload:', {
+        ...payload,
+        lyricsLength: payload.lyrics.length,
+        lyricsPreview: payload.lyrics.substring(0, 100) + '...',
+        lyricsType: typeof payload.lyrics
+      });
 
       const response = await fetch(`/api/songs/${songId}`, {
         method: 'PUT',
@@ -205,13 +218,20 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       }
 
       const data = await response.json();
-      console.log('✅ Song saved successfully:', data);
+      console.log('✅ Admin: Song saved successfully, response:', {
+        songId: data.song?.id,
+        title: data.song?.title,
+        lyricsLength: data.song?.lyrics?.length || 0,
+        lyricsType: typeof data.song?.lyrics,
+        hasLyrics: !!data.song?.lyrics
+      });
 
       const publicUrl = `${window.location.origin}/songs/${songId}`;
       console.log('🔗 Public page:', publicUrl);
 
       showNotification('Song saved successfully! View it on the public page.', 'success');
 
+      console.log('🔄 Reloading song data...');
       await loadSongData();
     } catch (error: any) {
       console.error('❌ Save error:', error);
