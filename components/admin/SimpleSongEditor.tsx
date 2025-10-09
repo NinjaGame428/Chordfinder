@@ -181,7 +181,9 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         alert('Song saved successfully!');
       } else {
         const errorData = await response.json();
-        alert(`Failed to save song: ${errorData.error || errorData.details || 'Unknown error'}`);
+        console.error('Save error:', errorData);
+        const errorMsg = errorData.details || errorData.error || 'Unknown error';
+        alert(`Failed to save song: ${errorMsg}\n\nCheck console for details.`);
       }
     } catch (error) {
       console.error('Error saving song:', error);

@@ -69,8 +69,7 @@ export async function PUT(
       title,
       key_signature: key_signature || key || null,
       tempo: tempo || bpm || null,
-      lyrics: lyrics || null,
-      updated_at: new Date().toISOString()
+      lyrics: lyrics || null
     };
 
     // Add chords if provided
@@ -105,9 +104,11 @@ export async function PUT(
 
     if (error) {
       console.error('Error updating song:', error);
+      console.error('Update data was:', updateData);
       return NextResponse.json({ 
         error: 'Failed to update song', 
-        details: error.message 
+        details: error.message,
+        code: error.code
       }, { status: 500 });
     }
 
