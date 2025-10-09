@@ -64,30 +64,35 @@ export async function PUT(
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    // Update song data - only use columns that exist in database
-    const updateData: any = {
-      title,
-      key_signature: key_signature || key || null,
-      tempo: tempo || bpm || null,
-      lyrics: lyrics || null
-    };
-
-    // Add chords if provided
+    // Build update data dynamically - only include fields that have values
+    const updateData: any = {};
+    
+    if (title) updateData.title = title;
+    if (artist_id) updateData.artist_id = artist_id;
+    if (lyrics !== undefined) updateData.lyrics = lyrics;
+    
+    // Only add these if they have values
+    if (key_signature || key) {
+      updateData.key_signature = key_signature || key;
+    }
+    if (tempo || bpm) {
+      updateData.tempo = tempo || bpm;
+    }
     if (chords) {
       updateData.chords = typeof chords === 'string' ? chords : JSON.stringify(chords);
     }
-
-    // Add artist_id if provided
-    if (artist_id) {
-      updateData.artist_id = artist_id;
+    if (youtube_id) {
+      updateData.youtube_id = youtube_id;
     }
-
-    // Add slug if provided or generate from title
-    if (slug) {
-      updateData.slug = slug;
-    } else if (title) {
+    
+    // Generate slug from title
+    if (title) {
       updateData.slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
+
+    console.log('=== UPDATING SONG ===');
+    console.log('Song ID:', resolvedParams.id);
+    console.log('Update data:', JSON.stringify(updateData, null, 2));
 
     const { data: song, error } = await supabase
       .from('songs')
