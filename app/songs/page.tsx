@@ -45,21 +45,18 @@ const SongsPage = () => {
             id,
             title,
             artist_id,
-            genre,
             key_signature,
-            year,
             tempo,
             downloads,
             rating,
-            description,
             created_at,
-            artists (
+            artists!inner (
               id,
               name
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(100);
+          .limit(50);
 
         if (songsError) {
           setIsLoading(false);
@@ -67,28 +64,28 @@ const SongsPage = () => {
         }
 
         if (songsData && songsData.length > 0) {
-          const formattedSongs: Song[] = songsData.map((song: any, index: number) => ({
-            id: song.id, // Use actual UUID as string
+          const formattedSongs: Song[] = songsData.map((song: any) => ({
+            id: song.id,
             title: song.title,
             artist: song.artists?.name || 'Unknown Artist',
             key: song.key_signature || 'C',
             difficulty: 'Medium',
-            category: song.genre || 'Gospel',
-            year: song.year?.toString() || new Date().getFullYear().toString(),
+            category: 'Gospel',
+            year: new Date().getFullYear().toString(),
             tempo: song.tempo ? `${song.tempo} BPM` : '120 BPM',
             timeSignature: '4/4',
-            genre: song.genre || 'Gospel',
-            chords: song.chords || ['C', 'G', 'Am', 'F'],
-            chordProgression: song.chords?.join(' - ') || 'C - G - Am - F',
+            genre: 'Gospel',
+            chords: ['C', 'G', 'Am', 'F'],
+            chordProgression: 'C - G - Am - F',
             lyrics: '',
             chordChart: '',
             capo: 'No capo needed',
             strummingPattern: 'Down, Down, Up, Down, Up, Down',
-            tags: ['Gospel', song.genre || 'Worship'],
+            tags: ['Gospel', 'Worship'],
             downloads: song.downloads || 0,
             rating: song.rating || 0,
-            description: song.description || '',
-            slug: song.slug,
+            description: '',
+            slug: song.id,
             language: 'en',
             captions_available: false
           }));

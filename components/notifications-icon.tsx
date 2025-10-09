@@ -13,21 +13,12 @@ export function NotificationsIcon() {
   const { notifications, markAsRead, removeNotification, unreadCount, addNotification } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  // Show for all users (including admins and regular users)
-  // The notification system will work for everyone
-
-  // Add sample notifications for testing (remove in production)
-  useEffect(() => {
-    if (notifications.length === 0) {
-      addNotification({
-        type: 'info',
-        title: 'Welcome to PhinAccords!',
-        message: 'Discover gospel chords and resources for worship.'
-      });
-    }
-  }, [notifications.length, addNotification]);
-
-  const unreadNotifications = notifications.filter(n => !n.read);
+  // Filter to only show important notifications (not info/welcome messages)
+  const importantNotifications = notifications.filter(n => 
+    n.type !== 'info' || (n.type === 'info' && !n.title.toLowerCase().includes('welcome'))
+  );
+  
+  const unreadNotifications = importantNotifications.filter(n => !n.read);
 
   const handleNotificationClick = (notificationId: string) => {
     markAsRead(notificationId);
@@ -47,12 +38,12 @@ export function NotificationsIcon() {
         className="relative"
       >
         <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
+        {unreadNotifications.length > 0 && (
           <Badge 
             variant="destructive" 
             className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
           >
-            {unreadCount}
+            {unreadNotifications.length}
           </Badge>
         )}
       </Button>
@@ -73,12 +64,12 @@ export function NotificationsIcon() {
           </div>
           
           <div className="max-h-96 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {importantNotifications.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
                 No notifications
               </div>
             ) : (
-              notifications.slice(0, 10).map((notification) => (
+              importantNotifications.slice(0, 10).map((notification) => (
                 <Card 
                   key={notification.id}
                   className={`m-2 cursor-pointer transition-colors hover:bg-muted/50 ${
