@@ -45,10 +45,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
     }
     
-    // Fetch artists with all their data
+    // Fetch artists - simplified for speed
     const { data: artists, error } = await supabase
       .from('artists')
-      .select('*')
+      .select('id, name, bio, created_at')
       .order('name', { ascending: true });
 
     if (error) {
@@ -56,25 +56,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Failed to fetch artists' }, { status: 500 });
     }
 
-    // Get song count for each artist
-    const artistsWithCounts = await Promise.all(
-      (artists || []).map(async (artist) => {
-        if (!supabase) {
-          return { ...artist, song_count: 0 };
-        }
-        const { count } = await supabase
-          .from('songs')
-          .select('*', { count: 'exact', head: true })
-          .eq('artist_id', artist.id);
-        
-        return {
-          ...artist,
-          song_count: count || 0
-        };
-      })
-    );
-
-    return NextResponse.json({ artists: artistsWithCounts });
+    // Return artists without song counts for faster loading
+    // Song counts can be added later if needed for specific pages
+    const response = NextResponse.json({ artists: artists || [] });
+    
+    // Add caching headers for better performance
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    
+    return response;
   } catch (error) {
     console.error('Error in GET /api/artists:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

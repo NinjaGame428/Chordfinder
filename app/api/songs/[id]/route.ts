@@ -90,8 +90,6 @@ export async function PUT(
       updateData.slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
 
-    console.log('Updating song with data:', updateData);
-
     const { data: song, error } = await supabase
       .from('songs')
       .update(updateData)
@@ -113,7 +111,6 @@ export async function PUT(
       }, { status: 500 });
     }
 
-    console.log('Song updated successfully:', song);
     return NextResponse.json({ song, message: 'Song updated successfully' });
   } catch (error) {
     console.error('Error in PUT /api/songs/[id]:', error);
@@ -131,8 +128,6 @@ export async function DELETE(
     }
     
     const resolvedParams = await params;
-    console.log('Deleting song with ID:', resolvedParams.id);
-
     const { error } = await supabase
       .from('songs')
       .delete()
@@ -146,7 +141,6 @@ export async function DELETE(
       }, { status: 500 });
     }
 
-    console.log('Song deleted successfully from database');
     return NextResponse.json({ message: 'Song deleted successfully' });
   } catch (error) {
     console.error('Error in DELETE /api/songs/[id]:', error);

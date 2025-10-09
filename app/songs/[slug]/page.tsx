@@ -50,7 +50,6 @@ const SongDetailsPage = () => {
 
         // If slug column doesn't exist, songsError will contain the error
         if (songsError && songsError.message.includes('column songs.slug does not exist')) {
-          console.log('Slug column does not exist, falling back to title-based search...');
           songsData = null; // Reset to trigger fallback logic
         } else if (songsError) {
           throw new Error(`Database error: ${songsError.message}`);
@@ -58,8 +57,6 @@ const SongDetailsPage = () => {
 
         // If no exact match, try to find by title slug
         if (!songsData || songsData.length === 0) {
-          console.log('No exact slug match, trying title-based search...');
-          
           // Get all songs and find by title slug
           const { data: allSongs, error: allSongsError } = await supabase
             .from('songs')
@@ -88,12 +85,8 @@ const SongDetailsPage = () => {
 
         if (songsData && songsData.length > 0) {
           const foundSong = songsData[0];
-          console.log('Found song:', foundSong);
-          console.log('Song lyrics:', foundSong.lyrics);
-          console.log('Song artist:', foundSong.artists);
           setSong(foundSong);
         } else {
-          console.log('Song not found for slug:', songSlug);
           setError(`Song not found for slug: ${songSlug}`);
         }
       } catch (err) {
