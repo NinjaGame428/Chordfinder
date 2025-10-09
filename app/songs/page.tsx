@@ -50,13 +50,13 @@ const SongsPage = () => {
             downloads,
             rating,
             created_at,
-            artists!inner (
+            artists (
               id,
               name
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(100);
 
         if (songsError) {
           console.error('❌ Error fetching songs:', songsError);

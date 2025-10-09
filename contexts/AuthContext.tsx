@@ -56,6 +56,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
+      // Set a timeout to prevent indefinite loading
+      const timeout = setTimeout(() => {
+        setIsLoading(false);
+      }, 2000);
+      
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -64,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Error checking auth:', error);
       } finally {
+        clearTimeout(timeout);
         setIsLoading(false);
       }
     };
