@@ -135,7 +135,9 @@ const ArtistDetailPage = () => {
       // If artist was changed, check if it affects this artist page
       if (detail?.action === 'artistChanged') {
         // Refresh if the song moved to or from this artist
-        if (detail.newArtistId === artistId || detail.oldArtistId === artistId) {
+        const newArtistId = detail.artistId || detail.newArtistId;
+        const oldArtistId = detail.oldArtistId;
+        if (newArtistId === artistId || oldArtistId === artistId) {
           console.log('🎨 Artist changed - song moved to/from this artist, refreshing...');
           fetchSongs();
         }

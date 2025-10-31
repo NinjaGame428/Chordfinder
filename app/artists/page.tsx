@@ -118,7 +118,12 @@ const ArtistsPage = () => {
     
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'songUpdated') {
-        handleSongUpdate();
+        try {
+          const updateData = JSON.parse(e.newValue || '{}');
+          handleSongUpdate({ detail: updateData });
+        } catch (err) {
+          handleSongUpdate({ detail: {} });
+        }
       }
     };
     
