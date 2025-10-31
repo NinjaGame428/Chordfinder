@@ -124,8 +124,6 @@ const translations = {
     'common.user': 'User',
     'common.bpm': 'BPM',
     'common.year': 'Year',
-    
-    // Song related
     'song.rateThisSong': 'Rate this song',
     'song.youRatedThis': 'You rated this',
     'song.clickToRemoveRating': 'Click to remove rating',
@@ -929,8 +927,6 @@ const translations = {
     'common.user': 'Utilisateur',
     'common.bpm': 'BPM',
     'common.year': 'Année',
-    
-    // Song related
     'song.rateThisSong': 'Noter cette chanson',
     'song.youRatedThis': 'Vous avez noté cette chanson',
     'song.clickToRemoveRating': 'Cliquez pour supprimer la note',
