@@ -210,6 +210,9 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
     try {
       setIsSaving(true);
 
+      // CRITICAL: Capture the OLD artist_id BEFORE saving (from current songData state)
+      const oldArtistId = songData.artist_id;
+
       const payload = {
         title: songData.title.trim(),
         artist_id: songData.artist_id,
@@ -237,9 +240,14 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       }
 
       const data = await response.json();
+      const newArtistId = data.song?.artist_id;
+      
       console.log('✅ Admin: Song saved successfully, response:', {
         songId: data.song?.id,
         title: data.song?.title,
+        oldArtistId: oldArtistId,
+        newArtistId: newArtistId,
+        artistChanged: oldArtistId !== newArtistId,
         lyricsLength: data.song?.lyrics?.length || 0,
         lyricsType: typeof data.song?.lyrics,
         hasLyrics: !!data.song?.lyrics
@@ -275,41 +283,66 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       const publicUrl = `${window.location.origin}/songs/${songId}`;
       console.log('🔗 Public page:', publicUrl);
 
-      showNotification('Song saved successfully! Changes will be visible on the public page.', 'success');
+      // Check if artist was changed
+      const artistChanged = oldArtistId && newArtistId && oldArtistId !== newArtistId;
+      
+      if (artistChanged) {
+        console.log('🎨 ARTIST CHANGED:', {
+          from: oldArtistId,
+          to: newArtistId,
+          songId: songId
+        });
+        showNotification(`Song artist changed successfully! Song moved from old artist to new artist.`, 'success');
+      } else {
+        showNotification('Song saved successfully! Changes will be visible on the public page.', 'success');
+      }
 
       console.log('🔄 Reloading song data from database...');
-      // Store old artist_id before reloading
-      const previousArtistId = songData.artist_id;
       await loadSongData();
-      
-      // After reloading, check if artist changed
-      if (previousArtistId && previousArtistId !== data.song?.artist_id) {
-        console.log('🎨 Artist changed from', previousArtistId, 'to', data.song?.artist_id);
-      }
-      
-      // Get the old artist_id from the previous state (before save)
-      const oldArtistId = songData.artist_id;
-      const newArtistId = data.song?.artist_id;
       
       // Notify other pages that a song was updated (so artist pages can refresh song counts)
       // Include both old and new artist IDs so both artist pages can update
-      window.dispatchEvent(new CustomEvent('songUpdated', { 
-        detail: { 
+      if (artistChanged) {
+        // Artist changed - notify with both IDs
+        console.log('📢 Broadcasting artist change event...');
+        window.dispatchEvent(new CustomEvent('songUpdated', { 
+          detail: { 
+            artistId: newArtistId,
+            oldArtistId: oldArtistId,
+            songId: songId,
+            action: 'artistChanged',
+            artistChanged: true
+          } 
+        }));
+        
+        // Also use localStorage for cross-tab communication
+        localStorage.setItem('songUpdated', JSON.stringify({
           artistId: newArtistId,
           oldArtistId: oldArtistId,
           songId: songId,
-          action: 'artistChanged'
-        } 
-      }));
-      
-      // Also use localStorage for cross-tab communication
-      localStorage.setItem('songUpdated', JSON.stringify({
-        artistId: newArtistId,
-        oldArtistId: oldArtistId,
-        songId: songId,
-        action: 'artistChanged',
-        timestamp: Date.now()
-      }));
+          action: 'artistChanged',
+          artistChanged: true,
+          timestamp: Date.now()
+        }));
+        
+        console.log('📢 Event broadcast complete. Both artists should update their counts now.');
+      } else {
+        // Just a regular update - only notify with current artist
+        window.dispatchEvent(new CustomEvent('songUpdated', { 
+          detail: { 
+            artistId: newArtistId,
+            songId: songId,
+            action: 'updated'
+          } 
+        }));
+        
+        localStorage.setItem('songUpdated', JSON.stringify({
+          artistId: newArtistId,
+          songId: songId,
+          action: 'updated',
+          timestamp: Date.now()
+        }));
+      }
       
       // Refresh artists list in case a new artist was just added
       await loadArtists();

@@ -110,26 +110,29 @@ const SongsPage = () => {
       if (response.ok) {
         // Get the song's artist_id before removing from state
         const deletedSong = songs.find(s => s.id === songId);
+        const deletedArtistId = deletedSong?.artist_id;
         
         setSongs(songs.filter(song => song.id !== songId));
         alert(t('admin.songs.deleteSuccess'));
         
         // Notify other pages that a song was deleted
-        window.dispatchEvent(new CustomEvent('songUpdated', { 
-          detail: { 
-            artistId: deletedSong?.artist_id,
+        if (deletedArtistId) {
+          window.dispatchEvent(new CustomEvent('songUpdated', { 
+            detail: { 
+              artistId: deletedArtistId,
+              songId: songId,
+              action: 'deleted'
+            } 
+          }));
+          
+          // Cross-tab communication
+          localStorage.setItem('songUpdated', JSON.stringify({
+            artistId: deletedArtistId,
             songId: songId,
-            action: 'deleted'
-          } 
-        }));
-        
-        // Cross-tab communication
-        localStorage.setItem('songUpdated', JSON.stringify({
-          artistId: deletedSong?.artist_id,
-          songId: songId,
-          action: 'deleted',
-          timestamp: Date.now()
-        }));
+            action: 'deleted',
+            timestamp: Date.now()
+          }));
+        }
       } else {
         alert(t('admin.songs.deleteError'));
       }
@@ -276,9 +279,10 @@ ${songData.lyrics || 'No lyrics available'}
         fetchSongs();
         
         // Notify other pages that a song was added
+        const newArtistId = songData.song?.artist_id || artistId;
         window.dispatchEvent(new CustomEvent('songUpdated', { 
           detail: { 
-            artistId: songData.song?.artist_id || artistId,
+            artistId: newArtistId,
             songId: songData.song?.id,
             action: 'added'
           } 
@@ -286,7 +290,7 @@ ${songData.lyrics || 'No lyrics available'}
         
         // Cross-tab communication
         localStorage.setItem('songUpdated', JSON.stringify({
-          artistId: songData.song?.artist_id || artistId,
+          artistId: newArtistId,
           songId: songData.song?.id,
           action: 'added',
           timestamp: Date.now()

@@ -179,17 +179,26 @@ export async function PUT(
       }, { status: 500 });
     }
 
-    // Log successful save with detailed info
+    // Log successful save with detailed info including artist information
     console.log('✅ Song saved successfully:', {
       id: song.id,
       title: song.title,
+      artist_id: song.artist_id,
+      artist_name: song.artists?.name,
       lyricsLength: song.lyrics?.length || 0,
       lyricsType: typeof song.lyrics,
       lyricsPreview: song.lyrics ? song.lyrics.substring(0, 100) + '...' : 'null',
-      hasLyrics: !!song.lyrics
+      hasLyrics: !!song.lyrics,
+      updated_at: song.updated_at
     });
     
-    return NextResponse.json({ song, message: 'Song updated successfully' });
+    return NextResponse.json({ 
+      song, 
+      message: 'Song updated successfully',
+      artistUpdated: true,
+      newArtistId: song.artist_id,
+      newArtistName: song.artists?.name
+    });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
