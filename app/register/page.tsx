@@ -90,8 +90,29 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Column - Full Screen Image */}
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Mobile Image - Shows on mobile, hidden on desktop */}
+      <div className="lg:hidden w-full h-64 relative">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/signup%20image.png')",
+          }}
+        >
+          <div 
+            className="absolute inset-0" 
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}
+          />
+        </div>
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full p-6 text-white">
+          <h2 className="text-2xl font-bold text-center">{t('auth.welcomeToPhinAccords')}</h2>
+          <p className="text-sm text-white/90 text-center mt-2">
+            {t('auth.joinMusicians')}
+          </p>
+        </div>
+      </div>
+
+      {/* Left Column - Full Screen Image (Desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
