@@ -107,8 +107,12 @@ const ArtistsPage = () => {
     fetchArtists();
     
     // Listen for song updates and refresh artist counts
-    const handleSongUpdate = () => {
-      console.log('🔄 Song updated, refreshing artist counts...');
+    const handleSongUpdate = (event: any) => {
+      console.log('🔄 Song updated, refreshing artist counts...', event?.detail);
+      // If artist was changed, refresh immediately to update counts
+      if (event?.detail?.action === 'artistChanged') {
+        console.log('🎨 Artist changed - refreshing counts for both old and new artists');
+      }
       fetchArtists();
     };
     

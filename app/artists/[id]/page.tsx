@@ -128,17 +128,34 @@ const ArtistDetailPage = () => {
     fetchSongs();
     
     // Listen for song updates and refresh the songs list
-    const handleSongUpdate = () => {
-      console.log('🔄 Song updated, refreshing songs list...');
-      fetchSongs();
+    const handleSongUpdate = (event: any) => {
+      console.log('🔄 Song updated, refreshing songs list...', event?.detail);
+      const detail = event?.detail;
+      
+      // If artist was changed, check if it affects this artist page
+      if (detail?.action === 'artistChanged') {
+        // Refresh if the song moved to or from this artist
+        if (detail.newArtistId === artistId || detail.oldArtistId === artistId) {
+          console.log('🎨 Artist changed - song moved to/from this artist, refreshing...');
+          fetchSongs();
+        }
+      } else if (detail?.artistId === artistId) {
+        // Song was updated for this artist
+        fetchSongs();
+      }
     };
     
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'songUpdated') {
         try {
           const updateData = JSON.parse(e.newValue || '{}');
-          // Only refresh if this update affects the current artist
-          if (!updateData.artistId || updateData.artistId === artistId) {
+          // Refresh if this update affects the current artist
+          if (updateData.action === 'artistChanged') {
+            // Check if song moved to or from this artist
+            if (updateData.artistId === artistId || updateData.oldArtistId === artistId) {
+              fetchSongs();
+            }
+          } else if (!updateData.artistId || updateData.artistId === artistId) {
             fetchSongs();
           }
         } catch (err) {

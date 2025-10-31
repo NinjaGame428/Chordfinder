@@ -278,26 +278,49 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       showNotification('Song saved successfully! Changes will be visible on the public page.', 'success');
 
       console.log('🔄 Reloading song data from database...');
+      // Store old artist_id before reloading
+      const previousArtistId = songData.artist_id;
       await loadSongData();
       
+      // After reloading, check if artist changed
+      if (previousArtistId && previousArtistId !== data.song?.artist_id) {
+        console.log('🎨 Artist changed from', previousArtistId, 'to', data.song?.artist_id);
+      }
+      
+      // Get the old artist_id from the previous state (before save)
+      const oldArtistId = songData.artist_id;
+      const newArtistId = data.song?.artist_id;
+      
       // Notify other pages that a song was updated (so artist pages can refresh song counts)
+      // Include both old and new artist IDs so both artist pages can update
       window.dispatchEvent(new CustomEvent('songUpdated', { 
         detail: { 
-          artistId: data.song?.artist_id,
-          songId: songId 
+          artistId: newArtistId,
+          oldArtistId: oldArtistId,
+          songId: songId,
+          action: 'artistChanged'
         } 
       }));
       
       // Also use localStorage for cross-tab communication
       localStorage.setItem('songUpdated', JSON.stringify({
-        artistId: data.song?.artist_id,
+        artistId: newArtistId,
+        oldArtistId: oldArtistId,
         songId: songId,
+        action: 'artistChanged',
         timestamp: Date.now()
       }));
       
-      // Force a small delay to ensure database write is complete
+      // Refresh artists list in case a new artist was just added
+      await loadArtists();
+      
+      // Force a small delay to ensure database write is complete and cache clears
       setTimeout(() => {
         console.log('✅ Song update complete. Changes should now be visible across the site.');
+        // Trigger a hard refresh notification for all pages
+        window.dispatchEvent(new CustomEvent('forceRefresh', { 
+          detail: { type: 'song', id: songId } 
+        }));
       }, 500);
     } catch (error: any) {
       console.error('❌ Save error:', error);
