@@ -280,6 +280,21 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       console.log('🔄 Reloading song data from database...');
       await loadSongData();
       
+      // Notify other pages that a song was updated (so artist pages can refresh song counts)
+      window.dispatchEvent(new CustomEvent('songUpdated', { 
+        detail: { 
+          artistId: data.song?.artist_id,
+          songId: songId 
+        } 
+      }));
+      
+      // Also use localStorage for cross-tab communication
+      localStorage.setItem('songUpdated', JSON.stringify({
+        artistId: data.song?.artist_id,
+        songId: songId,
+        timestamp: Date.now()
+      }));
+      
       // Force a small delay to ensure database write is complete
       setTimeout(() => {
         console.log('✅ Song update complete. Changes should now be visible across the site.');

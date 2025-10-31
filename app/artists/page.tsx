@@ -97,6 +97,34 @@ const ArtistsPage = () => {
     }
 
     fetchArtists();
+    
+    // Listen for song updates and refresh artist counts
+    const handleSongUpdate = () => {
+      console.log('🔄 Song updated, refreshing artist counts...');
+      fetchArtists();
+    };
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'songUpdated') {
+        handleSongUpdate();
+      }
+    };
+    
+    window.addEventListener('songUpdated', handleSongUpdate);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Refresh on window focus to get latest counts
+    const handleFocus = () => {
+      fetchArtists();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('songUpdated', handleSongUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   // Filter and search logic

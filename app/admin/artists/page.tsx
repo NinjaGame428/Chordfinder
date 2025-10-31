@@ -146,6 +146,47 @@ const ArtistsPage = () => {
 
   useEffect(() => {
     fetchArtists();
+    
+    // Listen for song updates to refresh artist counts
+    const handleSongUpdate = (event: any) => {
+      console.log('🔄 Song updated, refreshing artist counts...', event.detail);
+      fetchArtists();
+    };
+    
+    const handleArtistUpdate = () => {
+      console.log('🔄 Artist updated, refreshing...');
+      fetchArtists();
+    };
+    
+    // Listen for localStorage changes (cross-tab communication)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'songUpdated' || e.key === 'artistUpdated') {
+        fetchArtists();
+      }
+    };
+    
+    // Refresh artists when the window regains focus (user returns from editing a song)
+    const handleFocus = () => {
+      fetchArtists();
+    };
+    
+    window.addEventListener('songUpdated', handleSongUpdate);
+    window.addEventListener('artistUpdated', handleArtistUpdate);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+    
+    // Also refresh every 30 seconds to keep counts up-to-date
+    const refreshInterval = setInterval(() => {
+      fetchArtists();
+    }, 30000); // 30 seconds
+    
+    return () => {
+      window.removeEventListener('songUpdated', handleSongUpdate);
+      window.removeEventListener('artistUpdated', handleArtistUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Filter artists based on search
@@ -188,6 +229,8 @@ const ArtistsPage = () => {
       });
       await fetchArtists();
       alert('Artist added successfully');
+      // Refresh other open admin pages via localStorage event
+      window.dispatchEvent(new CustomEvent('artistUpdated'));
     } catch (error: any) {
       console.error('Error adding artist:', error);
       alert(error.message || 'Failed to add artist');
@@ -242,6 +285,8 @@ const ArtistsPage = () => {
       });
       await fetchArtists();
       alert('Artist updated successfully');
+      // Refresh other open admin pages via localStorage event
+      window.dispatchEvent(new CustomEvent('artistUpdated'));
     } catch (error: any) {
       console.error('Error updating artist:', error);
       alert(error.message || 'Failed to update artist');
@@ -288,6 +333,8 @@ const ArtistsPage = () => {
 
       await fetchArtists();
       alert('Artist deleted successfully');
+      // Refresh other open admin pages via localStorage event
+      window.dispatchEvent(new CustomEvent('artistUpdated'));
     } catch (error: any) {
       console.error('Error deleting artist:', error);
       alert(error.message || 'Failed to delete artist');

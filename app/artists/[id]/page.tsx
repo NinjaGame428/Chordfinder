@@ -126,6 +126,42 @@ const ArtistDetailPage = () => {
 
     fetchArtist();
     fetchSongs();
+    
+    // Listen for song updates and refresh the songs list
+    const handleSongUpdate = () => {
+      console.log('🔄 Song updated, refreshing songs list...');
+      fetchSongs();
+    };
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'songUpdated') {
+        try {
+          const updateData = JSON.parse(e.newValue || '{}');
+          // Only refresh if this update affects the current artist
+          if (!updateData.artistId || updateData.artistId === artistId) {
+            fetchSongs();
+          }
+        } catch (err) {
+          console.error('Error parsing song update data:', err);
+        }
+      }
+    };
+    
+    window.addEventListener('songUpdated', handleSongUpdate);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Refresh on window focus
+    const handleFocus = () => {
+      fetchSongs();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('songUpdated', handleSongUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [artistId]);
 
   const filteredSongs = songs.filter(song =>
