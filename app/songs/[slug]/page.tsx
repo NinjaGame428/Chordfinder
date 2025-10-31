@@ -138,8 +138,12 @@ const SongDetailsPage = () => {
 
     if (songSlug) {
       fetchSong();
+    } else {
+      // If no slug provided, stop loading immediately
+      setIsLoading(false);
+      setError('No song specified');
     }
-  }, [songSlug]);
+  }, [songSlug, t]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

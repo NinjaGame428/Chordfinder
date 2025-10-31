@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -37,83 +38,86 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const adminNavigationItems = [
-  {
-    name: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-    description: "Admin overview and statistics"
-  },
-  {
-    name: "Songs",
-    href: "/admin/songs",
-    icon: Music,
-    description: "Manage song library"
-  },
-  {
-    name: "Artists",
-    href: "/admin/artists",
-    icon: Users,
-    description: "Artist management"
-  },
-  {
-    name: "Users",
-    href: "/admin/users",
-    icon: Shield,
-    description: "User management"
-  },
-  {
-    name: "Resources",
-    href: "/admin/resources",
-    icon: BookOpen,
-    description: "Learning resources"
-  },
-  {
-    name: "Analytics",
-    href: "/admin/analytics",
-    icon: BarChart3,
-    description: "Site analytics and reports"
-  },
-  {
-    name: "YouTube",
-    href: "/admin/youtube",
-    icon: Youtube,
-    description: "YouTube video management"
-  },
-  {
-    name: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-    description: "Application settings"
-  }
-];
-
-const adminQuickActions = [
-  {
-    name: "Add Song",
-    href: "/admin/songs",
-    icon: Music,
-    description: "Add new song to collection"
-  },
-  {
-    name: "Import YouTube",
-    href: "/admin/youtube",
-    icon: Youtube,
-    description: "Import videos from YouTube"
-  },
-  {
-    name: "View Analytics",
-    href: "/admin/analytics",
-    icon: BarChart3,
-    description: "Check site performance"
-  }
-];
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, logout, isLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Translated navigation items
+  const adminNavigationItems = [
+    {
+      name: t('admin.common.dashboard'),
+      href: "/admin",
+      icon: LayoutDashboard,
+      description: "Admin overview and statistics"
+    },
+    {
+      name: t('admin.common.songs'),
+      href: "/admin/songs",
+      icon: Music,
+      description: "Manage song library"
+    },
+    {
+      name: t('admin.common.artists'),
+      href: "/admin/artists",
+      icon: Users,
+      description: "Artist management"
+    },
+    {
+      name: t('admin.common.users'),
+      href: "/admin/users",
+      icon: Shield,
+      description: "User management"
+    },
+    {
+      name: t('admin.common.resources'),
+      href: "/admin/resources",
+      icon: BookOpen,
+      description: "Learning resources"
+    },
+    {
+      name: t('admin.common.analytics'),
+      href: "/admin/analytics",
+      icon: BarChart3,
+      description: "Site analytics and reports"
+    },
+    {
+      name: t('admin.common.youtube'),
+      href: "/admin/youtube",
+      icon: Youtube,
+      description: "YouTube video management"
+    },
+    {
+      name: t('admin.common.settings'),
+      href: "/admin/settings",
+      icon: Settings,
+      description: "Application settings"
+    }
+  ];
+
+  const adminQuickActions = [
+    {
+      name: t('admin.common.addSong'),
+      href: "/admin/songs",
+      icon: Music,
+      description: "Add new song to collection"
+    },
+    {
+      name: t('admin.common.importYouTube'),
+      href: "/admin/youtube",
+      icon: Youtube,
+      description: "Import videos from YouTube"
+    },
+    {
+      name: t('admin.common.viewAnalytics'),
+      href: "/admin/analytics",
+      icon: BarChart3,
+      description: "Check site performance"
+    }
+  ];
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -164,7 +168,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Shield className="h-6 w-6 text-primary" />
-                  <h2 className="text-lg font-semibold">Admin Panel</h2>
+                  <h2 className="text-lg font-semibold">{t('admin.common.adminPanel')}</h2>
                 </div>
                 <Button
                   variant="ghost"
@@ -204,7 +208,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
               <div className="p-4">
                 <nav className="space-y-2">
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Administration
+                    {t('admin.common.administration')}
                   </div>
                   {adminNavigationItems.map((item) => {
                     const isActive = pathname === item.href;
@@ -235,7 +239,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                 {/* Quick Actions */}
                 <div className="space-y-2">
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Quick Actions
+                    {t('admin.common.quickActions')}
                   </div>
                   {adminQuickActions.map((action) => {
                     const Icon = action.icon;
@@ -259,11 +263,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                 {/* Admin Stats */}
                 <div className="space-y-3">
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                    Admin Stats
+                    {t('admin.common.adminStats')}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Admin since</span>
+                      <span className="text-muted-foreground">{t('admin.common.adminSince')}</span>
                       <Badge variant="secondary" className="text-xs">
                         {new Date(user.joinDate).toLocaleDateString('en-US', { 
                           month: 'short', 
@@ -272,9 +276,9 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Access level</span>
+                      <span className="text-muted-foreground">{t('admin.common.accessLevel')}</span>
                       <Badge variant="outline" className="text-xs">
-                        Full Access
+                        {t('admin.common.fullAccess')}
                       </Badge>
                     </div>
                   </div>
@@ -290,7 +294,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
                 className="w-full justify-start text-muted-foreground hover:text-foreground"
               >
                 <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
+                {t('admin.common.signOut')}
               </Button>
             </div>
           </div>
@@ -308,7 +312,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <h1 className="text-lg font-semibold">Admin Panel</h1>
+              <h1 className="text-lg font-semibold">{t('admin.common.adminPanel')}</h1>
               <div className="w-8" /> {/* Spacer for centering */}
             </div>
           </div>

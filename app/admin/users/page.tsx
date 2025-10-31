@@ -45,6 +45,7 @@ import {
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { UserDetailModal } from '@/components/admin/UserDetailModal';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface User {
   id: string;
@@ -97,6 +98,7 @@ interface UserAnalytics {
 }
 
 const UserManagementPage = () => {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<User[]>([]);
   const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,19 +238,19 @@ const UserManagementPage = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">User Management</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.users.title')}</h1>
                 <p className="text-muted-foreground">
-                  Manage users, track analytics, and monitor user activity
+                  {t('admin.users.subtitle')}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={fetchUsers}>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
+                  {t('admin.users.refresh')}
                 </Button>
                 <Button>
                   <Download className="h-4 w-4 mr-2" />
-                  Export Users
+                  {t('admin.users.exportUsers')}
                 </Button>
               </div>
             </div>
@@ -256,8 +258,8 @@ const UserManagementPage = () => {
 
           <Tabs defaultValue="users" className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="users">User Management</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="users">{t('admin.users.userManagement')}</TabsTrigger>
+              <TabsTrigger value="analytics">{t('admin.users.analytics')}</TabsTrigger>
             </TabsList>
 
 
@@ -269,7 +271,7 @@ const UserManagementPage = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('admin.users.totalUsers')}</p>
                         <p className="text-2xl font-bold">{users.length}</p>
                       </div>
                       <Users className="h-8 w-8 text-muted-foreground" />
@@ -280,7 +282,7 @@ const UserManagementPage = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('admin.users.activeUsers')}</p>
                         <p className="text-2xl font-bold">{users.filter(u => u.status === 'active').length}</p>
                       </div>
                       <Activity className="h-8 w-8 text-green-500" />
@@ -291,7 +293,7 @@ const UserManagementPage = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">New This Week</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('admin.users.newThisWeek')}</p>
                         <p className="text-2xl font-bold">{analytics?.newUsersThisWeek || 0}</p>
                       </div>
                       <TrendingUp className="h-8 w-8 text-blue-500" />

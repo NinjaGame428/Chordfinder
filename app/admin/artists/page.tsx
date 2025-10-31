@@ -33,6 +33,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { createClient } from '@supabase/supabase-js';
 
 // Create supabase client inside component to avoid SSR issues
@@ -66,6 +67,7 @@ interface Artist {
 }
 
 const ArtistsPage = () => {
+  const { t } = useLanguage();
   const [artists, setArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
