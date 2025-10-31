@@ -60,31 +60,39 @@ const ArtistsPage = () => {
         console.log(`✅ Retrieved ${artistsData?.length || 0} artists`);
 
         if (artistsData && artistsData.length > 0 && supabase) {
-          // Get song counts for each artist
-          const supabaseClient = supabase; // Store in const for TypeScript
-          const artistsWithCounts = await Promise.all(
-            artistsData.map(async (artist) => {
-              const { count } = await supabaseClient
-                .from('songs')
-                .select('*', { count: 'exact', head: true })
-                .eq('artist_id', artist.id);
+          // Optimize: Get all song counts in a single query instead of N+1 queries
+          const artistIds = artistsData.map(a => a.id);
+          const { data: songCounts, error: countsError } = await supabase
+            .from('songs')
+            .select('artist_id')
+            .in('artist_id', artistIds);
 
-              // Clean up artist name - remove "Artist from YouTube channel" suffix if present
-              const cleanName = artist.name?.replace(/\s*Artist from YouTube channel\s*/i, '').trim() || artist.name;
-              
-              return {
-                id: artist.id,
-                name: cleanName,
-                bio: artist.bio || undefined,
-                image_url: artist.image_url || undefined,
-                website: artist.website || undefined,
-                genre: artist.genre || 'Gospel',
-                country: artist.country || undefined,
-                founded: artist.founded || undefined,
-                songs: count || 0,
-              };
-            })
-          );
+          // Create a map of artist_id -> count
+          const countMap = new Map<string, number>();
+          if (songCounts && !countsError) {
+            songCounts.forEach((song: any) => {
+              const artistId = song.artist_id;
+              countMap.set(artistId, (countMap.get(artistId) || 0) + 1);
+            });
+          }
+
+          // Map artists with their counts
+          const artistsWithCounts = artistsData.map((artist) => {
+            // Clean up artist name - remove "Artist from YouTube channel" suffix if present
+            const cleanName = artist.name?.replace(/\s*Artist from YouTube channel\s*/i, '').trim() || artist.name;
+            
+            return {
+              id: artist.id,
+              name: cleanName,
+              bio: artist.bio || undefined,
+              image_url: artist.image_url || undefined,
+              website: artist.website || undefined,
+              genre: artist.genre || 'Gospel',
+              country: artist.country || undefined,
+              founded: artist.founded || undefined,
+              songs: countMap.get(artist.id) || 0,
+            };
+          });
 
           console.log(`✅ Formatted ${artistsWithCounts.length} artists with song counts`);
           setArtists(artistsWithCounts);

@@ -27,11 +27,21 @@ export async function POST(request: NextRequest) {
     const { data: artist, error } = await supabase
       .from('artists')
       .insert([artistData])
-      .select()
+      .select('id, name, bio, image_url, website, created_at, updated_at')
       .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to create artist', details: error.message }, { status: 500 });
+      console.error('Supabase error creating artist:', error);
+      return NextResponse.json({ 
+        error: 'Failed to create artist', 
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 });
+    }
+
+    if (!artist) {
+      return NextResponse.json({ error: 'Failed to create artist: No data returned' }, { status: 500 });
     }
 
     return NextResponse.json({ artist }, { status: 201 });

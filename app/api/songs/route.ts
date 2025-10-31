@@ -82,7 +82,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: 'Failed to create song', details: error.message }, { status: 500 });
+      console.error('Supabase error creating song:', error);
+      return NextResponse.json({ 
+        error: 'Failed to create song', 
+        details: error.message,
+        code: error.code,
+        hint: error.hint
+      }, { status: 500 });
+    }
+
+    if (!song) {
+      return NextResponse.json({ error: 'Failed to create song: No data returned' }, { status: 500 });
     }
 
     return NextResponse.json({ song }, { status: 201 });

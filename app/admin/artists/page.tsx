@@ -113,27 +113,27 @@ const ArtistsPage = () => {
         return;
       }
 
-      // Get song counts for each artist
-      const artistsWithCounts = await Promise.all(
-        artistsData.map(async (artist) => {
-          const supabaseClient = getSupabaseClient();
-          if (!supabaseClient) {
-            return {
-              ...artist,
-              song_count: 0,
-            };
-          }
-          const { count } = await supabaseClient
-            .from('songs')
-            .select('*', { count: 'exact', head: true })
-            .eq('artist_id', artist.id);
+      // Optimize: Get all song counts in a single query instead of N+1 queries
+      const artistIds = artistsData.map(a => a.id);
+      const { data: songCounts, error: countsError } = await supabase
+        .from('songs')
+        .select('artist_id')
+        .in('artist_id', artistIds);
 
-          return {
-            ...artist,
-            song_count: count || 0,
-          };
-        })
-      );
+      // Create a map of artist_id -> count
+      const countMap = new Map<string, number>();
+      if (songCounts && !countsError) {
+        songCounts.forEach((song: any) => {
+          const artistId = song.artist_id;
+          countMap.set(artistId, (countMap.get(artistId) || 0) + 1);
+        });
+      }
+
+      // Map artists with their counts
+      const artistsWithCounts = artistsData.map((artist) => ({
+        ...artist,
+        song_count: countMap.get(artist.id) || 0,
+      }));
 
       setArtists(artistsWithCounts);
     } catch (err) {

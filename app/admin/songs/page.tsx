@@ -198,11 +198,21 @@ ${songData.lyrics || 'No lyrics available'}
         });
 
         if (!artistResponse.ok) {
-          alert(t('admin.songs.artistError'));
+          const errorData = await artistResponse.json().catch(() => ({}));
+          const errorMessage = errorData.error || errorData.details || `HTTP ${artistResponse.status}: ${artistResponse.statusText}`;
+          console.error('Failed to create artist:', errorMessage, errorData);
+          alert(`Failed to create artist: ${errorMessage}`);
           return;
         }
 
         const artistData = await artistResponse.json();
+        
+        if (!artistData.artist || !artistData.artist.id) {
+          console.error('Response missing artist data:', artistData);
+          alert('Failed to create artist: Invalid response from server');
+          return;
+        }
+        
         artistId = artistData.artist.id;
         alert(t('admin.songs.artistCreated'));
         
@@ -233,6 +243,13 @@ ${songData.lyrics || 'No lyrics available'}
 
       if (response.ok) {
         const songData = await response.json();
+        
+        if (!songData.song) {
+          console.error('Response missing song data:', songData);
+          alert('Failed to add song: Invalid response from server');
+          return;
+        }
+
         alert(t('admin.songs.addSuccess'));
         setIsAddModalOpen(false);
         setIsNewArtist(false);
@@ -263,9 +280,10 @@ ${songData.lyrics || 'No lyrics available'}
           timestamp: Date.now()
         }));
       } else {
-        const errorData = await response.json();
-        console.error('Error adding song:', errorData);
-        alert(t('admin.songs.addError'));
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.details || `HTTP ${response.status}: ${response.statusText}`;
+        console.error('Error adding song:', errorMessage, errorData);
+        alert(`Failed to add song: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error adding song:', error);
