@@ -65,38 +65,64 @@ export async function PUT(
     // Build update data - ONLY using confirmed database columns
     const updateData: any = {};
     
-    // Only include fields that are actually changing and exist in DB
-    if (title !== undefined && title !== null) {
-      updateData.title = title;
+    // Title - required field
+    if (title !== undefined && title !== null && title.trim() !== '') {
+      updateData.title = title.trim();
     }
     
-    if (artist_id !== undefined && artist_id !== null && artist_id !== '') {
-      updateData.artist_id = artist_id;
+    // Artist ID - required field
+    if (artist_id !== undefined && artist_id !== null && artist_id !== '' && artist_id.trim() !== '') {
+      updateData.artist_id = artist_id.trim();
     }
     
     // Lyrics - critical field, always include (can be empty string or null)
     // Use !== undefined to allow empty strings to be saved
     if (lyrics !== undefined) {
-      updateData.lyrics = lyrics;
+      updateData.lyrics = lyrics || null;
     }
     
-    // Optional metadata fields
-    if (key_signature !== undefined && key_signature !== null && key_signature !== '') {
-      updateData.key_signature = key_signature;
-    } else if (key !== undefined && key !== null && key !== '') {
-      updateData.key_signature = key;
+    // Key Signature - optional field
+    if (key_signature !== undefined && key_signature !== null && key_signature !== '' && key_signature.trim() !== '') {
+      updateData.key_signature = key_signature.trim();
+    } else if (key !== undefined && key !== null && key !== '' && key.trim() !== '') {
+      updateData.key_signature = key.trim();
+    } else if (key_signature === '' || key === '' || key_signature === null || key === null) {
+      // Explicitly set to null if empty string or null is provided
+      updateData.key_signature = null;
     }
     
+    // Tempo/BPM - optional field
     if (tempo !== undefined && tempo !== null && tempo !== '') {
-      updateData.tempo = parseInt(tempo.toString());
+      const tempoValue = parseInt(tempo.toString());
+      if (!isNaN(tempoValue)) {
+        updateData.tempo = tempoValue;
+      }
     } else if (bpm !== undefined && bpm !== null && bpm !== '') {
-      updateData.tempo = parseInt(bpm.toString());
+      const bpmValue = parseInt(bpm.toString());
+      if (!isNaN(bpmValue)) {
+        updateData.tempo = bpmValue;
+      }
     }
+    
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date().toISOString();
 
+    // Validate required fields before saving
+    if (!updateData.title || !updateData.title.trim()) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+    
+    if (!updateData.artist_id || !updateData.artist_id.trim()) {
+      return NextResponse.json({ error: 'Artist ID is required' }, { status: 400 });
+    }
+    
     // Log what we're about to save for debugging
     console.log('💾 Saving song:', {
       id: resolvedParams.id,
       title: updateData.title,
+      artist_id: updateData.artist_id,
+      key_signature: updateData.key_signature,
+      tempo: updateData.tempo,
       lyricsLength: updateData.lyrics?.length || 0,
       hasLyrics: !!updateData.lyrics,
       lyricsPreview: updateData.lyrics ? updateData.lyrics.substring(0, 100) + '...' : 'null'

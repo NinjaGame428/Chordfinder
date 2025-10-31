@@ -4,8 +4,8 @@
   "description": "Ultra-fast Gospel Chords webapp with 100x performance optimization",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
@@ -49,11 +49,10 @@
     "clsx": "^2.0.0",
     "cross-env": "^7.0.3",
     "dotenv": "^17.2.2",
-    "eslint": "^8",
+    "eslint": "^9",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.475.0",
-    "motion": "^12.23.22",
-    "next": "^15.5.4",
+    "next": "^16.0.0",
     "next-themes": "^0.4.6",
     "postcss": "^8",
     "react": "^19.2.0",
@@ -67,12 +66,12 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^14.0.4",
+    "@next/bundle-analyzer": "^16.0.0",
     "@types/node": "^20",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.1",
-    "eslint": "^8",
-    "eslint-config-next": "^15.5.4",
+    "eslint": "^9",
+    "eslint-config-next": "^16.0.0",
     "typescript": "^5"
   },
   "engines": {

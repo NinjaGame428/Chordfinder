@@ -11,8 +11,11 @@ import ResourceRating from "@/components/resource-rating";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getTranslatedRoute } from "@/lib/url-translations";
 
 const ResourcesPage = () => {
+  const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Resources");
   const [displayedResources, setDisplayedResources] = useState(12);
@@ -174,10 +177,10 @@ const ResourcesPage = () => {
         <section className="py-20 px-6 max-w-screen-xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              Explore Our Resources
+              {t('resources.title')}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Download guides, templates, and tutorials to enhance your musical journey.
+              {t('resources.subtitle')}
             </p>
           </div>
 
@@ -185,7 +188,7 @@ const ResourcesPage = () => {
             {/* Sidebar for Categories */}
             <aside className="w-full md:w-1/4">
               <Card className="p-6">
-                <CardTitle className="mb-4 text-2xl">Categories</CardTitle>
+                <CardTitle className="mb-4 text-2xl">{t('resources.categories')}</CardTitle>
                 <div className="space-y-2">
                   {categories.map((category) => (
                     <Button
@@ -209,7 +212,7 @@ const ResourcesPage = () => {
             <div className="w-full md:w-3/4">
               <div className="mb-8">
                 <EnhancedSearch
-                  placeholder="Search resources..."
+                  placeholder={t('resources.searchPlaceholder')}
                   onSearch={(query) => {
                     setSearchQuery(query);
                     setDisplayedResources(12);
@@ -226,11 +229,11 @@ const ResourcesPage = () => {
               {isLoading ? (
                 <div className="text-center py-20">
                   <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                  <p className="mt-4 text-muted-foreground">Loading resources...</p>
+                  <p className="mt-4 text-muted-foreground">{t('resources.loading')}</p>
                 </div>
               ) : visibleResources.length === 0 ? (
                 <div className="text-center text-muted-foreground py-10">
-                  No resources found matching your criteria.
+                  {t('resources.noResources')}
                 </div>
               ) : (
                 <>
@@ -281,7 +284,7 @@ const ResourcesPage = () => {
                         </CardContent>
                         <div className="p-6 pt-0 flex justify-end gap-3">
                           <Button variant="outline" className="rounded-full" asChild>
-                            <Link href={`/resources/${resource.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                            <Link href={getTranslatedRoute(`/resources/${resource.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`, language)}>
                               <BookOpen className="mr-2 h-4 w-4" /> View
                             </Link>
                           </Button>
@@ -307,7 +310,7 @@ const ResourcesPage = () => {
                         className="rounded-full"
                         onClick={handleLoadMore}
                       >
-                        Load More Resources ({filteredResources.length - displayedResources} remaining)
+                        {t('resources.loadMore')} ({filteredResources.length - displayedResources} {t('resources.remaining')})
                         <ExternalLink className="ml-2 h-5 w-5" />
                       </Button>
                     </div>
@@ -322,29 +325,29 @@ const ResourcesPage = () => {
         <section className="py-20 px-6 bg-secondary/20 dark:bg-secondary/10">
           <div className="max-w-screen-xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-12">
-              Featured Collections
+              {t('resources.featuredCollections')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <Card className="p-6 text-center">
-                <CardTitle className="mb-4">Beginner's Bundle</CardTitle>
+                <CardTitle className="mb-4">{t('resources.beginnersBundle')}</CardTitle>
                 <CardContent className="text-muted-foreground">
-                  Start your journey with essential guides and practice routines.
+                  {t('resources.beginnersBundleDesc')}
                 </CardContent>
-                <Button className="mt-4 rounded-full">View Collection</Button>
+                <Button className="mt-4 rounded-full">{t('resources.viewCollection')}</Button>
               </Card>
               <Card className="p-6 text-center">
-                <CardTitle className="mb-4">Worship Leader Pack</CardTitle>
+                <CardTitle className="mb-4">{t('resources.worshipLeaderPack')}</CardTitle>
                 <CardContent className="text-muted-foreground">
-                  Resources for effective worship leading and team management.
+                  {t('resources.worshipLeaderPackDesc')}
                 </CardContent>
-                <Button className="mt-4 rounded-full">View Collection</Button>
+                <Button className="mt-4 rounded-full">{t('resources.viewCollection')}</Button>
               </Card>
               <Card className="p-6 text-center">
-                <CardTitle className="mb-4">Musician's Toolkit</CardTitle>
+                <CardTitle className="mb-4">{t('resources.musiciansToolkit')}</CardTitle>
                 <CardContent className="text-muted-foreground">
-                  Advanced theory, technical guides, and performance tips.
+                  {t('resources.musiciansToolkitDesc')}
                 </CardContent>
-                <Button className="mt-4 rounded-full">View Collection</Button>
+                <Button className="mt-4 rounded-full">{t('resources.viewCollection')}</Button>
               </Card>
             </div>
           </div>
@@ -354,13 +357,13 @@ const ResourcesPage = () => {
         <section className="py-20 px-6">
           <div className="max-w-screen-xl mx-auto text-center">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-              Join Our Community
+              {t('resources.joinCommunity')}
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Connect with other musicians, share insights, and get support.
+              {t('resources.joinCommunityDesc')}
             </p>
             <Button size="lg" className="rounded-full">
-              Join the Forum
+              {t('resources.joinForum')}
             </Button>
           </div>
         </section>

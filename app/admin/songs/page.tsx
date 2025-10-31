@@ -27,6 +27,7 @@ import {
   Upload
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Song {
   id: string;
@@ -40,6 +41,7 @@ interface Song {
 
 const SongsPage = () => {
   const router = useRouter();
+  const { t } = useLanguage();
   const [songs, setSongs] = useState<Song[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,6 +50,8 @@ const SongsPage = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [artists, setArtists] = useState<Array<{ id: string; name: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isNewArtist, setIsNewArtist] = useState(false);
+  const [newArtistName, setNewArtistName] = useState('');
   
   // Form state for adding a song
   const [newSong, setNewSong] = useState({
@@ -76,7 +80,7 @@ const SongsPage = () => {
   };
 
   const handleDeleteSong = async (songId: string) => {
-    if (!confirm('Are you sure you want to delete this song?')) {
+    if (!confirm(t('admin.songs.deleteConfirm'))) {
       return;
     }
 
@@ -87,13 +91,13 @@ const SongsPage = () => {
 
       if (response.ok) {
         setSongs(songs.filter(song => song.id !== songId));
-        alert('Song deleted successfully');
+        alert(t('admin.songs.deleteSuccess'));
       } else {
-        alert('Failed to delete song');
+        alert(t('admin.songs.deleteError'));
       }
     } catch (error) {
       console.error('Error deleting song:', error);
-      alert('Failed to delete song');
+      alert(t('admin.songs.deleteError'));
     }
   };
 
@@ -147,8 +151,43 @@ ${songData.lyrics || 'No lyrics available'}
   };
 
   const handleAddSong = async () => {
-    if (!newSong.title || !newSong.artist_id) {
-      alert('Please fill in title and artist');
+    // Validate required fields
+    if (!newSong.title) {
+      alert(t('admin.songs.requiredFields'));
+      return;
+    }
+
+    // Check if we need to create a new artist
+    let artistId = newSong.artist_id;
+    if (isNewArtist && newArtistName.trim()) {
+      try {
+        // Create new artist first
+        const artistResponse = await fetch('/api/artists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: newArtistName.trim(),
+          }),
+        });
+
+        if (!artistResponse.ok) {
+          alert(t('admin.songs.artistError'));
+          return;
+        }
+
+        const artistData = await artistResponse.json();
+        artistId = artistData.artist.id;
+        alert(t('admin.songs.artistCreated'));
+        
+        // Refresh artists list
+        fetchArtists();
+      } catch (error) {
+        console.error('Error creating artist:', error);
+        alert(t('admin.songs.artistError'));
+        return;
+      }
+    } else if (!isNewArtist && !artistId) {
+      alert(t('admin.songs.requiredFields'));
       return;
     }
 
@@ -157,14 +196,19 @@ ${songData.lyrics || 'No lyrics available'}
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...newSong,
+          title: newSong.title,
+          artist_id: artistId,
+          key_signature: newSong.key_signature || null,
           tempo: newSong.tempo ? parseInt(newSong.tempo) : null,
+          lyrics: newSong.lyrics || null,
         }),
       });
 
       if (response.ok) {
-        alert('Song added successfully');
+        alert(t('admin.songs.addSuccess'));
         setIsAddModalOpen(false);
+        setIsNewArtist(false);
+        setNewArtistName('');
         setNewSong({
           title: '',
           artist_id: '',
@@ -174,11 +218,13 @@ ${songData.lyrics || 'No lyrics available'}
         });
         fetchSongs();
       } else {
-        alert('Failed to add song');
+        const errorData = await response.json();
+        console.error('Error adding song:', errorData);
+        alert(t('admin.songs.addError'));
       }
     } catch (error) {
       console.error('Error adding song:', error);
-      alert('Failed to add song');
+      alert(t('admin.songs.addError'));
     }
   };
 
@@ -241,19 +287,19 @@ ${songData.lyrics || 'No lyrics available'}
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Song Management</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.songs.title')}</h1>
                 <p className="text-muted-foreground">
-                  Manage your song collection, edit details, and organize content
+                  {t('admin.songs.subtitle')}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
                   <Upload className="h-4 w-4 mr-2" />
-                  Import
+                  {t('admin.songs.import')}
                 </Button>
                 <Button onClick={() => setIsAddModalOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Song
+                  {t('admin.songs.add')}
                 </Button>
               </div>
             </div>
@@ -264,7 +310,7 @@ ${songData.lyrics || 'No lyrics available'}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search songs..."
+                placeholder={t('admin.songs.search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -277,7 +323,7 @@ ${songData.lyrics || 'No lyrics available'}
             >
               {genres.map(genre => (
                 <option key={genre} value={genre}>
-                  {genre === 'all' ? 'All Genres' : genre}
+                  {genre === 'all' ? t('admin.songs.allGenres') : genre}
                 </option>
               ))}
             </select>
@@ -293,16 +339,16 @@ ${songData.lyrics || 'No lyrics available'}
               <Card>
                 <CardContent className="p-12 text-center">
                   <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No songs found</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('admin.songs.noSongs')}</h3>
                   <p className="text-muted-foreground mb-4">
                     {searchQuery || filterGenre !== 'all' 
-                      ? 'Try adjusting your search or filter criteria'
-                      : 'Start by adding your first song to the collection'
+                      ? t('admin.songs.noSongsFilter')
+                      : t('admin.songs.noSongsEmpty')
                     }
                   </p>
-                  <Button>
+                  <Button onClick={() => setIsAddModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add First Song
+                    {t('admin.songs.addFirst')}
                   </Button>
                 </CardContent>
               </Card>
@@ -325,8 +371,8 @@ ${songData.lyrics || 'No lyrics available'}
                           <p className="text-muted-foreground">by {song.artist}</p>
                         )}
                         <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>Created: {new Date(song.created_at || '').toLocaleDateString()}</span>
-                          <span>Updated: {new Date(song.updated_at || '').toLocaleDateString()}</span>
+                          <span>{t('admin.songs.created')}: {new Date(song.created_at || '').toLocaleDateString()}</span>
+                          <span>{t('admin.songs.updated')}: {new Date(song.updated_at || '').toLocaleDateString()}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -383,7 +429,7 @@ ${songData.lyrics || 'No lyrics available'}
                   <Music className="h-8 w-8 text-primary" />
                   <div>
                     <p className="text-2xl font-bold">{songs.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Songs</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.songs.totalSongs')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -394,7 +440,7 @@ ${songData.lyrics || 'No lyrics available'}
                   <Filter className="h-8 w-8 text-blue-600" />
                   <div>
                     <p className="text-2xl font-bold">{genres.length - 1}</p>
-                    <p className="text-sm text-muted-foreground">Genres</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.songs.genres')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -405,7 +451,7 @@ ${songData.lyrics || 'No lyrics available'}
                   <Search className="h-8 w-8 text-green-600" />
                   <div>
                     <p className="text-2xl font-bold">{filteredSongs.length}</p>
-                    <p className="text-sm text-muted-foreground">Filtered Results</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.songs.filteredResults')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -415,77 +461,113 @@ ${songData.lyrics || 'No lyrics available'}
       </main>
 
       {/* Add Song Modal */}
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Dialog open={isAddModalOpen} onOpenChange={(open) => {
+        setIsAddModalOpen(open);
+        if (!open) {
+          setIsNewArtist(false);
+          setNewArtistName('');
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add New Song</DialogTitle>
+            <DialogTitle>{t('admin.songs.addTitle')}</DialogTitle>
             <DialogDescription>
-              Fill in the details to add a new song to your collection
+              {t('admin.songs.addDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t('admin.songs.titleLabel')}</Label>
               <Input
                 id="title"
                 value={newSong.title}
                 onChange={(e) => setNewSong({ ...newSong, title: e.target.value })}
-                placeholder="Enter song title"
+                placeholder={t('admin.songs.titlePlaceholder')}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="artist">Artist *</Label>
-              <select
-                id="artist"
-                value={newSong.artist_id}
-                onChange={(e) => setNewSong({ ...newSong, artist_id: e.target.value })}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="">Select an artist</option>
-                {artists.map((artist) => (
-                  <option key={artist.id} value={artist.id}>
-                    {artist.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="artist">{t('admin.songs.artistLabel')}</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsNewArtist(!isNewArtist);
+                    if (!isNewArtist) {
+                      setNewSong({ ...newSong, artist_id: '' });
+                    } else {
+                      setNewArtistName('');
+                    }
+                  }}
+                >
+                  {isNewArtist ? t('admin.songs.selectArtist') : t('admin.songs.newArtist')}
+                </Button>
+              </div>
+              {isNewArtist ? (
+                <Input
+                  id="newArtist"
+                  value={newArtistName}
+                  onChange={(e) => setNewArtistName(e.target.value)}
+                  placeholder={t('admin.songs.newArtistPlaceholder')}
+                />
+              ) : (
+                <select
+                  id="artist"
+                  value={newSong.artist_id}
+                  onChange={(e) => setNewSong({ ...newSong, artist_id: e.target.value })}
+                  className="px-3 py-2 border rounded-md bg-background"
+                >
+                  <option value="">{t('admin.songs.selectArtist')}</option>
+                  {artists.map((artist) => (
+                    <option key={artist.id} value={artist.id}>
+                      {artist.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="key">Key</Label>
+                <Label htmlFor="key">{t('admin.songs.keyLabel')}</Label>
                 <Input
                   id="key"
                   value={newSong.key_signature}
                   onChange={(e) => setNewSong({ ...newSong, key_signature: e.target.value })}
-                  placeholder="e.g., C"
+                  placeholder={t('admin.songs.keyPlaceholder')}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="tempo">Tempo (BPM)</Label>
+                <Label htmlFor="tempo">{t('admin.songs.tempoLabel')}</Label>
                 <Input
                   id="tempo"
                   type="number"
                   value={newSong.tempo}
                   onChange={(e) => setNewSong({ ...newSong, tempo: e.target.value })}
-                  placeholder="e.g., 120"
+                  placeholder={t('admin.songs.tempoPlaceholder')}
                 />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="lyrics">Lyrics</Label>
+              <Label htmlFor="lyrics">{t('admin.songs.lyricsLabel')}</Label>
               <Textarea
                 id="lyrics"
                 value={newSong.lyrics}
                 onChange={(e) => setNewSong({ ...newSong, lyrics: e.target.value })}
-                placeholder="Enter song lyrics..."
+                placeholder={t('admin.songs.lyricsPlaceholder')}
                 rows={8}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => {
+              setIsAddModalOpen(false);
+              setIsNewArtist(false);
+              setNewArtistName('');
+            }}>
+              {t('admin.songs.cancel')}
             </Button>
-            <Button onClick={handleAddSong}>Add Song</Button>
+            <Button onClick={handleAddSong}>{t('admin.songs.add')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

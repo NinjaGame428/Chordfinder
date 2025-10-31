@@ -4,12 +4,15 @@ import { Menu } from "lucide-react";
 import { Logo } from "./logo";
 import { NavMenu } from "./nav-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getTranslatedRoute } from "@/lib/url-translations";
 import { UserMenu } from "./user-menu";
 import LanguageSwitcher from "../language-switcher";
 import Link from "next/link";
 
 export const NavigationSheet = () => {
   const { user, isLoading } = useAuth();
+  const { t, language } = useLanguage();
 
   return (
     <Sheet>
@@ -44,10 +47,10 @@ export const NavigationSheet = () => {
             ) : (
               <>
                 <Button variant="outline" className="w-full" asChild>
-                  <Link href="/login">Sign In</Link>
+                  <Link href={getTranslatedRoute('/login', language)}>{t('auth.signIn')}</Link>
                 </Button>
                 <Button className="w-full" asChild>
-                  <Link href="/register">Get Started</Link>
+                  <Link href={getTranslatedRoute('/register', language)}>{t('auth.getStarted')}</Link>
                 </Button>
               </>
             )}

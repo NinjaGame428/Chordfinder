@@ -8,17 +8,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, bio } = body;
+    const { name, bio, image_url, website } = body;
 
     // Validate required fields
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Artist name is required' }, { status: 400 });
     }
 
-    // Create artist data - only use columns that exist
-    const artistData = {
+    // Create artist data - only use columns that exist in the table
+    // Based on schema: name, bio, image_url, website
+    const artistData: any = {
       name: name.trim(),
       bio: bio || null,
+      image_url: image_url || null,
+      website: website || null,
     };
 
     const { data: artist, error } = await supabase
@@ -43,10 +46,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
     }
     
-    // Fetch artists - simplified for speed
+    // Fetch artists - only select columns that exist in the table
+    // Based on schema: id, name, bio, image_url, website, created_at, updated_at
     const { data: artists, error } = await supabase
       .from('artists')
-      .select('id, name, bio, created_at')
+      .select('id, name, bio, image_url, website, created_at, updated_at')
       .order('name', { ascending: true });
 
     if (error) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { fetchDownloadedResources, type DownloadedResource } from "@/lib/user-st
 
 export default function DownloadsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [downloadedResources, setDownloadedResources] = useState<DownloadedResource[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -85,9 +87,9 @@ export default function DownloadsPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Your Downloads</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('dashboard.yourDownloads')}</h1>
             <p className="text-muted-foreground">
-              Resources you've downloaded for offline access
+              {t('dashboard.resourcesForOffline')}
             </p>
           </div>
 
@@ -97,7 +99,7 @@ export default function DownloadsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search your downloads..."
+                placeholder={t('dashboard.searchDownloads')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border rounded-md bg-background"
@@ -108,12 +110,12 @@ export default function DownloadsPage() {
               onChange={(e) => setFilterType(e.target.value)}
               className="px-3 py-2 border rounded-md bg-background"
             >
-              <option value="all">All Types</option>
+              <option value="all">{t('dashboard.allTypes')}</option>
               <option value="pdf">PDF</option>
-              <option value="document">Document</option>
-              <option value="image">Image</option>
-              <option value="video">Video</option>
-              <option value="audio">Audio</option>
+              <option value="document">{t('common.document') || 'Document'}</option>
+              <option value="image">{t('common.image') || 'Image'}</option>
+              <option value="video">{t('common.video') || 'Video'}</option>
+              <option value="audio">{t('common.audio') || 'Audio'}</option>
             </select>
           </div>
 
@@ -127,7 +129,7 @@ export default function DownloadsPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{downloadedResources.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Downloads</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.totalDownloads')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -143,7 +145,7 @@ export default function DownloadsPage() {
                     <p className="text-2xl font-bold">
                       {downloadedResources.filter(r => r.type.toLowerCase() === 'pdf').length}
                     </p>
-                    <p className="text-sm text-muted-foreground">PDFs</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.pdfs')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -159,7 +161,7 @@ export default function DownloadsPage() {
                     <p className="text-2xl font-bold">
                       {new Set(downloadedResources.map(r => r.category)).size}
                     </p>
-                    <p className="text-sm text-muted-foreground">Categories</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.categories')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -180,7 +182,7 @@ export default function DownloadsPage() {
                         return resourceDate > weekAgo;
                       }).length}
                     </p>
-                    <p className="text-sm text-muted-foreground">This Week</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.thisWeek')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -191,7 +193,7 @@ export default function DownloadsPage() {
           {isLoadingData ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Loading your downloads...</p>
+              <p className="mt-2 text-muted-foreground">{t('dashboard.loadingDownloads')}</p>
             </div>
           ) : filteredResources.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -225,14 +227,14 @@ export default function DownloadsPage() {
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Downloaded {new Date(resource.created_at).toLocaleDateString()}
+                          {t('dashboard.downloaded')} {new Date(resource.created_at).toLocaleDateString()}
                         </p>
                         <div className="flex gap-2 mt-4">
                           <Button size="sm" className="flex-1">
-                            Open
+                            {t('dashboard.open')}
                           </Button>
                           <Button size="sm" variant="outline">
-                            Share
+                            {t('dashboard.share')}
                           </Button>
                         </div>
                       </div>
@@ -245,12 +247,12 @@ export default function DownloadsPage() {
             <Card>
               <CardContent className="text-center py-12">
                 <Download className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Downloads Yet</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('dashboard.noDownloadsYet')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Start exploring resources and download them for offline access
+                  {t('dashboard.startExploringResources')}
                 </p>
                 <Button onClick={() => router.push("/resources")}>
-                  Browse Resources
+                  {t('dashboard.browseResources')}
                 </Button>
               </CardContent>
             </Card>

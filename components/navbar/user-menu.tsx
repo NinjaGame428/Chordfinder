@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getTranslatedRoute } from "@/lib/url-translations";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -37,17 +39,18 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
   const { logout } = useAuth();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
-    router.push("/");
+    router.push(getTranslatedRoute('/', language));
     setIsOpen(false);
   };
 
   const handleNavigation = (path: string) => {
-    router.push(path);
+    router.push(getTranslatedRoute(path, language));
     setIsOpen(false);
   };
 
@@ -77,33 +80,33 @@ export function UserMenu({ user }: UserMenuProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleNavigation("/dashboard")}>
           <User className="mr-2 h-4 w-4" />
-          <span>Dashboard</span>
+          <span>{t('nav.dashboard')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation("/dashboard?tab=profile")}>
           <Settings className="mr-2 h-4 w-4" />
-          <span>Profile</span>
+          <span>{t('common.profile')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation("/dashboard?tab=activity")}>
           <Heart className="mr-2 h-4 w-4" />
-          <span>Favorites</span>
+          <span>{t('common.favorite')}</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleNavigation("/dashboard?tab=activity")}>
           <Download className="mr-2 h-4 w-4" />
-          <span>Downloads</span>
+          <span>{t('common.download')}</span>
         </DropdownMenuItem>
         {user.role === 'admin' && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleNavigation("/admin")}>
               <Settings className="mr-2 h-4 w-4" />
-              <span>Admin Panel</span>
+              <span>{t('nav.admin')}</span>
             </DropdownMenuItem>
           </>
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sign out</span>
+          <span>{t('nav.logout')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -10,20 +10,24 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import EnhancedSearch from "@/components/enhanced-search";
 import LazyLoad from "@/components/lazy-load";
-import { YouTubeSongCard } from "@/components/youtube-song-card";
 import { ViewToggle } from "@/components/view-toggle";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
 import { Song } from "@/lib/song-data";
 import { supabase } from "@/lib/supabase";
+import { getTranslatedRoute } from "@/lib/url-translations";
+import { useState, useEffect, useMemo } from "react";
 
 const SongsPage = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addSongToFavorites, removeSongFromFavorites, isSongFavorite } = useFavorites();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Songs");
+  const [selectedCategory, setSelectedCategory] = useState(t('songs.allCategories'));
+  
+  // Update selectedCategory when language changes
+  useEffect(() => {
+    setSelectedCategory(t('songs.allCategories'));
+  }, [language, t]);
   const [displayedSongs, setDisplayedSongs] = useState(12);
-  const [filteredSongs, setFilteredSongs] = useState<Song[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [highlightedSong, setHighlightedSong] = useState<string | null>(null);
   const [supabaseSongs, setSupabaseSongs] = useState<Song[]>([]);
@@ -38,7 +42,8 @@ const SongsPage = () => {
       }
 
       try {
-        // Fetch songs with artists in a single optimized query
+        setIsLoading(true);
+        // Fetch only initial batch with optimized query
         const { data: songsData, error: songsError } = await supabase
           .from('songs')
           .select(`
@@ -50,13 +55,13 @@ const SongsPage = () => {
             downloads,
             rating,
             created_at,
-            artists (
+            artists!inner (
               id,
               name
             )
           `)
           .order('created_at', { ascending: false })
-          .limit(100);
+          .limit(24); // Reduced initial load - fetch more as needed
 
         if (songsError) {
           console.error('❌ Error fetching songs:', songsError);
@@ -64,33 +69,26 @@ const SongsPage = () => {
           return;
         }
 
-        console.log('✅ Fetched songs from database:', songsData?.length || 0, 'songs');
-
         if (songsData && songsData.length > 0) {
-          console.log('📋 First song sample:', {
-            id: songsData[0].id,
-            title: songsData[0].title,
-            artist: songsData[0].artists?.name
-          });
-
+          // Optimized: Minimal data mapping
           const formattedSongs: Song[] = songsData.map((song: any) => ({
             id: song.id,
             title: song.title,
-            artist: song.artists?.name || 'Unknown Artist',
+            artist: (song.artists?.name) || (Array.isArray(song.artists) ? song.artists[0]?.name : 'Unknown Artist'),
             key: song.key_signature || 'C',
             difficulty: 'Medium',
             category: 'Gospel',
-            year: new Date().getFullYear().toString(),
+            year: new Date(song.created_at).getFullYear().toString(),
             tempo: song.tempo ? `${song.tempo} BPM` : '120 BPM',
             timeSignature: '4/4',
             genre: 'Gospel',
-            chords: ['C', 'G', 'Am', 'F'],
-            chordProgression: 'C - G - Am - F',
+            chords: [],
+            chordProgression: '',
             lyrics: '',
             chordChart: '',
-            capo: 'No capo needed',
-            strummingPattern: 'Down, Down, Up, Down, Up, Down',
-            tags: ['Gospel', 'Worship'],
+            capo: '',
+            strummingPattern: '',
+            tags: [],
             downloads: song.downloads || 0,
             rating: song.rating || 0,
             description: '',
@@ -99,10 +97,7 @@ const SongsPage = () => {
             captions_available: false
           }));
 
-          console.log('✅ Formatted songs:', formattedSongs.length);
           setSupabaseSongs(formattedSongs);
-        } else {
-          console.warn('⚠️ No songs found in database');
         }
       } catch (error) {
         console.error('❌ Exception while fetching songs:', error);
@@ -114,14 +109,14 @@ const SongsPage = () => {
     fetchSongs();
   }, []);
 
-  // Use only database songs
-  const allSongs: Song[] = supabaseSongs;
+  // Use memoized songs to prevent unnecessary re-renders
+  const allSongs: Song[] = useMemo(() => supabaseSongs, [supabaseSongs]);
 
   const categories = [
-    { name: "All Songs", icon: Music },
-    { name: "Classic Hymn", icon: BookOpen },
-    { name: "Contemporary", icon: Zap },
-    { name: "Modern Hymn", icon: Star }
+    { name: t('songs.allCategories'), icon: Music, key: 'all' },
+    { name: t('songs.classicHymn'), icon: BookOpen, key: 'classic' },
+    { name: t('songs.contemporary'), icon: Zap, key: 'contemporary' },
+    { name: t('songs.modernHymn'), icon: Star, key: 'modern' }
   ];
 
   // Handle URL parameters for highlighting songs
@@ -141,27 +136,50 @@ const SongsPage = () => {
     }
   }, []);
 
-  // Filter songs based on search query and category
+  // Initialize selectedCategory based on language
   useEffect(() => {
+    setSelectedCategory(t('songs.allCategories'));
+  }, [language, t]);
+
+  // Optimized: Use useMemo for filtering to prevent unnecessary recalculations
+  const filteredSongs = useMemo(() => {
     let filtered = [...allSongs];
 
     // Filter by search query
-    if (searchQuery) {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(song =>
-        song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.key.toLowerCase().includes(searchQuery.toLowerCase())
+        song.title.toLowerCase().includes(query) ||
+        song.artist.toLowerCase().includes(query) ||
+        song.key.toLowerCase().includes(query)
       );
     }
 
-    // Filter by category
-    if (selectedCategory !== "All Songs") {
-      filtered = filtered.filter(song => song.category === selectedCategory);
+    // Filter by category (map translated names back to English)
+    const categoryMap: { [key: string]: string } = {
+      [t('songs.allCategories')]: 'all',
+      [t('songs.classicHymn')]: 'Classic Hymn',
+      [t('songs.contemporary')]: 'Contemporary',
+      [t('songs.modernHymn')]: 'Modern Hymn',
+      // Legacy support
+      'All Songs': 'all',
+      'Classic Hymn': 'Classic Hymn',
+      'Contemporary': 'Contemporary',
+      'Modern Hymn': 'Modern Hymn',
+    };
+    
+    const mappedCategory = categoryMap[selectedCategory] || selectedCategory;
+    if (mappedCategory !== 'all' && mappedCategory !== t('songs.allCategories')) {
+      filtered = filtered.filter(song => song.category === mappedCategory || song.category === selectedCategory);
     }
 
-    setFilteredSongs(filtered);
-    setDisplayedSongs(12); // Reset displayed songs when filters change
-  }, [searchQuery, selectedCategory, allSongs]);
+    return filtered;
+  }, [searchQuery, selectedCategory, allSongs, t]);
+
+  // Reset displayed songs when filters change
+  useEffect(() => {
+    setDisplayedSongs(12);
+  }, [searchQuery, selectedCategory]);
 
   const handleLoadMore = () => {
     setDisplayedSongs(prev => Math.min(prev + 12, filteredSongs.length));
@@ -195,7 +213,15 @@ const SongsPage = () => {
     }
   };
 
-  const visibleSongs = filteredSongs.slice(0, displayedSongs);
+  const getDifficultyText = (difficulty: string) => {
+    if (difficulty === 'Easy') return t('chord.easy');
+    if (difficulty === 'Medium') return t('chord.medium');
+    if (difficulty === 'Hard') return t('chord.hard');
+    return difficulty;
+  };
+
+  // Memoize visible songs to prevent unnecessary recalculations
+  const visibleSongs = useMemo(() => filteredSongs.slice(0, displayedSongs), [filteredSongs, displayedSongs]);
   const hasMoreSongs = displayedSongs < filteredSongs.length;
 
   return (
@@ -206,23 +232,23 @@ const SongsPage = () => {
         <section className="pt-20 pb-12 px-6 bg-gradient-to-br from-background to-muted/20">
           <div className="max-w-7xl mx-auto text-center">
             <h1 className="text-4xl xs:text-5xl sm:text-6xl font-bold tracking-tight mb-6">
-              Gospel Songs
+              {t('songs.title')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
-              Discover beautiful gospel songs with chord charts, lyrics, and resources for worship
+              {t('songs.subtitle')}
             </p>
             
             {/* Enhanced Search Bar */}
             <div className="max-w-2xl mx-auto mb-8">
               <EnhancedSearch
-                placeholder="Search for songs, artists, chords, or lyrics..."
+                placeholder={t('songs.searchPlaceholder')}
                 onSearch={(query) => setSearchQuery(query)}
                 onResultSelect={(result) => {
                   // Navigate to the selected song using ID (fastest and most reliable)
-                  window.location.href = `/songs/${result.id}`;
+                  window.location.href = getTranslatedRoute(`/songs/${result.id}`, language);
                 }}
-                showFilters={true}
-                showSort={true}
+                showFilters={false}
+                showSort={false}
               />
             </div>
 
@@ -232,7 +258,7 @@ const SongsPage = () => {
                 const IconComponent = category.icon;
                 return (
                   <Button
-                    key={category.name}
+                    key={category.key || category.name}
                     variant={selectedCategory === category.name ? "default" : "outline"}
                     className="rounded-full"
                     onClick={() => setSelectedCategory(category.name)}
@@ -251,21 +277,21 @@ const SongsPage = () => {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
               <h2 className="text-3xl xs:text-4xl font-bold tracking-tight mb-4">
-                {searchQuery || selectedCategory !== "All Songs" 
-                  ? `Search Results (${filteredSongs.length} songs found)` 
-                  : "All Gospel Songs"
+                {searchQuery || selectedCategory !== t('songs.allCategories') 
+                  ? `${t('songs.searchResults')} (${filteredSongs.length} ${t('songs.songsFound')})` 
+                  : t('songs.allSongs')
                 }
               </h2>
               <p className="text-lg text-muted-foreground mb-4">
-                Browse our complete collection of gospel songs with chord charts and resources
+                {t('songs.browseCollection')}
               </p>
               {!isLoading && supabaseSongs.length > 0 && (
                 <div className="flex justify-center gap-3 flex-wrap">
                   <Badge variant="default" className="text-sm">
-                    🎵 {allSongs.length} songs available
+                    🎵 {allSongs.length} {t('songs.songsAvailable')}
                   </Badge>
                   <Badge variant="secondary" className="text-sm">
-                    📀 From our database collection
+                    📀 {t('songs.fromDatabase')}
                   </Badge>
                 </div>
               )}
@@ -275,7 +301,7 @@ const SongsPage = () => {
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-muted-foreground">
-                  {filteredSongs.length} songs found
+                  {filteredSongs.length} {t('songs.songsFound')}
                 </span>
               </div>
               <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
@@ -284,9 +310,9 @@ const SongsPage = () => {
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <h3 className="text-xl font-semibold mb-2">Loading songs...</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('songs.loading')}</h3>
                 <p className="text-muted-foreground">
-                  Fetching the latest gospel songs from our collection
+                  {t('songs.fetching')}
                 </p>
               </div>
             ) : visibleSongs.length > 0 ? (
@@ -295,15 +321,7 @@ const SongsPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {visibleSongs.map((song) => (
                       <LazyLoad key={song.id}>
-                        {song.category === 'YouTube Scraped' ? (
-                          <YouTubeSongCard
-                            song={song}
-                            viewMode={viewMode}
-                            onToggleFavorite={handleToggleFavorite}
-                            isFavorite={isSongFavorite(song.id)}
-                          />
-                        ) : (
-                          <Card 
+                        <Card 
                             id={`song-${song.id}`}
                             className={`group hover:shadow-lg transition-all duration-300 ${
                               highlightedSong === song.id.toString() ? 'ring-2 ring-blue-500 ring-opacity-50' : ''
@@ -341,7 +359,7 @@ const SongsPage = () => {
                             <CardContent className="pt-0">
                               <div className="flex items-center justify-between mb-4">
                                 <Badge className={getDifficultyColor(song.difficulty)}>
-                                  {song.difficulty}
+                                  {getDifficultyText(song.difficulty)}
                                 </Badge>
                                 <Badge variant="secondary">
                                   {song.category}
@@ -353,16 +371,15 @@ const SongsPage = () => {
                                   variant="outline"
                                   asChild
                                 >
-                                   <Link href={`/songs/${song.id}`}>
+                                   <Link href={getTranslatedRoute(`/songs/${song.id}`, language)}>
                                     <Music className="mr-2 h-4 w-4" />
-                                    View Chords
+                                    {t('song.viewChords')}
                                     <ExternalLink className="ml-2 h-4 w-4" />
                                   </Link>
                                 </Button>
                               </div>
                             </CardContent>
                           </Card>
-                        )}
                       </LazyLoad>
                     ))}
                   </div>
@@ -396,7 +413,7 @@ const SongsPage = () => {
                                     <span>{song.language || 'en'}</span>
                                   </span>
                                   <Badge variant="secondary">
-                                    {song.difficulty}
+                                    {getDifficultyText(song.difficulty)}
                                   </Badge>
                                   <Badge variant="outline">
                                     {song.key}
@@ -425,9 +442,9 @@ const SongsPage = () => {
                                   variant="outline"
                                   asChild
                                 >
-                                  <Link href={`/songs/${song.id}`}>
+                                  <Link href={getTranslatedRoute(`/songs/${song.id}`, language)}>
                                     <Music className="h-4 w-4 mr-2" />
-                                    View Chords
+                                    {t('song.viewChords')}
                                   </Link>
                                 </Button>
                                 <Button
@@ -462,7 +479,7 @@ const SongsPage = () => {
                       className="rounded-full"
                       onClick={handleLoadMore}
                     >
-                      Load More Songs ({filteredSongs.length - displayedSongs} remaining)
+                      {t('songs.loadMore')} ({filteredSongs.length - displayedSongs} {t('songs.remaining')})
                       <ExternalLink className="ml-2 h-5 w-5" />
                     </Button>
                   </div>
@@ -471,32 +488,32 @@ const SongsPage = () => {
             ) : supabaseSongs.length === 0 ? (
               <div className="text-center py-12">
                 <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No songs in database</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('songs.noSongs')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  The admin needs to add songs to the database first.
+                  {t('songs.adminNeedsToAdd')}
                 </p>
-                <Link href="/admin/songs">
+                <Link href={getTranslatedRoute('/admin/songs', language)}>
                   <Button variant="outline" className="rounded-full">
-                    Go to Admin Panel
+                    {t('nav.admin')}
                   </Button>
                 </Link>
               </div>
             ) : (
               <div className="text-center py-12">
                 <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-xl font-semibold mb-2">No songs found</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('songs.noSongsFound')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Try adjusting your search terms or browse all songs.
+                  {t('songs.tryAdjusting')}
                 </p>
                 <Button 
                   variant="outline" 
                   className="rounded-full"
                   onClick={() => {
                     setSearchQuery("");
-                    setSelectedCategory("All Songs");
+                    setSelectedCategory(t('songs.allCategories'));
                   }}
                 >
-                  Clear Filters
+                  {t('songs.clearFilters')}
                 </Button>
               </div>
             )}

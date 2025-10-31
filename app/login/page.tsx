@@ -10,6 +10,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getTranslatedRoute } from "@/lib/url-translations";
+import LanguageSwitcher from "@/components/language-switcher";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,20 +21,21 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
+  const { t, language } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
     if (!email || !password) {
-      setError("Please fill in all fields");
+      setError(t('auth.fillAllFields'));
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
+      setError(t('auth.invalidEmail'));
       return;
     }
 
@@ -43,117 +47,161 @@ export default function LoginPage() {
       if (success) {
         // Small delay to ensure auth state updates before redirect
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push(getTranslatedRoute("/dashboard", language));
         }, 100);
       } else {
-        setError("Invalid email or password. Please check your credentials and try again.");
+        setError(t('auth.invalidEmailPassword'));
       }
     } catch (error) {
       console.error("Login error:", error);
-      setError("Login failed. Please try again.");
+      setError(t('auth.loginFailed'));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Link>
-          <div className="flex items-center justify-center space-x-2">
-            <Music className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold">PhinAccords</h1>
-          </div>
-          <p className="text-muted-foreground">Sign in to your account</p>
-        </div>
-
-        {/* Login Form */}
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Sign In</CardTitle>
-            <CardDescription className="text-center">
-              Enter your email and password to access your account
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="#" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              {error && (
-                <div className="text-sm text-destructive text-center">
-                  {error}
-                </div>
-              )}
-
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" disabled>
-                Google
-              </Button>
-              <Button variant="outline" disabled>
-                GitHub
-              </Button>
-            </div>
-
-            <div className="text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
-              <Link href="/register" className="text-primary hover:underline">
-                Sign up
+    <div className="min-h-screen flex">
+      {/* Left Column - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8 bg-background">
+        <div className="w-full max-w-md space-y-6">
+          {/* Header */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Link href={getTranslatedRoute('/', language)} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {t('auth.backToHome')}
               </Link>
+              <LanguageSwitcher />
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center space-x-2 lg:hidden">
+              <Music className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl font-bold">PhinAccords</h1>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">{t('auth.signInTitle')}</h1>
+              <p className="text-muted-foreground mt-1">{t('auth.welcomeBack')}</p>
+            </div>
+          </div>
 
+          {/* Login Form */}
+          <Card>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl">{t('auth.signIn')}</CardTitle>
+              <CardDescription>
+                {t('auth.signInDescription')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t('auth.email')}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">{t('auth.password')}</Label>
+                    <Link href="#" className="text-sm text-primary hover:underline">
+                      {t('auth.forgotPassword')}
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder={t('auth.enterPassword')}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                {error && (
+                  <div className="text-sm text-destructive text-center">
+                    {error}
+                  </div>
+                )}
+
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? t('auth.signingIn') : t('auth.signIn')}
+                </Button>
+              </form>
+
+              <div className="text-center text-sm">
+                <span className="text-muted-foreground">{t('auth.dontHaveAccount')} </span>
+                <Link href={getTranslatedRoute('/register', language)} className="text-primary hover:underline">
+                  {t('auth.signUp')}
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Footer */}
+          <div className="text-center text-sm text-muted-foreground pt-4">
+            {t('auth.builtBy')}{" "}
+            <Link 
+              href="https://heavenkeys.ca" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Heavenkeys Ltd
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column - Full Screen Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/login%20image.png')",
+          }}
+        >
+          <div 
+            className="absolute inset-0" 
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.15)' }}
+          />
+        </div>
+        <div className="relative z-10 flex flex-col items-center justify-center w-full p-12 text-white">
+          <div className="max-w-md space-y-6 text-center">
+            <h2 className="text-3xl font-bold">{t('auth.welcomeToPhinAccords')}</h2>
+            <p className="text-lg text-white/90">
+              {t('auth.joinMusicians')}
+            </p>
+            <ul className="space-y-3 text-left list-none">
+              <li className="flex items-center space-x-3">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                </div>
+                <span>{t('auth.accessChords')}</span>
+              </li>
+              <li className="flex items-center space-x-3">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                </div>
+                <span>{t('auth.interactiveDiagrams')}</span>
+              </li>
+              <li className="flex items-center space-x-3">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-white" />
+                </div>
+                <span>{t('auth.saveFavorites')}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

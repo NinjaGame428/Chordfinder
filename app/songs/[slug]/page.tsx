@@ -12,10 +12,13 @@ import Footer from '@/components/footer';
 import YouTubePlayer from '@/components/youtube-player';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getTranslatedRoute } from '@/lib/url-translations';
 
 const SongDetailsPage = () => {
   const params = useParams();
   const songSlug = params.slug;
+  const { t, language } = useLanguage();
   const [song, setSong] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,6 +40,9 @@ const SongDetailsPage = () => {
         }
 
         console.log('🔍 Fetching song with slug:', songSlug);
+        
+        // Add cache-busting query parameter to ensure fresh data
+        const cacheBuster = new Date().getTime();
 
         // Try to fetch song by ID if slug looks like a UUID
         const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(songSlug as string);
@@ -120,7 +126,7 @@ const SongDetailsPage = () => {
           setSong(foundSong);
         } else {
           console.error('❌ Song not found for slug:', songSlug);
-          setError(`Song not found`);
+          setError(t('songDetail.notFound'));
         }
       } catch (err) {
         console.error('❌ Error fetching song:', err);
@@ -161,7 +167,7 @@ const SongDetailsPage = () => {
         <main className="pt-16 min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading song details...</p>
+            <p>{t('songDetail.loading')}</p>
           </div>
         </main>
         <Footer />
@@ -175,15 +181,15 @@ const SongDetailsPage = () => {
         <Navbar />
         <main className="pt-16 min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Song not found</h1>
-            <p className="text-muted-foreground mb-4">Song slug: {songSlug}</p>
+            <h1 className="text-2xl font-bold mb-4">{t('songDetail.notFound')}</h1>
+            <p className="text-muted-foreground mb-4">{t('songDetail.slug')}: {songSlug}</p>
             {error && (
-              <p className="text-red-500 mb-4">Error: {error}</p>
+              <p className="text-red-500 mb-4">{t('songDetail.error')}: {error}</p>
             )}
-            <Link href="/songs">
+            <Link href={getTranslatedRoute('/songs', language)}>
               <Button>
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Songs
+                {t('songDetail.backToSongs')}
               </Button>
             </Link>
           </div>
@@ -200,10 +206,10 @@ const SongDetailsPage = () => {
         <div className="container mx-auto px-4 py-8">
           {/* Back Button */}
           <div className="mb-6">
-            <Link href="/songs">
+            <Link href={getTranslatedRoute('/songs', language)}>
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Songs
+                {t('songDetail.backToSongs')}
               </Button>
             </Link>
           </div>
@@ -232,31 +238,34 @@ const SongDetailsPage = () => {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Artist</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('songDetail.artist')}</p>
                       <p className="text-lg">{song.artists?.name || song.artist || 'Unknown Artist'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Language</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('songDetail.language')}</p>
                       <p className="text-lg">English</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Difficulty</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('songDetail.difficulty')}</p>
                       <Badge className={getDifficultyColor(song.difficulty || 'Medium')}>
-                        {song.difficulty || 'Medium'}
+                        {song.difficulty === 'Easy' ? t('chord.easy') : 
+                         song.difficulty === 'Medium' ? t('chord.medium') : 
+                         song.difficulty === 'Hard' ? t('chord.hard') : 
+                         song.difficulty || t('chord.medium')}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Key</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('songDetail.key')}</p>
                       <Badge className={getKeyColor(song.key_signature || song.key || 'C')}>
                         {song.key_signature || song.key || 'C'}
                       </Badge>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">BPM</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('songDetail.tempo')}</p>
                       <p className="text-lg">{song.tempo || song.bpm || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-muted-foreground">Year</p>
+                      <p className="text-sm font-medium text-muted-foreground">{t('songDetail.year')}</p>
                       <p className="text-lg">{song.year || 'N/A'}</p>
                     </div>
                   </div>
@@ -277,16 +286,16 @@ const SongDetailsPage = () => {
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center">
                       <Guitar className="h-5 w-5 mr-2" />
-                      Lyrics & Chords
+                      {t('songDetail.lyrics')} & {t('songDetail.chords')}
                     </div>
                     {song.key_signature && (
                       <Badge variant="outline" className="text-sm">
-                        Key: {song.key_signature}
+                        {t('songDetail.key')}: {song.key_signature}
                       </Badge>
                     )}
                   </CardTitle>
                   <CardDescription>
-                    Follow along with the chords and lyrics below
+                    {t('songDetail.followAlong')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -296,7 +305,7 @@ const SongDetailsPage = () => {
                       <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
                         <p className="flex items-center gap-2">
                           <Music className="h-4 w-4" />
-                          <span>Lyrics and chords added by admin • {song.lyrics.split('\n').length} lines</span>
+                          <span>{t('songDetail.linesAdded').replace('{lines}', song.lyrics.split('\n').length.toString())}</span>
                         </p>
                       </div>
                       
@@ -342,7 +351,7 @@ const SongDetailsPage = () => {
                           <div className="flex items-center gap-2">
                             <Music className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                              Tempo: <span className="font-semibold text-foreground">{song.tempo} BPM</span>
+                              {t('songDetail.tempo')}: <span className="font-semibold text-foreground">{song.tempo} BPM</span>
                             </span>
                           </div>
                         )}
@@ -350,7 +359,7 @@ const SongDetailsPage = () => {
                           <div className="flex items-center gap-2">
                             <Piano className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                              Key: <span className="font-semibold text-foreground">{song.key_signature}</span>
+                              {t('songDetail.key')}: <span className="font-semibold text-foreground">{song.key_signature}</span>
                             </span>
                           </div>
                         )}
@@ -360,14 +369,14 @@ const SongDetailsPage = () => {
                     <div className="text-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
                       <Guitar className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
                       <p className="text-lg font-medium text-muted-foreground mb-2">
-                        No lyrics added yet
+                        {t('songDetail.noLyrics')}
                       </p>
                       <p className="text-sm text-muted-foreground mb-4">
-                        An admin needs to add lyrics and chords for this song in the admin dashboard.
+                        {t('songDetail.adminNeedsToAdd')}
                       </p>
                       <div className="inline-flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
                         <Music className="h-3 w-3" />
-                        <span>Admin Dashboard → Songs → Edit → Add Lyrics</span>
+                        <span>{t('songDetail.adminDashboard')}</span>
                       </div>
                     </div>
                   )}

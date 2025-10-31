@@ -23,8 +23,12 @@ import {
 import { Navbar } from "@/components/navbar";
 import Footer from "@/components/footer";
 import React, { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getTranslatedRoute } from "@/lib/url-translations";
+import Link from "next/link";
 
 const ContactPage = () => {
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -54,12 +58,12 @@ const ContactPage = () => {
   };
 
   const inquiryTypes = [
-    "General Inquiry",
-    "Song Request",
-    "Technical Support",
-    "Partnership",
-    "Feedback",
-    "Other"
+    t('contact.generalInquiry'),
+    t('contact.songRequest'),
+    t('contact.technicalSupport'),
+    t('contact.partnership'),
+    t('contact.feedback'),
+    t('contact.other')
   ];
 
   if (isSubmitted) {
@@ -73,18 +77,18 @@ const ContactPage = () => {
                 <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <h1 className="text-4xl xs:text-5xl sm:text-6xl font-bold tracking-tight mb-6">
-                Message Sent Successfully!
+                {t('contact.messageSent')}
               </h1>
               <p className="text-lg text-muted-foreground mb-8">
-                Thank you for reaching out. We'll get back to you within 24 hours.
+                {t('contact.messageSentText')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="rounded-full" onClick={() => setIsSubmitted(false)}>
                   <MessageSquare className="mr-2 h-5 w-5" />
-                  Send Another Message
+                  {t('contact.sendAnother')}
                 </Button>
                 <Button variant="outline" size="lg" className="rounded-full" asChild>
-                  <a href="/">Back to Home</a>
+                  <Link href={getTranslatedRoute('/', language)}>{t('contact.backToHome')}</Link>
                 </Button>
               </div>
             </div>
@@ -105,10 +109,10 @@ const ContactPage = () => {
               <MessageSquare className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl xs:text-5xl sm:text-6xl font-bold tracking-tight mb-6">
-              Get in Touch
+              {t('contact.title')}
             </h1>
             <p className="text-lg text-muted-foreground mb-12">
-              Have a question, suggestion, or need help? We'd love to hear from you.
+              {t('contact.subtitle')}
             </p>
           </div>
         </section>
@@ -120,13 +124,11 @@ const ContactPage = () => {
               <Card className="p-6 shadow-lg">
                 <CardHeader>
                   <CardTitle className="text-xl flex items-center gap-3">
-                    <MapPin className="h-6 w-6 text-primary" /> Our Location
+                    <MapPin className="h-6 w-6 text-primary" /> {t('contact.ourLocation')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <p className="text-muted-foreground">Heavenkeys Ltd.</p>
-                  <p className="text-muted-foreground">123 Gospel Avenue, Suite 400</p>
-                  <p className="text-muted-foreground">Toronto, ON M5V 2L9, Canada</p>
+                  <p className="text-muted-foreground">{t('contact.location')}</p>
                 </CardContent>
               </Card>
             </div>
@@ -135,19 +137,19 @@ const ContactPage = () => {
             <div className="lg:col-span-2">
               <Card className="shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-center">Send us a Message</CardTitle>
+                  <CardTitle className="text-2xl text-center">{t('contact.sendMessage')}</CardTitle>
                   <p className="text-muted-foreground text-center">
-                    Fill out the form below and we'll get back to you as soon as possible.
+                    {t('contact.formDescription')}
                   </p>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Full Name *</Label>
+                        <Label htmlFor="name">{t('contact.fullName')} *</Label>
                         <Input
                           id="name"
-                          placeholder="Your full name"
+                          placeholder={t('contact.fullName')}
                           value={formData.name}
                           onChange={(e) => handleInputChange("name", e.target.value)}
                           required
@@ -155,7 +157,7 @@ const ContactPage = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email Address *</Label>
+                        <Label htmlFor="email">{t('contact.emailAddress')} *</Label>
                         <Input
                           id="email"
                           type="email"
@@ -169,10 +171,10 @@ const ContactPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="inquiryType">Type of Inquiry</Label>
+                      <Label htmlFor="inquiryType">{t('contact.inquiryType')}</Label>
                       <Select value={formData.inquiryType} onValueChange={(value) => handleInputChange("inquiryType", value)}>
                         <SelectTrigger className="rounded-full">
-                          <SelectValue placeholder="Select inquiry type" />
+                          <SelectValue placeholder={t('contact.selectInquiryType')} />
                         </SelectTrigger>
                         <SelectContent>
                           {inquiryTypes.map((type) => (
@@ -185,10 +187,10 @@ const ContactPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="subject">Subject *</Label>
+                      <Label htmlFor="subject">{t('contact.subject')} *</Label>
                       <Input
                         id="subject"
-                        placeholder="Brief description of your inquiry"
+                        placeholder={t('contact.briefDescription')}
                         value={formData.subject}
                         onChange={(e) => handleInputChange("subject", e.target.value)}
                         required
@@ -197,10 +199,10 @@ const ContactPage = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="message">Message *</Label>
+                      <Label htmlFor="message">{t('contact.message')} *</Label>
                       <Textarea
                         id="message"
-                        placeholder="Tell us more about your inquiry..."
+                        placeholder={t('contact.tellUsMore')}
                         value={formData.message}
                         onChange={(e) => handleInputChange("message", e.target.value)}
                         required
@@ -211,7 +213,7 @@ const ContactPage = () => {
                     <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
                       <Clock className="h-5 w-5 text-muted-foreground" />
                       <div className="text-sm text-muted-foreground">
-                        <strong>Response Time:</strong> We typically respond within 24 hours during business days.
+                        <strong>{t('contact.responseTime')}:</strong> {t('contact.responseTimeText')}
                       </div>
                     </div>
 
@@ -225,12 +227,12 @@ const ContactPage = () => {
                         {isSubmitting ? (
                           <>
                             <Clock className="mr-2 h-5 w-5 animate-spin" />
-                            Sending...
+                            {t('contact.sending')}
                           </>
                         ) : (
                           <>
                             <Send className="mr-2 h-5 w-5" />
-                            Send Message
+                            {t('contact.send')}
                           </>
                         )}
                       </Button>
@@ -247,7 +249,7 @@ const ContactPage = () => {
                           inquiryType: ""
                         })}
                       >
-                        Clear Form
+                        {t('contact.clearForm')}
                       </Button>
                     </div>
                   </form>

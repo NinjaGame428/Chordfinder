@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { fetchRecentActivity, type RecentActivity } from "@/lib/user-stats";
 
 export default function ActivityPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -62,10 +64,10 @@ export default function ActivityPage() {
     const activityTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - activityTime.getTime()) / (1000 * 60));
     
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    if (diffInMinutes < 1) return t('dashboard.justNow');
+    if (diffInMinutes < 60) return `${diffInMinutes}m ${t('common.ago') || 'ago'}`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ${t('common.ago') || 'ago'}`;
+    return `${Math.floor(diffInMinutes / 1440)}d ${t('common.ago') || 'ago'}`;
   };
 
   return (
@@ -74,9 +76,9 @@ export default function ActivityPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Your Activity</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('dashboard.yourActivity')}</h1>
             <p className="text-muted-foreground">
-              Track your engagement with Chord Finder
+              {t('dashboard.trackEngagementWithFinder')}
             </p>
           </div>
 
@@ -90,7 +92,7 @@ export default function ActivityPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{recentActivity.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Activities</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.totalActivities')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -106,7 +108,7 @@ export default function ActivityPage() {
                     <p className="text-2xl font-bold">
                       {recentActivity.filter(a => a.icon === 'Heart').length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Favorites</p>
+                    <p className="text-sm text-muted-foreground">{t('common.favorites')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -122,7 +124,7 @@ export default function ActivityPage() {
                     <p className="text-2xl font-bold">
                       {recentActivity.filter(a => a.icon === 'Download').length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Downloads</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.downloads')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -138,7 +140,7 @@ export default function ActivityPage() {
                     <p className="text-2xl font-bold">
                       {recentActivity.filter(a => a.icon === 'Star').length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Ratings</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.ratings')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -150,12 +152,12 @@ export default function ActivityPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Activity Timeline</CardTitle>
-                  <CardDescription>Your recent interactions with Chord Finder</CardDescription>
+                  <CardTitle>{t('dashboard.activityTimeline')}</CardTitle>
+                  <CardDescription>{t('dashboard.yourRecentInteractions')}</CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={loadRecentActivity} disabled={isLoadingData}>
                   <Clock className="h-4 w-4 mr-2" />
-                  {isLoadingData ? 'Loading...' : 'Refresh'}
+                  {isLoadingData ? t('dashboard.loading') : t('dashboard.refresh')}
                 </Button>
               </div>
             </CardHeader>
@@ -163,7 +165,7 @@ export default function ActivityPage() {
               {isLoadingData ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-2 text-muted-foreground">Loading your activity...</p>
+                  <p className="mt-2 text-muted-foreground">{t('dashboard.loadingActivity')}</p>
                 </div>
               ) : recentActivity.length > 0 ? (
                 <div className="space-y-4">
@@ -193,16 +195,16 @@ export default function ActivityPage() {
               ) : (
                 <div className="text-center py-12">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('dashboard.noActivityYet')}</h3>
                   <p className="text-muted-foreground mb-4">
-                    Start exploring to see your activity here
+                    {t('dashboard.startExploring')}
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={() => router.push("/songs")}>
-                      Browse Songs
+                      {t('dashboard.browseSongs')}
                     </Button>
                     <Button variant="outline" onClick={() => router.push("/resources")}>
-                      View Resources
+                      {t('dashboard.viewResources')}
                     </Button>
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [preferences, setPreferences] = useState({
     language: 'en',
@@ -64,17 +66,17 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Settings</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('dashboard.settings')}</h1>
             <p className="text-muted-foreground">
-              Customize your Chord Finder experience
+              {t('dashboard.customizeExperience')}
             </p>
           </div>
 
           {/* Preferences */}
           <Card>
             <CardHeader>
-              <CardTitle>Preferences</CardTitle>
-              <CardDescription>Customize your Chord Finder experience</CardDescription>
+              <CardTitle>{t('dashboard.preferences')}</CardTitle>
+              <CardDescription>{t('dashboard.customizeExperience')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
@@ -82,8 +84,8 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3">
                     <Globe className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <Label>Language</Label>
-                      <p className="text-sm text-muted-foreground">Choose your preferred language</p>
+                      <Label>{t('dashboard.language')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('dashboard.chooseLanguage')}</p>
                     </div>
                   </div>
                   <select 
@@ -102,8 +104,8 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3">
                     <Palette className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <Label>Theme</Label>
-                      <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
+                      <Label>{t('dashboard.theme')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('dashboard.chooseTheme')}</p>
                     </div>
                   </div>
                   <select 
@@ -123,8 +125,8 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3">
                     <Bell className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive email notifications</p>
+                      <Label>{t('dashboard.emailNotifications')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('dashboard.receiveEmailNotifications')}</p>
                     </div>
                   </div>
                   <input
@@ -139,8 +141,8 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3">
                     <Smartphone className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <Label>Push Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive push notifications</p>
+                      <Label>{t('dashboard.pushNotifications')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('dashboard.receivePushNotifications')}</p>
                     </div>
                   </div>
                   <input
@@ -157,8 +159,8 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3">
                     <Settings className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <Label>Auto-save</Label>
-                      <p className="text-sm text-muted-foreground">Automatically save your work</p>
+                      <Label>{t('dashboard.autoSave')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('dashboard.automaticallySaveWork')}</p>
                     </div>
                   </div>
                   <input
@@ -173,8 +175,8 @@ export default function SettingsPage() {
                   <div className="flex items-center space-x-3">
                     <Bell className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <Label>Show Tutorials</Label>
-                      <p className="text-sm text-muted-foreground">Display helpful tutorials</p>
+                      <Label>{t('dashboard.showTutorials')}</Label>
+                      <p className="text-sm text-muted-foreground">{t('dashboard.displayHelpfulTutorials')}</p>
                     </div>
                   </div>
                   <input
@@ -191,20 +193,20 @@ export default function SettingsPage() {
           {/* Security */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Security</CardTitle>
-              <CardDescription>Manage your account security</CardDescription>
+              <CardTitle>{t('dashboard.security')}</CardTitle>
+              <CardDescription>{t('dashboard.manageAccountSecurity')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Key className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <Label>Password</Label>
-                    <p className="text-sm text-muted-foreground">Change your password</p>
+                    <Label>{t('dashboard.password')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.changePassword')}</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm">
-                  Change Password
+                  {t('dashboard.changePassword')}
                 </Button>
               </div>
 
@@ -214,12 +216,12 @@ export default function SettingsPage() {
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <Label>Email</Label>
-                    <p className="text-sm text-muted-foreground">Update your email address</p>
+                    <Label>{t('dashboard.email')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.updateEmailAddress')}</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm">
-                  Update Email
+                  {t('dashboard.updateEmail')}
                 </Button>
               </div>
             </CardContent>
@@ -228,20 +230,20 @@ export default function SettingsPage() {
           {/* Data Management */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Data Management</CardTitle>
-              <CardDescription>Manage your data and account</CardDescription>
+              <CardTitle>{t('dashboard.dataManagement')}</CardTitle>
+              <CardDescription>{t('dashboard.manageDataAndAccount')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Download className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <Label>Export Data</Label>
-                    <p className="text-sm text-muted-foreground">Download your data</p>
+                    <Label>{t('dashboard.exportData')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.downloadYourData')}</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleExportData}>
-                  Export Data
+                  {t('dashboard.exportData')}
                 </Button>
               </div>
 
@@ -251,12 +253,12 @@ export default function SettingsPage() {
                 <div className="flex items-center space-x-3">
                   <Trash2 className="h-5 w-5 text-red-500" />
                   <div>
-                    <Label className="text-red-600">Delete Account</Label>
-                    <p className="text-sm text-muted-foreground">Permanently delete your account</p>
+                    <Label className="text-red-600">{t('dashboard.deleteAccount')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.permanentlyDeleteAccount')}</p>
                   </div>
                 </div>
                 <Button variant="destructive" size="sm" onClick={handleDeleteAccount}>
-                  Delete Account
+                  {t('dashboard.deleteAccount')}
                 </Button>
               </div>
             </CardContent>

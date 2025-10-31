@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { fetchFavoriteSongs, type FavoriteSong } from "@/lib/user-stats";
 
 export default function FavoritesPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [favoriteSongs, setFavoriteSongs] = useState<FavoriteSong[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -55,9 +57,9 @@ export default function FavoritesPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Your Favorite Songs</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('dashboard.yourFavorites')}</h1>
             <p className="text-muted-foreground">
-              Songs you've saved for easy access
+              {t('dashboard.songsSavedForAccess')}
             </p>
           </div>
 
@@ -67,7 +69,7 @@ export default function FavoritesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search your favorite songs..."
+                placeholder={t('dashboard.searchFavorites')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border rounded-md bg-background"
@@ -75,7 +77,7 @@ export default function FavoritesPage() {
             </div>
             <Button variant="outline" className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              Filter
+              {t('common.filter')}
             </Button>
           </div>
 
@@ -89,7 +91,7 @@ export default function FavoritesPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{favoriteSongs.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Favorites</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.totalFavorites')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -105,7 +107,7 @@ export default function FavoritesPage() {
                     <p className="text-2xl font-bold">
                       {new Set(favoriteSongs.map(song => song.genre)).size}
                     </p>
-                    <p className="text-sm text-muted-foreground">Genres</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.genres')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -126,7 +128,7 @@ export default function FavoritesPage() {
                         return songDate > weekAgo;
                       }).length}
                     </p>
-                    <p className="text-sm text-muted-foreground">Added This Week</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.addedThisWeek')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -137,7 +139,7 @@ export default function FavoritesPage() {
           {isLoadingData ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Loading your favorite songs...</p>
+              <p className="mt-2 text-muted-foreground">{t('dashboard.loadingFavorites')}</p>
             </div>
           ) : filteredSongs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -160,15 +162,15 @@ export default function FavoritesPage() {
                         <Badge variant="secondary">{song.genre}</Badge>
                         <Badge variant="outline">{song.key_signature}</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        Added {new Date(song.created_at).toLocaleDateString()}
+                        <p className="text-sm text-muted-foreground">
+                        {t('dashboard.added')} {new Date(song.created_at).toLocaleDateString()}
                       </p>
                       <div className="flex gap-2 mt-4">
                         <Button size="sm" className="flex-1">
-                          View Chords
+                          {t('dashboard.viewChords')}
                         </Button>
                         <Button size="sm" variant="outline">
-                          Play
+                          {t('dashboard.play')}
                         </Button>
                       </div>
                     </div>
@@ -180,12 +182,12 @@ export default function FavoritesPage() {
             <Card>
               <CardContent className="text-center py-12">
                 <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Favorite Songs Yet</h3>
+                <h3 className="text-lg font-semibold mb-2">{t('dashboard.noFavoritesYet')}</h3>
                 <p className="text-muted-foreground mb-4">
-                  Start exploring songs and add them to your favorites
+                  {t('dashboard.startExploringSongs')}
                 </p>
                 <Button onClick={() => router.push("/songs")}>
-                  Browse Songs
+                  {t('dashboard.browseSongs')}
                 </Button>
               </CardContent>
             </Card>

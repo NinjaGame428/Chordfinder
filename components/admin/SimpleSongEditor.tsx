@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { ArrowLeft, Save, Loader2, Plus, Search, CheckCircle2, XCircle, ExternalLink, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SimpleSongEditorProps {
   songId: string;
@@ -39,6 +40,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
   const [artists, setArtists] = useState<Array<{ id: string; name: string }>>([]);
   const [filteredArtists, setFilteredArtists] = useState<Array<{ id: string; name: string }>>([]);
   const [artistSearchQuery, setArtistSearchQuery] = useState('');
+  const [showArtistDropdown, setShowArtistDropdown] = useState(false);
   const [isAddArtistModalOpen, setIsAddArtistModalOpen] = useState(false);
   const [newArtistName, setNewArtistName] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -124,11 +126,18 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       const response = await fetch('/api/artists');
       if (response.ok) {
         const data = await response.json();
-        setArtists(data.artists || []);
-        setFilteredArtists(data.artists || []);
+        const artistsList = data.artists || [];
+        setArtists(artistsList);
+        setFilteredArtists(artistsList);
+        console.log('✅ Loaded artists:', artistsList.length);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to load artists:', response.status, errorData);
+        showNotification('Failed to load artists from database', 'error');
       }
     } catch (error) {
-      console.error('Error loading artists:', error);
+      console.error('❌ Error loading artists:', error);
+      showNotification('Failed to load artists from database', 'error');
     }
   };
 
@@ -139,6 +148,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
 
   useEffect(() => {
     if (artistSearchQuery.trim() === '') {
+      // Show all artists when search is empty
       setFilteredArtists(artists);
     } else {
       const filtered = artists.filter((artist) =>
@@ -147,6 +157,13 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       setFilteredArtists(filtered);
     }
   }, [artistSearchQuery, artists]);
+
+  // Initialize search query with artist name when song loads
+  useEffect(() => {
+    if (songData.artist_name && !artistSearchQuery) {
+      setArtistSearchQuery(songData.artist_name);
+    }
+  }, [songData.artist_name]);
 
   const handleAddArtist = async () => {
     if (!newArtistName.trim()) return;
@@ -166,7 +183,9 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       const data = await response.json();
       const newArtist = data.artist;
 
-      setArtists([...artists, newArtist]);
+      // Refresh artists list to ensure we have the latest data
+      await loadArtists();
+      
       setSongData({ ...songData, artist_id: newArtist.id, artist_name: newArtist.name });
       setArtistSearchQuery(newArtist.name);
       setNewArtistName('');
@@ -194,7 +213,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       const payload = {
         title: songData.title.trim(),
         artist_id: songData.artist_id,
-        key_signature: songData.key_signature || null,
+        key_signature: songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature.trim() : null,
         tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
         lyrics: songData.lyrics.trim() || '',
       };
@@ -226,13 +245,45 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         hasLyrics: !!data.song?.lyrics
       });
 
+      // Verify the saved data matches what we sent
+      if (data.song) {
+        console.log('✅ Verification - Saved song data:', {
+          title: data.song.title,
+          artist_id: data.song.artist_id,
+          artist_name: data.song.artists?.name,
+          key_signature: data.song.key_signature,
+          tempo: data.song.tempo,
+          lyricsLength: data.song.lyrics?.length || 0,
+          updated_at: data.song.updated_at
+        });
+        
+        // Verify critical fields were saved
+        if (data.song.title !== payload.title.trim()) {
+          console.warn('⚠️ Warning: Title mismatch!');
+        }
+        if (data.song.artist_id !== payload.artist_id) {
+          console.warn('⚠️ Warning: Artist ID mismatch!');
+        }
+        if (data.song.lyrics !== payload.lyrics) {
+          console.warn('⚠️ Warning: Lyrics mismatch!', {
+            savedLength: data.song.lyrics?.length || 0,
+            sentLength: payload.lyrics.length
+          });
+        }
+      }
+
       const publicUrl = `${window.location.origin}/songs/${songId}`;
       console.log('🔗 Public page:', publicUrl);
 
-      showNotification('Song saved successfully! View it on the public page.', 'success');
+      showNotification('Song saved successfully! Changes will be visible on the public page.', 'success');
 
-      console.log('🔄 Reloading song data...');
+      console.log('🔄 Reloading song data from database...');
       await loadSongData();
+      
+      // Force a small delay to ensure database write is complete
+      setTimeout(() => {
+        console.log('✅ Song update complete. Changes should now be visible across the site.');
+      }, 500);
     } catch (error: any) {
       console.error('❌ Save error:', error);
       showNotification(error.message || 'Failed to save song', 'error');
@@ -348,49 +399,133 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
             {/* Artist */}
             <div>
               <Label htmlFor="artist">Artist *</Label>
+              {songData.artist_id && songData.artist_name && (
+                <p className="text-xs text-muted-foreground mb-2">
+                  Selected: <span className="font-medium">{songData.artist_name}</span>
+                </p>
+              )}
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="artist"
                     value={artistSearchQuery}
-                    onChange={(e) => setArtistSearchQuery(e.target.value)}
-                    placeholder="Search for an artist..."
+                    onChange={(e) => {
+                      setArtistSearchQuery(e.target.value);
+                      setShowArtistDropdown(true); // Show dropdown when typing
+                    }}
+                    onFocus={() => {
+                      // Show dropdown when input is focused
+                      setShowArtistDropdown(true);
+                      if (artistSearchQuery.trim() === '' && artists.length > 0) {
+                        setFilteredArtists(artists);
+                      }
+                    }}
+                    onBlur={() => {
+                      // Delay hiding dropdown to allow clicks
+                      setTimeout(() => setShowArtistDropdown(false), 200);
+                    }}
+                    placeholder={songData.artist_name || "Search for an artist..."}
                     className="pl-9"
                   />
-                  {filteredArtists.length > 0 && artistSearchQuery && (
+                  {showArtistDropdown && (filteredArtists.length > 0 || artists.length > 0) && (
                     <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
-                      {filteredArtists.map((artist) => (
+                      {(artistSearchQuery.trim() === '' ? artists : filteredArtists).map((artist) => (
                         <div
                           key={artist.id}
-                          className="px-4 py-2 hover:bg-muted cursor-pointer"
+                          className={`px-4 py-2 hover:bg-muted cursor-pointer ${
+                            songData.artist_id === artist.id ? 'bg-muted font-medium' : ''
+                          }`}
+                          onMouseDown={(e) => {
+                            // Prevent input blur when clicking
+                            e.preventDefault();
+                          }}
                           onClick={() => {
                             setSongData({ ...songData, artist_id: artist.id, artist_name: artist.name });
                             setArtistSearchQuery(artist.name);
+                            setFilteredArtists(artists); // Reset filtered list
+                            setShowArtistDropdown(false); // Hide dropdown after selection
                           }}
                         >
                           {artist.name}
+                          {songData.artist_id === artist.id && (
+                            <span className="ml-2 text-xs text-muted-foreground">(selected)</span>
+                          )}
                         </div>
                       ))}
+                      {artistSearchQuery.trim() !== '' && filteredArtists.length === 0 && (
+                        <div className="px-4 py-2 text-sm text-muted-foreground text-center">
+                          No artists found matching "{artistSearchQuery}"
+                        </div>
+                      )}
                     </div>
                   )}
+                  {!showArtistDropdown && artists.length === 0 && !artistSearchQuery && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No artists found. Click + to add one.
+                    </p>
+                  )}
                 </div>
-                <Button type="button" variant="outline" onClick={() => setIsAddArtistModalOpen(true)}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsAddArtistModalOpen(true)}
+                  title="Add new artist"
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              {!songData.artist_id && (
+                <p className="text-xs text-destructive mt-1">Please select an artist from the dropdown</p>
+              )}
             </div>
 
             {/* Key & Tempo */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="key">Key Signature</Label>
-                <Input
-                  id="key"
-                  value={songData.key_signature}
-                  onChange={(e) => setSongData({ ...songData, key_signature: e.target.value })}
-                  placeholder="e.g., C, G, Am"
-                />
+                <Select
+                  value={songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature : '__none__'}
+                  onValueChange={(value) => {
+                    // Handle special "none" value
+                    if (value === '__none__') {
+                      setSongData({ ...songData, key_signature: '' });
+                    } else {
+                      setSongData({ ...songData, key_signature: value });
+                    }
+                  }}
+                >
+                  <SelectTrigger id="key">
+                    <SelectValue placeholder="Select key" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="C#">C#</SelectItem>
+                    <SelectItem value="Db">Db</SelectItem>
+                    <SelectItem value="D">D</SelectItem>
+                    <SelectItem value="D#">D#</SelectItem>
+                    <SelectItem value="Eb">Eb</SelectItem>
+                    <SelectItem value="E">E</SelectItem>
+                    <SelectItem value="F">F</SelectItem>
+                    <SelectItem value="F#">F#</SelectItem>
+                    <SelectItem value="Gb">Gb</SelectItem>
+                    <SelectItem value="G">G</SelectItem>
+                    <SelectItem value="G#">G#</SelectItem>
+                    <SelectItem value="Ab">Ab</SelectItem>
+                    <SelectItem value="A">A</SelectItem>
+                    <SelectItem value="A#">A#</SelectItem>
+                    <SelectItem value="Bb">Bb</SelectItem>
+                    <SelectItem value="B">B</SelectItem>
+                    <SelectItem value="Am">Am</SelectItem>
+                    <SelectItem value="Bm">Bm</SelectItem>
+                    <SelectItem value="Cm">Cm</SelectItem>
+                    <SelectItem value="Dm">Dm</SelectItem>
+                    <SelectItem value="Em">Em</SelectItem>
+                    <SelectItem value="Fm">Fm</SelectItem>
+                    <SelectItem value="Gm">Gm</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="tempo">Tempo (BPM)</Label>

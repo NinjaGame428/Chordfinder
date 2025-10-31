@@ -24,9 +24,22 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/lib/supabase';
+
+interface AdminActivity {
+  id: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  icon: string;
+}
 
 const AdminPage = () => {
   const router = useRouter();
+  const { user } = useAuth();
+  const { t } = useLanguage();
   const [adminStats, setAdminStats] = useState({
     totalSongs: 0,
     totalArtists: 0,
@@ -37,11 +50,90 @@ const AdminPage = () => {
     collections: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
-  const [recentActivity, setRecentActivity] = useState([
-    { id: '1', title: 'New song added', description: 'Amazing Grace added to collection', timestamp: '2024-01-15', icon: 'Music' },
-    { id: '2', title: 'User registered', description: 'New user joined the platform', timestamp: '2024-01-14', icon: 'Users' },
-    { id: '3', title: 'Resource uploaded', description: 'Gospel chord guide uploaded', timestamp: '2024-01-13', icon: 'BookOpen' }
-  ]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [recentActivity, setRecentActivity] = useState<AdminActivity[]>([]);
+
+  // Fetch admin activities from user_activities table
+  const fetchAdminActivities = async () => {
+    if (!supabase || !user) return;
+    
+    try {
+      setActivityLoading(true);
+      // Get all admin users first
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('users')
+        .select('id')
+        .in('role', ['admin', 'moderator']);
+
+      if (adminError || !adminUsers || adminUsers.length === 0) {
+        setRecentActivity([]);
+        return;
+      }
+
+      const adminUserIds = adminUsers.map(u => u.id);
+
+      // Fetch activities from admin users
+      const { data: activities, error: activitiesError } = await supabase
+        .from('user_activities')
+        .select(`
+          id,
+          activity_type,
+          description,
+          metadata,
+          page,
+          action,
+          created_at,
+          user_id,
+          users!inner (role)
+        `)
+        .in('user_id', adminUserIds)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (activitiesError) {
+        console.error('Error fetching admin activities:', activitiesError);
+        setRecentActivity([]);
+        return;
+      }
+
+      if (!activities || activities.length === 0) {
+        setRecentActivity([]);
+        return;
+      }
+
+      // Map activities to AdminActivity format
+      const mappedActivities: AdminActivity[] = activities.map((activity: any) => {
+        const metadata = activity.metadata ? (typeof activity.metadata === 'string' ? JSON.parse(activity.metadata) : activity.metadata) : {};
+        
+        // Determine icon based on activity_type
+        let icon = 'Activity';
+        if (activity.activity_type?.toLowerCase().includes('song')) {
+          icon = 'Music';
+        } else if (activity.activity_type?.toLowerCase().includes('user')) {
+          icon = 'Users';
+        } else if (activity.activity_type?.toLowerCase().includes('resource')) {
+          icon = 'BookOpen';
+        } else if (activity.activity_type?.toLowerCase().includes('artist')) {
+          icon = 'Music';
+        }
+
+        return {
+          id: activity.id,
+          title: activity.description || activity.activity_type || t('admin.activity'),
+          description: activity.page || metadata?.title || '',
+          timestamp: activity.created_at,
+          icon
+        };
+      });
+
+      setRecentActivity(mappedActivities);
+    } catch (error) {
+      console.error('Error in fetchAdminActivities:', error);
+      setRecentActivity([]);
+    } finally {
+      setActivityLoading(false);
+    }
+  };
 
   // Fetch admin statistics
   const fetchAdminStats = async () => {
@@ -72,7 +164,8 @@ const AdminPage = () => {
 
   useEffect(() => {
     fetchAdminStats();
-  }, []);
+    fetchAdminActivities();
+  }, [user]);
 
   return (
     <AdminLayout>
@@ -80,18 +173,18 @@ const AdminPage = () => {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('admin.dashboard.title')}</h1>
             <p className="text-muted-foreground">
-              Manage your chord collection, YouTube scraper, and application settings.
+              {t('admin.dashboard.subtitle')}
             </p>
           </div>
 
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="overview">{t('admin.dashboard.overview')}</TabsTrigger>
+              <TabsTrigger value="analytics">{t('admin.dashboard.analytics')}</TabsTrigger>
+              <TabsTrigger value="activity">{t('admin.dashboard.activity')}</TabsTrigger>
+              <TabsTrigger value="settings">{t('admin.dashboard.settings')}</TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -99,9 +192,9 @@ const AdminPage = () => {
               {/* Stats Header with Refresh Button */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">System Statistics</h3>
+                  <h3 className="text-lg font-semibold">{t('admin.dashboard.systemStatistics')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Real-time updates of your platform performance
+                    {t('admin.dashboard.systemStatisticsDesc')}
                   </p>
                 </div>
                 <Button 
@@ -112,14 +205,14 @@ const AdminPage = () => {
                   className="flex items-center gap-2"
                 >
                   <Clock className="h-4 w-4" />
-                  {statsLoading ? 'Updating...' : 'Refresh Data'}
+                  {statsLoading ? t('admin.dashboard.updating') : t('admin.dashboard.refreshData')}
                 </Button>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Songs in Collection</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('admin.dashboard.songsInCollection')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Music className="h-4 w-4 text-muted-foreground" />
                       {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -130,14 +223,14 @@ const AdminPage = () => {
                       {adminStats.totalSongs}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Total songs available
+                      {t('admin.dashboard.totalSongsAvailable')}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Artists</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('admin.dashboard.artists')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -148,14 +241,14 @@ const AdminPage = () => {
                       {adminStats.totalArtists}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Artists in database
+                      {t('admin.dashboard.artistsInDatabase')}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Resources</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('admin.dashboard.resources')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <BookOpen className="h-4 w-4 text-muted-foreground" />
                       {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -166,14 +259,14 @@ const AdminPage = () => {
                       {adminStats.totalResources}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Learning resources
+                      {t('admin.dashboard.learningResources')}
                     </p>
                   </CardContent>
                 </Card>
 
                 <Card className="relative">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                    <CardTitle className="text-sm font-medium">{t('admin.dashboard.activeUsers')}</CardTitle>
                     <div className="flex items-center gap-2">
                       <Activity className="h-4 w-4 text-muted-foreground" />
                       {statsLoading && <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>}
@@ -184,7 +277,7 @@ const AdminPage = () => {
                       {adminStats.activeUsers}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Currently active
+                      {t('admin.dashboard.currentlyActive')}
                     </p>
                   </CardContent>
                 </Card>
@@ -193,14 +286,20 @@ const AdminPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Latest system activities and changes</CardDescription>
+                    <CardTitle>{t('admin.dashboard.recentActivity')}</CardTitle>
+                    <CardDescription>{t('admin.dashboard.latestSystemActivities')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {recentActivity.length > 0 ? (
+                    {activityLoading ? (
+                      <div className="text-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-sm text-muted-foreground mt-2">{t('admin.dashboard.updating')}</p>
+                      </div>
+                    ) : recentActivity.length > 0 ? (
                       recentActivity.map((activity) => {
                         const IconComponent = activity.icon === 'Music' ? Music : 
-                                            activity.icon === 'Users' ? Users : BookOpen;
+                                            activity.icon === 'Users' ? Users : 
+                                            activity.icon === 'BookOpen' ? BookOpen : Activity;
                         const timeAgo = new Date(activity.timestamp).toLocaleDateString();
                         
                         return (
@@ -219,8 +318,8 @@ const AdminPage = () => {
                       })
                     ) : (
                       <div className="text-center py-4">
-                        <p className="text-sm text-muted-foreground">No recent activity</p>
-                        <p className="text-xs text-muted-foreground">System activities will appear here</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.dashboard.noRecentActivity')}</p>
+                        <p className="text-xs text-muted-foreground">{t('admin.dashboard.systemActivitiesWillAppear')}</p>
                       </div>
                     )}
                   </CardContent>
@@ -228,33 +327,33 @@ const AdminPage = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Common admin tasks and shortcuts</CardDescription>
+                    <CardTitle>{t('admin.dashboard.quickActions')}</CardTitle>
+                    <CardDescription>{t('admin.dashboard.commonAdminTasks')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/songs")}>
                       <Music className="mr-2 h-4 w-4" />
-                      Manage Songs
+                      {t('admin.dashboard.manageSongs')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/artists")}>
                       <Users className="mr-2 h-4 w-4" />
-                      Manage Artists
+                      {t('admin.dashboard.manageArtists')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/users")}>
                       <Shield className="mr-2 h-4 w-4" />
-                      Manage Users
+                      {t('admin.dashboard.manageUsers')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/resources")}>
                       <BookOpen className="mr-2 h-4 w-4" />
-                      Manage Resources
+                      {t('admin.dashboard.manageResources')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/youtube")}>
                       <Youtube className="mr-2 h-4 w-4" />
-                      Import YouTube Videos
+                      {t('admin.dashboard.importYouTubeVideos')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/analytics")}>
                       <BarChart3 className="mr-2 h-4 w-4" />
-                      View Analytics
+                      {t('admin.dashboard.viewAnalytics')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -267,54 +366,54 @@ const AdminPage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <BarChart3 className="h-5 w-5 mr-2" />
-                    Platform Analytics
+                    {t('admin.dashboard.platformAnalytics')}
                   </CardTitle>
                   <CardDescription>
-                    Comprehensive insights into your platform's performance
+                    {t('admin.dashboard.comprehensiveInsights')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span>Total Users</span>
+                        <span>{t('admin.dashboard.totalUsers')}</span>
                         <span className="font-medium">{adminStats.totalUsers}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Collections</span>
+                        <span>{t('admin.dashboard.collections')}</span>
                         <span className="font-medium">{adminStats.collections}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>YouTube Videos</span>
+                        <span>{t('admin.dashboard.youtubeVideos')}</span>
                         <span className="font-medium">{adminStats.youtubeVideos}</span>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span>Database Status</span>
-                        <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                        <span>{t('admin.dashboard.databaseStatus')}</span>
+                        <Badge className="bg-green-100 text-green-800">{t('admin.dashboard.connected')}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Last Sync</span>
-                        <span className="text-sm text-muted-foreground">Just now</span>
+                        <span>{t('admin.dashboard.lastSync')}</span>
+                        <span className="text-sm text-muted-foreground">{t('admin.dashboard.justNow')}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>System Health</span>
-                        <Badge variant="outline">Healthy</Badge>
+                        <span>{t('admin.dashboard.systemHealth')}</span>
+                        <Badge variant="outline">{t('admin.dashboard.healthy')}</Badge>
                       </div>
                     </div>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span>Growth Rate</span>
+                        <span>{t('admin.dashboard.growthRate')}</span>
                         <span className="font-medium text-green-600">+12%</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Engagement</span>
-                        <span className="font-medium text-blue-600">High</span>
+                        <span>{t('admin.dashboard.engagement')}</span>
+                        <span className="font-medium text-blue-600">{t('admin.dashboard.high')}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span>Performance</span>
-                        <span className="font-medium text-purple-600">Excellent</span>
+                        <span>{t('admin.dashboard.performance')}</span>
+                        <span className="font-medium text-purple-600">{t('admin.dashboard.excellent')}</span>
                       </div>
                     </div>
                   </div>
@@ -328,12 +427,12 @@ const AdminPage = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>System Activity</CardTitle>
-                      <CardDescription>Track system activities and admin actions</CardDescription>
+                      <CardTitle>{t('admin.dashboard.systemActivity')}</CardTitle>
+                      <CardDescription>{t('admin.dashboard.trackSystemActivities')}</CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={fetchAdminStats} disabled={statsLoading}>
+                    <Button variant="outline" size="sm" onClick={fetchAdminActivities} disabled={activityLoading}>
                       <Clock className="h-4 w-4 mr-2" />
-                      {statsLoading ? 'Updating...' : 'Refresh'}
+                      {activityLoading ? t('admin.dashboard.updating') : t('admin.dashboard.refresh')}
                     </Button>
                   </div>
                 </CardHeader>
@@ -363,16 +462,16 @@ const AdminPage = () => {
                     ) : (
                       <div className="text-center py-8">
                         <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
+                        <h3 className="text-lg font-semibold mb-2">{t('admin.dashboard.noActivityYet')}</h3>
                         <p className="text-muted-foreground mb-4">
-                          System activities will appear here
+                          {t('admin.dashboard.systemActivitiesWillAppearHere')}
                         </p>
                         <div className="flex gap-2 justify-center">
                           <Button onClick={() => router.push("/admin/songs")}>
-                            Manage Songs
+                            {t('admin.dashboard.manageSongs')}
                           </Button>
                           <Button variant="outline" onClick={() => router.push("/admin/analytics")}>
-                            View Analytics
+                            {t('admin.dashboard.viewAnalytics')}
                           </Button>
                         </div>
                       </div>
@@ -386,38 +485,38 @@ const AdminPage = () => {
             <TabsContent value="settings" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>System Settings</CardTitle>
-                  <CardDescription>Configure your admin panel and system preferences</CardDescription>
+                  <CardTitle>{t('admin.dashboard.systemSettings')}</CardTitle>
+                  <CardDescription>{t('admin.dashboard.configureAdminPanel')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">Database Connection</h4>
-                        <p className="text-sm text-muted-foreground">Manage database settings</p>
+                        <h4 className="font-medium">{t('admin.dashboard.databaseConnection')}</h4>
+                        <p className="text-sm text-muted-foreground">{t('admin.dashboard.manageDatabaseSettings')}</p>
                       </div>
-                      <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                      <Badge className="bg-green-100 text-green-800">{t('admin.dashboard.connected')}</Badge>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">System Notifications</h4>
-                        <p className="text-sm text-muted-foreground">Receive admin alerts</p>
+                        <h4 className="font-medium">{t('admin.dashboard.systemNotifications')}</h4>
+                        <p className="text-sm text-muted-foreground">{t('admin.dashboard.receiveAdminAlerts')}</p>
                       </div>
                       <Button variant="outline" size="sm">
                         <Settings className="h-4 w-4 mr-2" />
-                        Configure
+                        {t('admin.dashboard.configure')}
                       </Button>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">Backup Status</h4>
-                        <p className="text-sm text-muted-foreground">Last backup: 2 hours ago</p>
+                        <h4 className="font-medium">{t('admin.dashboard.backupStatus')}</h4>
+                        <p className="text-sm text-muted-foreground">{t('admin.dashboard.lastBackup')}</p>
                       </div>
                       <Button variant="outline" size="sm">
                         <Download className="h-4 w-4 mr-2" />
-                        Backup Now
+                        {t('admin.dashboard.backupNow')}
                       </Button>
                     </div>
                   </div>
@@ -426,26 +525,26 @@ const AdminPage = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Admin Actions</CardTitle>
-                  <CardDescription>System management and maintenance</CardDescription>
+                  <CardTitle>{t('admin.dashboard.adminActions')}</CardTitle>
+                  <CardDescription>{t('admin.dashboard.systemManagement')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <Button variant="outline" className="w-full justify-start">
                       <Shield className="mr-2 h-4 w-4" />
-                      Security Settings
+                      {t('admin.dashboard.securitySettings')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start">
                       <Database className="mr-2 h-4 w-4" />
-                      Database Management
+                      {t('admin.dashboard.databaseManagement')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start">
                       <BarChart3 className="mr-2 h-4 w-4" />
-                      Performance Monitoring
+                      {t('admin.dashboard.performanceMonitoring')}
                     </Button>
                     <Button variant="destructive" className="w-full justify-start">
                       <Settings className="mr-2 h-4 w-4" />
-                      System Maintenance
+                      {t('admin.dashboard.systemMaintenance')}
                     </Button>
                   </div>
                 </CardContent>

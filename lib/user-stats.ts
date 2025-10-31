@@ -78,116 +78,169 @@ export const fetchUserStats = async (userId: string): Promise<UserStats> => {
   }
 };
 
-// Fetch recent activity
+// Fetch recent activity from user_activities table
 export const fetchRecentActivity = async (userId: string): Promise<RecentActivity[]> => {
   if (!supabase) {
     return [];
   }
   
   try {
-    const activities: RecentActivity[] = [];
+    // Fetch from user_activities table (real activity tracking)
+    const { data: userActivities, error: activitiesError } = await supabase
+      .from('user_activities')
+      .select(`
+        id,
+        activity_type,
+        description,
+        metadata,
+        page,
+        action,
+        created_at
+      `)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
 
-    // Get recent favorites - silently fail if table doesn't exist
-    try {
-      const { data: recentFavorites, error: favError } = await supabase
-        .from('favorites')
-        .select(`
-          id,
-          created_at,
-          song_id
-        `)
-        .eq('user_id', userId)
-        .not('song_id', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (!favError && recentFavorites) {
-        recentFavorites.forEach((fav: any) => {
-          activities.push({
-            id: fav.id,
-            type: 'favorite',
-            title: `Added a song to favorites`,
-            description: `Recently favorited`,
-            timestamp: fav.created_at,
-            icon: 'Heart'
-          });
-        });
-      }
-    } catch (err) {
-      // Silently ignore if favorites table doesn't exist
+    if (activitiesError) {
+      console.error('Error fetching user activities:', activitiesError);
+      // Fallback to old method if table doesn't exist or error occurs
+      return await fetchRecentActivityFallback(userId);
     }
 
-    // Get recent downloads - silently fail if table doesn't exist
-    try {
-      const { data: recentDownloads, error: downloadError } = await supabase
-        .from('downloads')
-        .select(`
-          id,
-          created_at,
-          resource_id
-        `)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (!downloadError && recentDownloads) {
-        recentDownloads.forEach((download: any) => {
-          activities.push({
-            id: download.id,
-            type: 'download',
-            title: `Downloaded a resource`,
-            description: `Recently downloaded`,
-            timestamp: download.created_at,
-            icon: 'Download'
-          });
-        });
-      }
-    } catch (err) {
-      // Silently ignore if downloads table doesn't exist
+    if (!userActivities || userActivities.length === 0) {
+      // Fallback to old method if no activities found
+      return await fetchRecentActivityFallback(userId);
     }
 
-    // Get recent ratings - silently fail if table doesn't exist
-    try {
-      const { data: recentRatings, error: ratingError } = await supabase
-        .from('ratings')
-        .select(`
-          id,
-          rating,
-          created_at,
-          song_id
-        `)
-        .eq('user_id', userId)
-        .not('song_id', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      if (!ratingError && recentRatings) {
-        recentRatings.forEach((rating: any) => {
-          const ratingValue = rating.rating || 0;
-          
-          activities.push({
-            id: rating.id,
-            type: 'rating',
-            title: `Rated a song ${ratingValue} stars`,
-            description: `Recently rated`,
-            timestamp: rating.created_at,
-            icon: 'Star'
-          });
-        });
+    // Map user_activities to RecentActivity format
+    const activities: RecentActivity[] = userActivities.map((activity: any) => {
+      const metadata = activity.metadata ? (typeof activity.metadata === 'string' ? JSON.parse(activity.metadata) : activity.metadata) : {};
+      
+      // Determine icon and type based on activity_type
+      let icon = 'Clock';
+      let type: 'favorite' | 'download' | 'rating' = 'favorite';
+      
+      if (activity.activity_type?.toLowerCase().includes('favorite')) {
+        icon = 'Heart';
+        type = 'favorite';
+      } else if (activity.activity_type?.toLowerCase().includes('download')) {
+        icon = 'Download';
+        type = 'download';
+      } else if (activity.activity_type?.toLowerCase().includes('rating') || activity.activity_type?.toLowerCase().includes('rate')) {
+        icon = 'Star';
+        type = 'rating';
       }
-    } catch (err) {
-      // Silently ignore if ratings table doesn't exist
-    }
 
-    // Sort by timestamp and return latest 5
-    return activities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 5);
+      return {
+        id: activity.id,
+        type,
+        title: activity.description || activity.activity_type || 'Activity',
+        description: activity.page || metadata?.title || '',
+        timestamp: activity.created_at,
+        icon
+      };
+    });
+
+    return activities.slice(0, 20);
 
   } catch (error) {
-    // Silently return empty array on any error
-    return [];
+    console.error('Error in fetchRecentActivity:', error);
+    // Fallback to old method
+    return await fetchRecentActivityFallback(userId);
   }
+};
+
+// Fallback method using old approach (favorites, downloads, ratings)
+const fetchRecentActivityFallback = async (userId: string): Promise<RecentActivity[]> => {
+  const activities: RecentActivity[] = [];
+
+  // Get recent favorites
+  try {
+    if (!supabase) return [];
+    
+    const { data: recentFavorites } = await supabase
+      .from('favorites')
+      .select(`id, created_at, song_id`)
+      .eq('user_id', userId)
+      .not('song_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (recentFavorites) {
+      recentFavorites.forEach((fav: any) => {
+        activities.push({
+          id: fav.id,
+          type: 'favorite',
+          title: `Added a song to favorites`,
+          description: `Recently favorited`,
+          timestamp: fav.created_at,
+          icon: 'Heart'
+        });
+      });
+    }
+  } catch (err) {
+    // Silently ignore
+  }
+
+  // Get recent downloads
+  try {
+    if (!supabase) return activities;
+    
+    const { data: recentDownloads } = await supabase
+      .from('downloads')
+      .select(`id, created_at, resource_id`)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (recentDownloads) {
+      recentDownloads.forEach((download: any) => {
+        activities.push({
+          id: download.id,
+          type: 'download',
+          title: `Downloaded a resource`,
+          description: `Recently downloaded`,
+          timestamp: download.created_at,
+          icon: 'Download'
+        });
+      });
+    }
+  } catch (err) {
+    // Silently ignore
+  }
+
+  // Get recent ratings
+  try {
+    if (!supabase) return activities;
+    
+    const { data: recentRatings } = await supabase
+      .from('ratings')
+      .select(`id, rating, created_at, song_id`)
+      .eq('user_id', userId)
+      .not('song_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    if (recentRatings) {
+      recentRatings.forEach((rating: any) => {
+        const ratingValue = rating.rating || 0;
+        activities.push({
+          id: rating.id,
+          type: 'rating',
+          title: `Rated a song ${ratingValue} stars`,
+          description: `Recently rated`,
+          timestamp: rating.created_at,
+          icon: 'Star'
+        });
+      });
+    }
+  } catch (err) {
+    // Silently ignore
+  }
+
+  return activities
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, 5);
 };
 
 // Fetch user's favorite songs

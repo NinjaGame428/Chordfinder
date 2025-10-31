@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter, usePathname } from "next/navigation";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -44,71 +45,68 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-const navigationItems = [
-  {
-    name: "Overview",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    description: "Your dashboard overview"
-  },
-  {
-    name: "Favorites",
-    href: "/dashboard/favorites",
-    icon: Heart,
-    description: "Your favorite songs"
-  },
-  {
-    name: "Downloads",
-    href: "/dashboard/downloads",
-    icon: Download,
-    description: "Downloaded resources"
-  },
-  {
-    name: "Activity",
-    href: "/dashboard/activity",
-    icon: Clock,
-    description: "Your activity history"
-  },
-  {
-    name: "Profile",
-    href: "/dashboard/profile",
-    icon: User,
-    description: "Manage your profile"
-  },
-  {
-    name: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-    description: "Account settings"
-  }
-];
-
-const quickActions = [
-  {
-    name: "Browse Songs",
-    href: "/songs",
-    icon: Music,
-    description: "Explore our song collection"
-  },
-  {
-    name: "Resources",
-    href: "/resources",
-    icon: FileText,
-    description: "Download resources"
-  },
-  {
-    name: "Request Song",
-    href: "/request-song",
-    icon: Star,
-    description: "Request a new song"
-  }
-];
+// Navigation items and quick actions will be defined inside component to use translations
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, logout, isLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const navigationItems = [
+    {
+      name: t('dashboard.overview'),
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      description: t('dashboard.overview')
+    },
+    {
+      name: t('dashboard.favorites'),
+      href: "/dashboard/favorites",
+      icon: Heart,
+      description: t('dashboard.favorites')
+    },
+    {
+      name: t('dashboard.activity'),
+      href: "/dashboard/activity",
+      icon: Clock,
+      description: t('dashboard.activity')
+    },
+    {
+      name: t('dashboard.profile'),
+      href: "/dashboard/profile",
+      icon: User,
+      description: t('dashboard.profile')
+    },
+    {
+      name: t('dashboard.settings'),
+      href: "/dashboard/settings",
+      icon: Settings,
+      description: t('dashboard.settings')
+    }
+  ];
+
+  const quickActions = [
+    {
+      name: t('dashboard.browseSongs'),
+      href: "/songs",
+      icon: Music,
+      description: t('dashboard.browseSongs')
+    },
+    {
+      name: t('dashboard.browseResources'),
+      href: "/resources",
+      icon: FileText,
+      description: t('dashboard.browseResources')
+    },
+    {
+      name: t('dashboard.requestSong'),
+      href: "/request-song",
+      icon: Star,
+      description: t('dashboard.requestSong')
+    }
+  ];
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -154,7 +152,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               {/* Sidebar Header */}
               <div className="p-6 border-b">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Dashboard</h2>
+                  <h2 className="text-lg font-semibold">{t('dashboard.title')}</h2>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -189,7 +187,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <div className="p-4">
                   <nav className="space-y-2">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Navigation
+                      {t('dashboard.navigation')}
                     </div>
                     {navigationItems.map((item) => {
                       const isActive = pathname === item.href;
@@ -220,7 +218,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   {/* Quick Actions */}
                   <div className="space-y-2">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Quick Actions
+                      {t('dashboard.quickActions')}
                     </div>
                     {quickActions.map((action) => {
                       const Icon = action.icon;
@@ -244,11 +242,11 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   {/* User Stats */}
                   <div className="space-y-3">
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                      Your Stats
+                      {t('dashboard.yourStats')}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Member since</span>
+                        <span className="text-muted-foreground">{t('dashboard.memberSince')}</span>
                         <Badge variant="secondary" className="text-xs">
                           {new Date(user.joinDate).toLocaleDateString('en-US', { 
                             month: 'short', 
@@ -257,9 +255,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Account status</span>
+                        <span className="text-muted-foreground">{t('dashboard.accountStatus')}</span>
                         <Badge variant="outline" className="text-xs">
-                          Active
+                          {t('dashboard.active')}
                         </Badge>
                       </div>
                     </div>
@@ -275,7 +273,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   className="w-full justify-start text-muted-foreground hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  {t('dashboard.signOut')}
                 </Button>
               </div>
             </div>
@@ -293,7 +291,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 >
                   <Menu className="h-5 w-5" />
                 </Button>
-                <h1 className="text-lg font-semibold">Dashboard</h1>
+                <h1 className="text-lg font-semibold">{t('dashboard.title')}</h1>
                 <div className="w-8" /> {/* Spacer for centering */}
               </div>
             </div>

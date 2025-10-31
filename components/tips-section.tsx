@@ -1,46 +1,50 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Lightbulb, Users, Music } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TipsSection = () => {
+  const { t } = useLanguage();
   const tips = [
     {
       icon: <BookOpen className="h-6 w-6" />,
-      title: "Lire les Grilles d'Accords",
-      description: "Apprenez à lire les grilles d'accords efficacement. Commencez par les accords majeurs et mineurs de base, puis progressez vers des progressions plus complexes.",
-      category: "Débutant"
+      title: t('tips.readingCharts'),
+      description: t('tips.readingChartsDesc'),
+      category: t('tips.category.beginner')
     },
     {
       icon: <Lightbulb className="h-6 w-6" />,
-      title: "Transposer les Chansons",
-      description: "Maîtrisez l'art de transposer les chansons dans différentes tonalités. Compétence essentielle pour adapter les chansons à votre tessiture ou instrument.",
-      category: "Intermédiaire"
+      title: t('tips.transposeSongs'),
+      description: t('tips.transposeSongsDesc'),
+      category: t('tips.category.intermediate')
     },
     {
       icon: <Users className="h-6 w-6" />,
-      title: "Diriger l'Adoration",
-      description: "Conseils pour diriger l'adoration efficacement. Apprenez sur le flux des chansons, les changements de tonalité et l'engagement de votre congrégation.",
-      category: "Avancé"
+      title: t('tips.leadingWorship'),
+      description: t('tips.leadingWorshipDesc'),
+      category: t('tips.category.advanced')
     },
     {
       icon: <Music className="h-6 w-6" />,
-      title: "Progressions d'Accords",
-      description: "Comprenez les progressions d'accords gospel communes et comment créer des transitions fluides entre les chansons de votre set.",
-      category: "Intermédiaire"
+      title: t('tips.chordProgressions'),
+      description: t('tips.chordProgressionsDesc'),
+      category: t('tips.category.intermediate')
     }
   ];
 
   const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Débutant":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
-      case "Intermédiaire":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
-      case "Avancé":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+    if (category === t('tips.category.beginner')) {
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
     }
+    if (category === t('tips.category.intermediate')) {
+      return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
+    }
+    if (category === t('tips.category.advanced')) {
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
+    }
+    return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
   };
 
   return (
@@ -48,10 +52,10 @@ const TipsSection = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl xs:text-4xl font-bold tracking-tight">
-            Conseils & Ressources
+            {t('tips.title')}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Améliorez votre ministère d'adoration avec nos conseils et ressources organisés pour la musique gospel
+            {t('tips.subtitle')}
           </p>
         </div>
 
@@ -82,7 +86,7 @@ const TipsSection = () => {
 
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-4">
-            More resources coming soon from Heavenkeys Ltd.
+            {t('tips.moreResources')}
           </p>
         </div>
       </div>

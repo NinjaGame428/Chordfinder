@@ -47,8 +47,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
-  // Check for existing session on mount
+  // Optimized: Check for existing session on mount with faster timeout
   useEffect(() => {
     const checkAuth = async () => {
       if (!supabase) {
@@ -56,14 +57,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      // Set a timeout to prevent indefinite loading
+      // Faster timeout - show buttons immediately if no session
       const timeout = setTimeout(() => {
         setIsLoading(false);
-      }, 2000);
+      }, 500); // Reduced from 2000ms to 500ms
       
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        // Optimized: getSession with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) => 
+          setTimeout(() => resolve({ data: { session: null }, error: null }), 1000)
+        );
+        
+        const { data: { session }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]);
+        
+        if (!error && session?.user) {
           await loadUserProfile(session.user);
         }
       } catch (error) {
@@ -97,11 +108,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
     
     try {
+      // Optimized: Only fetch essential fields
       const { data: profile, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, full_name, email, avatar_url, role, created_at')
         .eq('id', supabaseUser.id)
-        .single();
+        .single(); // Optimized: only fetch essential fields
 
       if (error) {
         console.error('Error loading user profile:', error);

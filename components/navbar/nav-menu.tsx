@@ -8,48 +8,51 @@ import {
 } from "@/components/ui/navigation-menu";
 import { NavigationMenuProps } from "@radix-ui/react-navigation-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getTranslatedRoute } from "@/lib/url-translations";
 import Link from "next/link";
 
 export const NavMenu = (props: NavigationMenuProps) => {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   
   return (
     <NavigationMenu {...props}>
       <NavigationMenuList className="gap-6 space-x-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:items-start">
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/songs">Songs</Link>
+            <Link href={getTranslatedRoute('/songs', language)}>{t('nav.songs')}</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/chords">Chords</Link>
+            <Link href={getTranslatedRoute('/piano-chords', language)}>{t('chord.piano')} {t('nav.chords')}</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/artists">Artists</Link>
+            <Link href={getTranslatedRoute('/artists', language)}>{t('common.artist')}</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/about">About</Link>
+            <Link href={getTranslatedRoute('/about', language)}>{t('nav.about')}</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/resources">Resources</Link>
+            <Link href={getTranslatedRoute('/resources', language)}>{t('nav.resources')}</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink asChild>
-            <Link href="/contact">Contact</Link>
+            <Link href={getTranslatedRoute('/contact', language)}>{t('nav.contact')}</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
         {user?.role === 'admin' && (
           <NavigationMenuItem>
             <NavigationMenuLink asChild>
-              <Link href="/admin" className="text-purple-600 font-medium">Admin</Link>
+              <Link href={getTranslatedRoute('/admin', language)} className="text-purple-600 font-medium">{t('nav.admin')}</Link>
             </NavigationMenuLink>
           </NavigationMenuItem>
         )}

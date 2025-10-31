@@ -1,8 +1,13 @@
+"use client";
+
 import React from 'react';
 import { Music, Github, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { getTranslatedRoute } from '@/lib/url-translations';
 
 const Footer: React.FC = () => {
+  const { t, language } = useLanguage();
   return (
     <footer className="bg-muted/50 border-t">
       <div className="container mx-auto px-4 py-8">
@@ -14,34 +19,34 @@ const Footer: React.FC = () => {
               <span className="text-xl font-bold">PhinAccords</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              Découvrez les accords de musique gospel, paroles et ressources pour l'adoration.
+              {t('footer.description')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Liens Rapides</h3>
+            <h3 className="font-semibold">{t('footer.quickLinks')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/songs" className="text-muted-foreground hover:text-primary transition-colors">Chansons</Link></li>
-              <li><Link href="/chords" className="text-muted-foreground hover:text-primary transition-colors">Accords</Link></li>
-              <li><Link href="/artists" className="text-muted-foreground hover:text-primary transition-colors">Artistes</Link></li>
-              <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">À Propos</Link></li>
+              <li><Link href={getTranslatedRoute('/songs', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('nav.songs')}</Link></li>
+              <li><Link href={getTranslatedRoute('/piano-chords', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('chord.piano')} {t('nav.chords')}</Link></li>
+              <li><Link href={getTranslatedRoute('/artists', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('common.artist')}</Link></li>
+              <li><Link href={getTranslatedRoute('/about', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('nav.about')}</Link></li>
             </ul>
           </div>
 
           {/* Resources */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Ressources</h3>
+            <h3 className="font-semibold">{t('footer.resources')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/resources" className="text-muted-foreground hover:text-primary transition-colors">Toutes les Ressources</Link></li>
-              <li><Link href="/learning" className="text-muted-foreground hover:text-primary transition-colors">Apprentissage</Link></li>
-              <li><Link href="/community" className="text-muted-foreground hover:text-primary transition-colors">Communauté</Link></li>
+              <li><Link href={getTranslatedRoute('/resources', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('footer.allResources')}</Link></li>
+              <li><Link href={getTranslatedRoute('/resources', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('footer.learning')}</Link></li>
+              <li><Link href={getTranslatedRoute('/resources', language)} className="text-muted-foreground hover:text-primary transition-colors">{t('footer.community')}</Link></li>
             </ul>
           </div>
 
           {/* Contact */}
           <div className="space-y-4">
-            <h3 className="font-semibold">Contact</h3>
+            <h3 className="font-semibold">{t('footer.contact')}</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
@@ -57,11 +62,11 @@ const Footer: React.FC = () => {
 
         <div className="border-t mt-8 pt-8 flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Heavenkeys Ltd. Tous droits réservés.
+            © 2024 Heavenkeys Ltd. {t('footer.rights')}
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0">
-            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">Confidentialité</Link>
-            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">Conditions</Link>
+            <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">{t('footer.privacy')}</Link>
+            <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">{t('footer.terms')}</Link>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ import {
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -53,17 +55,17 @@ export default function ProfilePage() {
       const errors: {[key: string]: string} = {};
       
       if (!editData.firstName.trim()) {
-        errors.firstName = 'First name is required';
+        errors.firstName = t('dashboard.firstNameRequired');
       }
       
       if (!editData.lastName.trim()) {
-        errors.lastName = 'Last name is required';
+        errors.lastName = t('dashboard.lastNameRequired');
       }
       
       if (!editData.email.trim()) {
-        errors.email = 'Email is required';
+        errors.email = t('dashboard.emailRequired');
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editData.email)) {
-        errors.email = 'Please enter a valid email address';
+        errors.email = t('dashboard.validEmailRequired');
       }
       
       if (Object.keys(errors).length > 0) {
@@ -85,7 +87,7 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error('Error updating profile:', error);
-        setValidationErrors({ general: 'Failed to update profile. Please try again.' });
+        setValidationErrors({ general: t('dashboard.failedToUpdateProfile') });
       } finally {
         setIsUpdating(false);
       }
@@ -109,9 +111,9 @@ export default function ProfilePage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('dashboard.profileSettings')}</h1>
             <p className="text-muted-foreground">
-              Manage your personal information and account settings
+              {t('dashboard.managePersonalInfoAndAccount')}
             </p>
           </div>
 
@@ -120,13 +122,13 @@ export default function ProfilePage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Profile Information</CardTitle>
-                  <CardDescription>Manage your personal information and preferences</CardDescription>
+                  <CardTitle>{t('dashboard.profileInformation')}</CardTitle>
+                  <CardDescription>{t('dashboard.managePersonalInfo')}</CardDescription>
                 </div>
                 {!isEditing ? (
                   <Button variant="outline" onClick={() => setIsEditing(true)}>
                     <Edit className="mr-2 h-4 w-4" />
-                    Edit Profile
+                    {t('dashboard.editProfile')}
                   </Button>
                 ) : (
                   <div className="flex space-x-2">
@@ -140,7 +142,7 @@ export default function ProfilePage() {
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      {isUpdating ? 'Saving...' : 'Save Changes'}
+                      {isUpdating ? t('dashboard.saving') : t('dashboard.saveChanges')}
                     </Button>
                     <Button 
                       variant="outline" 
@@ -148,7 +150,7 @@ export default function ProfilePage() {
                       disabled={isUpdating}
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Cancel
+                      {t('dashboard.cancel')}
                     </Button>
                   </div>
                 )}
@@ -166,7 +168,7 @@ export default function ProfilePage() {
                   <h3 className="text-lg font-semibold">{user?.firstName} {user?.lastName}</h3>
                   <p className="text-muted-foreground">{user?.email}</p>
                   <Badge variant="secondary" className="mt-1">
-                    Member since {new Date(user?.joinDate || '').toLocaleDateString()}
+                    {t('dashboard.memberSince')} {new Date(user?.joinDate || '').toLocaleDateString()}
                   </Badge>
                 </div>
               </div>
@@ -181,7 +183,7 @@ export default function ProfilePage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="firstName">{t('dashboard.firstName')}</Label>
                   <Input
                     id="firstName"
                     value={editData.firstName}
@@ -194,7 +196,7 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="lastName">{t('dashboard.lastName')}</Label>
                   <Input
                     id="lastName"
                     value={editData.lastName}
@@ -207,7 +209,7 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('dashboard.email')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -227,8 +229,8 @@ export default function ProfilePage() {
           {/* Account Information */}
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Account Information</CardTitle>
-              <CardDescription>Your account details and status</CardDescription>
+              <CardTitle>{t('dashboard.accountInformation')}</CardTitle>
+              <CardDescription>{t('dashboard.yourAccountDetails')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -237,7 +239,7 @@ export default function ProfilePage() {
                     <Mail className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Email Address</p>
+                    <p className="font-medium">{t('dashboard.emailAddress')}</p>
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
                   </div>
                 </div>
@@ -247,7 +249,7 @@ export default function ProfilePage() {
                     <Calendar className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Member Since</p>
+                    <p className="font-medium">{t('dashboard.memberSince')}</p>
                     <p className="text-sm text-muted-foreground">
                       {new Date(user?.joinDate || '').toLocaleDateString()}
                     </p>
@@ -259,8 +261,8 @@ export default function ProfilePage() {
                     <Shield className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Account Status</p>
-                    <Badge variant="outline" className="text-xs">Active</Badge>
+                    <p className="font-medium">{t('dashboard.accountStatus')}</p>
+                    <Badge variant="outline" className="text-xs">{t('dashboard.active')}</Badge>
                   </div>
                 </div>
                 
@@ -269,8 +271,8 @@ export default function ProfilePage() {
                     <Settings className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Preferences</p>
-                    <p className="text-sm text-muted-foreground">Manage your settings</p>
+                    <p className="font-medium">{t('dashboard.preferences')}</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.manageSettings')}</p>
                   </div>
                 </div>
               </div>

@@ -120,17 +120,17 @@ export default function DashboardPage() {
       const errors: {[key: string]: string} = {};
       
       if (!editData.firstName.trim()) {
-        errors.firstName = 'First name is required';
+        errors.firstName = t('dashboard.firstNameRequired');
       }
       
       if (!editData.lastName.trim()) {
-        errors.lastName = 'Last name is required';
+        errors.lastName = t('dashboard.lastNameRequired');
       }
       
       if (!editData.email.trim()) {
-        errors.email = 'Email is required';
+        errors.email = t('dashboard.emailRequired');
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editData.email)) {
-        errors.email = 'Please enter a valid email address';
+        errors.email = t('dashboard.validEmailRequired');
       }
       
       if (Object.keys(errors).length > 0) {
@@ -154,7 +154,7 @@ export default function DashboardPage() {
         }
       } catch (error) {
         console.error('Error updating profile:', error);
-        setValidationErrors({ general: 'Failed to update profile. Please try again.' });
+        setValidationErrors({ general: t('dashboard.failedToUpdateProfile') });
       } finally {
         setIsUpdating(false);
       }
@@ -185,18 +185,18 @@ export default function DashboardPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.firstName || 'User'}!</h1>
+            <h1 className="text-3xl font-bold mb-2">{t('dashboard.welcomeBack').replace('{name}', user?.firstName || t('common.user'))}</h1>
             <p className="text-muted-foreground">
-              Manage your profile, view your activity, and access your saved content.
+              {t('dashboard.welcomeDescription')}
             </p>
           </div>
 
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="overview">{t('dashboard.overview')}</TabsTrigger>
+              <TabsTrigger value="profile">{t('dashboard.profile')}</TabsTrigger>
+              <TabsTrigger value="activity">{t('dashboard.activity')}</TabsTrigger>
+              <TabsTrigger value="settings">{t('dashboard.settings')}</TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -204,9 +204,9 @@ export default function DashboardPage() {
               {/* Stats Header with Refresh Button */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold">Your Statistics</h3>
+                  <h3 className="text-lg font-semibold">{t('dashboard.yourStatistics')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Real-time updates of your activity on Chord Finder
+                    {t('dashboard.realTimeUpdates')}
                   </p>
                 </div>
                 <Button 
@@ -217,7 +217,7 @@ export default function DashboardPage() {
                   className="flex items-center gap-2"
                 >
                   <Clock className="h-4 w-4" />
-                  {isUpdating ? 'Updating...' : 'Refresh Data'}
+                  {isUpdating ? t('dashboard.updating') : t('dashboard.refreshData')}
                 </Button>
               </div>
               
@@ -301,8 +301,8 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                    <CardDescription>Your latest interactions with Chord Finder</CardDescription>
+                    <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
+                    <CardDescription>{t('dashboard.latestInteractions')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {recentActivity.length > 0 ? (
@@ -327,8 +327,8 @@ export default function DashboardPage() {
                       })
                     ) : (
                       <div className="text-center py-4">
-                        <p className="text-sm text-muted-foreground">No recent activity</p>
-                        <p className="text-xs text-muted-foreground">Start exploring to see your activity here</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.noRecentActivity')}</p>
+                        <p className="text-xs text-muted-foreground">{t('dashboard.startExploring')}</p>
                       </div>
                     )}
                   </CardContent>
@@ -336,29 +336,29 @@ export default function DashboardPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                    <CardDescription>Common tasks and shortcuts</CardDescription>
+                    <CardTitle>{t('dashboard.quickActions')}</CardTitle>
+                    <CardDescription>{t('dashboard.commonTasks')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/songs")}>
                       <Music className="mr-2 h-4 w-4" />
-                      Browse Songs
+                      {t('dashboard.browseSongs')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/dashboard/favorites")}>
                       <Heart className="mr-2 h-4 w-4" />
-                      My Favorites
+                      {t('dashboard.myFavorites')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/dashboard/downloads")}>
                       <Download className="mr-2 h-4 w-4" />
-                      My Downloads
+                      {t('dashboard.myDownloads')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/resources")}>
                       <Download className="mr-2 h-4 w-4" />
-                      Browse Resources
+                      {t('dashboard.browseResources')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/request-song")}>
                       <Music className="mr-2 h-4 w-4" />
-                      Request a Song
+                      {t('dashboard.requestSong')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -371,13 +371,13 @@ export default function DashboardPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Profile Information</CardTitle>
-                      <CardDescription>Manage your personal information and preferences</CardDescription>
+                      <CardTitle>{t('dashboard.profileInformation')}</CardTitle>
+                      <CardDescription>{t('dashboard.managePersonalInfo')}</CardDescription>
                     </div>
                     {!isEditing ? (
                       <Button variant="outline" onClick={() => setIsEditing(true)}>
                         <Edit className="mr-2 h-4 w-4" />
-                        Edit Profile
+                        {t('dashboard.editProfile')}
                       </Button>
                     ) : (
                       <div className="flex space-x-2">
@@ -391,7 +391,7 @@ export default function DashboardPage() {
                           ) : (
                             <Save className="mr-2 h-4 w-4" />
                           )}
-                          {isUpdating ? 'Saving...' : 'Save Changes'}
+                          {isUpdating ? t('dashboard.saving') : t('dashboard.saveChanges')}
                         </Button>
                         <Button 
                           variant="outline" 
@@ -399,7 +399,7 @@ export default function DashboardPage() {
                           disabled={isUpdating}
                         >
                           <X className="mr-2 h-4 w-4" />
-                          Cancel
+                          {t('dashboard.cancel')}
                         </Button>
                       </div>
                     )}
@@ -417,7 +417,7 @@ export default function DashboardPage() {
                       <h3 className="text-lg font-semibold">{user?.firstName || ''} {user?.lastName || ''}</h3>
                       <p className="text-muted-foreground">{user?.email || ''}</p>
                       <Badge variant="secondary" className="mt-1">
-                        Member since {user?.joinDate ? new Date(user.joinDate).toLocaleDateString() : 'N/A'}
+                        {t('dashboard.memberSince')} {user?.joinDate ? new Date(user.joinDate).toLocaleDateString() : 'N/A'}
                       </Badge>
                     </div>
                   </div>
@@ -432,7 +432,7 @@ export default function DashboardPage() {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
+                      <Label htmlFor="firstName">{t('dashboard.firstName')}</Label>
                       <Input
                         id="firstName"
                         value={editData.firstName}
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
+                      <Label htmlFor="lastName">{t('dashboard.lastName')}</Label>
                       <Input
                         id="lastName"
                         value={editData.lastName}
@@ -458,7 +458,7 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">{t('dashboard.email')}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -482,12 +482,12 @@ export default function DashboardPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle>Activity History</CardTitle>
-                      <CardDescription>Track your engagement with Chord Finder</CardDescription>
+                      <CardTitle>{t('dashboard.activityHistory')}</CardTitle>
+                      <CardDescription>{t('dashboard.trackEngagement')}</CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={loadUserData} disabled={isUpdating}>
                       <Clock className="h-4 w-4 mr-2" />
-                      {isUpdating ? 'Updating...' : 'Refresh'}
+                      {isUpdating ? t('dashboard.updating') : t('dashboard.refresh')}
                     </Button>
                   </div>
                 </CardHeader>
@@ -517,16 +517,16 @@ export default function DashboardPage() {
                     ) : (
                       <div className="text-center py-8">
                         <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">No Activity Yet</h3>
+                        <h3 className="text-lg font-semibold mb-2">{t('dashboard.noActivityYet')}</h3>
                         <p className="text-muted-foreground mb-4">
-                          Start exploring to see your activity here
+                          {t('dashboard.startExploring')}
                         </p>
                         <div className="flex gap-2 justify-center">
                           <Button onClick={() => router.push("/songs")}>
-                            Browse Songs
+                            {t('dashboard.browseSongs')}
                           </Button>
                           <Button variant="outline" onClick={() => router.push("/resources")}>
-                            View Resources
+                            {t('dashboard.viewResources')}
                           </Button>
                         </div>
                       </div>
@@ -540,15 +540,15 @@ export default function DashboardPage() {
             <TabsContent value="settings" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Preferences</CardTitle>
-                  <CardDescription>Customize your Chord Finder experience</CardDescription>
+                  <CardTitle>{t('dashboard.preferences')}</CardTitle>
+                  <CardDescription>{t('dashboard.customizeExperience')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label>Language</Label>
-                        <p className="text-sm text-muted-foreground">Choose your preferred language</p>
+                        <Label>{t('dashboard.language')}</Label>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.chooseLanguage')}</p>
                       </div>
                       <select 
                         value={user?.preferences?.language || 'en'}
@@ -562,8 +562,8 @@ export default function DashboardPage() {
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label>Theme</Label>
-                        <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
+                        <Label>{t('dashboard.theme')}</Label>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.chooseTheme')}</p>
                       </div>
                       <select 
                         value={user?.preferences?.theme || 'system'}
@@ -578,8 +578,8 @@ export default function DashboardPage() {
 
                     <div className="flex items-center justify-between">
                       <div>
-                        <Label>Notifications</Label>
-                        <p className="text-sm text-muted-foreground">Receive email notifications</p>
+                        <Label>{t('dashboard.notifications')}</Label>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.receiveEmailNotifications')}</p>
                       </div>
                       <input
                         type="checkbox"
@@ -594,22 +594,22 @@ export default function DashboardPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Account Actions</CardTitle>
-                  <CardDescription>Manage your account settings</CardDescription>
+                  <CardTitle>{t('dashboard.accountActions')}</CardTitle>
+                  <CardDescription>{t('dashboard.manageAccountSettings')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <Button variant="outline" className="w-full justify-start">
                       <Settings className="mr-2 h-4 w-4" />
-                      Change Password
+                      {t('dashboard.changePassword')}
                     </Button>
                     <Button variant="outline" className="w-full justify-start">
                       <Download className="mr-2 h-4 w-4" />
-                      Export Data
+                      {t('dashboard.exportData')}
                     </Button>
                     <Button variant="destructive" className="w-full justify-start">
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
+                      {t('dashboard.signOut')}
                     </Button>
                   </div>
                 </CardContent>
