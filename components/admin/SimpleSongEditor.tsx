@@ -211,15 +211,22 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       setIsSaving(true);
 
       // CRITICAL: Capture the OLD artist_id BEFORE saving (from current songData state)
+      // This is the artist_id that was loaded when the page opened
       const oldArtistId = songData.artist_id;
 
       const payload = {
         title: songData.title.trim(),
-        artist_id: songData.artist_id,
+        artist_id: songData.artist_id, // This is the NEW artist_id the user selected
         key_signature: songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature.trim() : null,
         tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
         lyrics: songData.lyrics.trim() || '',
       };
+
+      console.log('🎨 Artist change tracking:', {
+        oldArtistId: oldArtistId,
+        newArtistId: payload.artist_id,
+        changed: oldArtistId !== payload.artist_id
+      });
 
       console.log('💾 Admin: Saving song with payload:', {
         ...payload,
