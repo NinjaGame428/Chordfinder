@@ -254,12 +254,36 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || errorData.details || 'Failed to save song');
+        let errorMessage = 'Failed to save song';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.details || errorMessage;
+          console.error('❌ API Error Response:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+        } catch (e) {
+          const errorText = await response.text();
+          console.error('❌ API Error (non-JSON):', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      const savedArtistId = data.song?.artist_id;
+      
+      // Verify we got song data back
+      if (!data.song) {
+        console.error('❌ API returned success but no song data:', data);
+        throw new Error('Server returned success but no song data. Please refresh and try again.');
+      }
+      
+      const savedArtistId = data.song.artist_id;
       
       // Use the saved artist_id from database as the final newArtistId
       const finalNewArtistId = savedArtistId || newArtistId;
@@ -322,10 +346,24 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       }
 
       console.log('🔄 Reloading song data from database...');
-      await loadSongData();
       
-      // Update originalArtistId to reflect the new state after save
+      // CRITICAL: Update originalArtistId BEFORE reloading, so it's set correctly
+      // This ensures that if loadSongData fails, we don't lose track of the save state
       setOriginalArtistId(finalNewArtistId);
+      
+      // Reload song data to verify the save and get latest state
+      try {
+        await loadSongData();
+      } catch (reloadError) {
+        console.warn('⚠️ Failed to reload song data after save (but save was successful):', reloadError);
+        // Don't throw - the save was successful, reload failure is non-critical
+        // Just update the local state to reflect what we saved
+        setSongData(prev => ({
+          ...prev,
+          artist_id: finalNewArtistId,
+          artist_name: data.song?.artists?.name || prev.artist_name
+        }));
+      }
       
       // Notify other pages that a song was updated (so artist pages can refresh song counts)
       // Include both old and new artist IDs so both artist pages can update
@@ -387,7 +425,13 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       }, 500);
     } catch (error: any) {
       console.error('❌ Save error:', error);
-      showNotification(error.message || 'Failed to save song', 'error');
+      const errorMessage = error?.message || 'Failed to save song';
+      
+      // Show detailed error to user
+      showNotification(errorMessage, 'error');
+      
+      // DON'T clear form state or redirect - let user fix and retry
+      // The error is already logged and displayed
     } finally {
       setIsSaving(false);
     }

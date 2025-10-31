@@ -109,11 +109,22 @@ export async function PUT(
 
     // Validate required fields before saving
     if (!updateData.title || !updateData.title.trim()) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+      console.error('❌ Validation failed: Title is required');
+      return NextResponse.json({ 
+        error: 'Title is required',
+        details: 'The song title cannot be empty'
+      }, { status: 400 });
     }
     
     if (!updateData.artist_id || !updateData.artist_id.trim()) {
-      return NextResponse.json({ error: 'Artist ID is required' }, { status: 400 });
+      console.error('❌ Validation failed: Artist ID is required', {
+        artist_id: updateData.artist_id,
+        received: artist_id
+      });
+      return NextResponse.json({ 
+        error: 'Artist ID is required',
+        details: 'Please select a valid artist for this song'
+      }, { status: 400 });
     }
     
     // Log what we're about to save for debugging
