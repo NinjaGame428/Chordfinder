@@ -71,11 +71,14 @@ const SongsPage = () => {
 
         if (songsData && songsData.length > 0) {
           // Optimized: Minimal data mapping
-          const formattedSongs: Song[] = songsData.map((song: any) => ({
-            id: song.id,
-            title: song.title,
-            artist: (song.artists?.name) || (Array.isArray(song.artists) ? song.artists[0]?.name : 'Unknown Artist'),
-            key: song.key_signature || 'C',
+          // Filter out songs without artists before mapping
+          const formattedSongs: Song[] = songsData
+            .filter((song: any) => song.artists?.name || (Array.isArray(song.artists) && song.artists[0]?.name))
+            .map((song: any) => ({
+              id: song.id,
+              title: song.title,
+              artist: song.artists?.name || (Array.isArray(song.artists) ? song.artists[0]?.name : ''),
+              key: song.key_signature || 'C',
             difficulty: 'Medium',
             category: 'Gospel',
             year: new Date(song.created_at).getFullYear().toString(),
@@ -406,7 +409,7 @@ const SongsPage = () => {
                                 <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-3">
                                   <span className="flex items-center space-x-1">
                                     <span className="font-medium">Artist:</span>
-                                    <span>{song.artist || 'Unknown'}</span>
+                                    {song.artist ? <span>{song.artist}</span> : null}
                                   </span>
                                   <span className="flex items-center space-x-1">
                                     <span className="font-medium">Language:</span>

@@ -73,11 +73,22 @@ const SongsPage = () => {
       }
       const data = await response.json();
       // Ensure artist_id is included in the songs data
-      const songsWithArtistId = (data.songs || []).map((song: any) => ({
-        ...song,
-        artist_id: song.artist_id || song.artists?.id,
-        artist: song.artists?.name || song.artist || 'Unknown'
-      }));
+      // Only include songs that have valid artist data
+      const songsWithArtistId = (data.songs || [])
+        .filter((song: any) => {
+          // Only show songs that have an artist (either through relation or direct field)
+          return song.artist_id || song.artists?.id || song.artists?.name || song.artist;
+        })
+        .map((song: any) => {
+          // Get artist name from nested relation or direct field
+          const artistName = song.artists?.name || song.artist || null;
+          
+          return {
+            ...song,
+            artist_id: song.artist_id || song.artists?.id,
+            artist: artistName
+          };
+        });
       setSongs(songsWithArtistId);
     } catch (err) {
       console.error('Error fetching songs:', err);
@@ -136,9 +147,10 @@ const SongsPage = () => {
         const songData = data.song || data;
         
         // Create text format for download
+        const artistName = songData.artists?.name || songData.artist || 'N/A';
         const textContent = `
 Title: ${songData.title}
-Artist: ${songData.artists?.name || songData.artist || 'Unknown'}
+Artist: ${artistName}
 Key: ${songData.key_signature || 'N/A'}
 Tempo: ${songData.tempo || 'N/A'} BPM
 Genre: ${songData.genre || 'N/A'}

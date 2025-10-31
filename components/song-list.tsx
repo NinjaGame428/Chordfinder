@@ -63,11 +63,14 @@ const SongList = () => {
         }
 
         if (songsData && songsData.length > 0) {
-          const formattedSongs: Song[] = songsData.map((song: any) => ({
-            id: song.id,
-            title: song.title,
-            artist: song.artists?.name || (Array.isArray(song.artists) ? song.artists[0]?.name : 'Unknown Artist'),
-            key: song.key_signature || 'C',
+          // Filter out songs without artists before mapping
+          const formattedSongs: Song[] = songsData
+            .filter((song: any) => song.artists?.name || (Array.isArray(song.artists) && song.artists[0]?.name))
+            .map((song: any) => ({
+              id: song.id,
+              title: song.title,
+              artist: song.artists?.name || (Array.isArray(song.artists) ? song.artists[0]?.name : ''),
+              key: song.key_signature || 'C',
             difficulty: 'Medium',
             category: song.genre || 'Gospel',
             slug: song.slug || song.id,
