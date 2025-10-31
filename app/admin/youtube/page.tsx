@@ -49,42 +49,8 @@ const YouTubePage = () => {
       setVideos(data.videos || []);
     } catch (err) {
       console.error('Error fetching YouTube videos:', err);
-      // Set mock data for demonstration
-      setVideos([
-        {
-          id: '1',
-          title: 'Amazing Grace - Gospel Piano Tutorial',
-          channel: 'Gospel Music Academy',
-          duration: '15:30',
-          views: 1250,
-          thumbnail: '/api/placeholder/300/200',
-          description: 'Learn to play Amazing Grace on piano with chord progressions',
-          added_at: '2024-01-15',
-          status: 'processed'
-        },
-        {
-          id: '2',
-          title: 'How Great Thou Art - Guitar Chords',
-          channel: 'Worship Music',
-          duration: '12:45',
-          views: 890,
-          thumbnail: '/api/placeholder/300/200',
-          description: 'Complete guitar tutorial for How Great Thou Art',
-          added_at: '2024-01-20',
-          status: 'processed'
-        },
-        {
-          id: '3',
-          title: 'Great Is Thy Faithfulness - Piano Cover',
-          channel: 'Gospel Covers',
-          duration: '8:20',
-          views: 2100,
-          thumbnail: '/api/placeholder/300/200',
-          description: 'Beautiful piano arrangement of Great Is Thy Faithfulness',
-          added_at: '2024-02-01',
-          status: 'pending'
-        }
-      ]);
+      // Don't use mock data - set empty array to show no data state
+      setVideos([]);
     } finally {
       setLoading(false);
     }

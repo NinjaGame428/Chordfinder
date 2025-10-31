@@ -65,44 +65,8 @@ const AnalyticsPage = () => {
       setAnalytics(data);
     } catch (err) {
       console.error('Error fetching analytics:', err);
-      // Set mock data for demonstration
-      setAnalytics({
-        overview: {
-          totalSongs: 207,
-          totalArtists: 79,
-          totalUsers: 2,
-          totalResources: 30,
-          activeUsers: 1,
-          youtubeVideos: 0,
-          collections: 1
-        },
-        userGrowth: {
-          newUsersToday: 0,
-          newUsersThisWeek: 0,
-          newUsersThisMonth: 2,
-          userGrowthRate: 0
-        },
-        engagement: {
-          averageSessionsPerUser: 0,
-          totalPageViews: 0,
-          averageSessionDuration: 0,
-          bounceRate: 0
-        },
-        content: {
-          mostPopularSongs: [
-            { title: "Amazing Grace", artist: "Various", views: 150 },
-            { title: "How Great Thou Art", artist: "Various", views: 120 },
-            { title: "Great Is Thy Faithfulness", artist: "Various", views: 100 }
-          ],
-          mostPopularArtists: [
-            { name: "Kirk Franklin", songCount: 25 },
-            { name: "CeCe Winans", songCount: 18 },
-            { name: "Fred Hammond", songCount: 22 }
-          ],
-          totalDownloads: 0,
-          averageRating: 0
-        }
-      });
+      // Don't use mock data - set to null to show error state
+      setAnalytics(null);
     } finally {
       setLoading(false);
     }

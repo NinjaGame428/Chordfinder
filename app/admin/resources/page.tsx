@@ -48,41 +48,8 @@ const ResourcesPage = () => {
       setResources(data.resources || []);
     } catch (err) {
       console.error('Error fetching resources:', err);
-      // Set mock data for demonstration
-      setResources([
-        { 
-          id: '1', 
-          title: 'Gospel Chord Progressions Guide', 
-          type: 'document', 
-          description: 'Complete guide to common gospel chord progressions',
-          downloads: 45,
-          created_at: '2024-01-15'
-        },
-        { 
-          id: '2', 
-          title: 'Piano Techniques Tutorial', 
-          type: 'video', 
-          description: 'Learn advanced piano techniques for gospel music',
-          downloads: 32,
-          created_at: '2024-01-20'
-        },
-        { 
-          id: '3', 
-          title: 'Chord Chart Template', 
-          type: 'image', 
-          description: 'Blank chord chart template for songwriting',
-          downloads: 28,
-          created_at: '2024-02-01'
-        },
-        { 
-          id: '4', 
-          title: 'Gospel Music Theory', 
-          type: 'link', 
-          description: 'External resource for gospel music theory',
-          downloads: 15,
-          created_at: '2024-02-10'
-        }
-      ]);
+      // Don't use mock data - set empty array to show no data state
+      setResources([]);
     } finally {
       setLoading(false);
     }
