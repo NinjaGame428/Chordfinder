@@ -225,13 +225,27 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       const oldArtistId = originalArtistId || songData.artist_id;
       const newArtistId = songData.artist_id; // This is the artist_id the user selected/kept
 
+      // Ensure artist_id is a valid non-empty string
+      if (!newArtistId || !newArtistId.trim()) {
+        console.error('❌ Invalid artist_id before save:', newArtistId);
+        showNotification('Please select a valid artist before saving', 'error');
+        return;
+      }
+
       const payload = {
         title: songData.title.trim(),
-        artist_id: newArtistId,
+        artist_id: newArtistId.trim(), // Ensure trimmed and valid
         key_signature: songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature.trim() : null,
         tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
         lyrics: songData.lyrics.trim() || '',
       };
+
+      // Double-check payload before sending
+      if (!payload.artist_id || payload.artist_id.trim() === '') {
+        console.error('❌ Invalid artist_id in payload:', payload);
+        showNotification('Artist ID is missing. Please select an artist.', 'error');
+        return;
+      }
 
       console.log('🎨 Artist change tracking:', {
         originalArtistId: originalArtistId,
