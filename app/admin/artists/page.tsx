@@ -216,8 +216,19 @@ const ArtistsPage = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to add artist');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.details || `HTTP ${response.status}: ${response.statusText}`;
+        console.error('Failed to add artist:', errorMessage, errorData);
+        alert(`Failed to add artist: ${errorMessage}`);
+        return;
+      }
+
+      const data = await response.json();
+      
+      if (!data.artist) {
+        console.error('Response missing artist data:', data);
+        alert('Failed to add artist: Invalid response from server');
+        return;
       }
 
       setIsAddModalOpen(false);
