@@ -12,11 +12,33 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/dashboard') ||
     // Exclude file extensions (CSS, JS, images, fonts, etc.)
     /\.(css|js|jsx|ts|tsx|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|otf|mp4|webm|pdf)$/i.test(pathname)
   ) {
     return NextResponse.next();
+  }
+  
+  // Handle dashboard routes with language support (but not /admin)
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/tableau-de-bord')) {
+    const language = request.cookies.get('language')?.value || 'en';
+    
+    // If it's already prefixed, let it through
+    if (pathname.startsWith(`/${language}/dashboard`) || pathname.startsWith(`/${language}/tableau-de-bord`)) {
+      // Rewrite to internal route
+      const url = request.nextUrl.clone();
+      url.pathname = pathname.replace(`/${language}/tableau-de-bord`, '/dashboard').replace(`/${language}/dashboard`, '/dashboard');
+      const response = NextResponse.rewrite(url);
+      response.cookies.set('language', language, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+      return response;
+    }
+    
+    // If not prefixed, redirect to prefixed version
+    const dashboardPath = language === 'fr' ? '/tableau-de-bord' : '/dashboard';
+    const url = request.nextUrl.clone();
+    url.pathname = `/${language}${dashboardPath}`;
+    const response = NextResponse.redirect(url);
+    response.cookies.set('language', language, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+    return response;
   }
 
   // Handle language-prefixed URLs (/en/... or /fr/...)
