@@ -54,6 +54,10 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
     tempo: '',
     lyrics: '',
   });
+  
+  // Track the ORIGINAL artist_id from when song was first loaded
+  // This allows us to detect when artist actually changes
+  const [originalArtistId, setOriginalArtistId] = useState<string | null>(null);
 
   const showNotification = (message: string, type: 'success' | 'error') => {
     setToastMessage(message);
@@ -101,14 +105,20 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         hasArtist: !!song.artist_id
       });
 
+      const loadedArtistId = song.artist_id || '';
+      
       setSongData({
         title: song.title || '',
-        artist_id: song.artist_id || '',
+        artist_id: loadedArtistId,
         artist_name: song.artists?.name || song.artist_name || '',
         key_signature: song.key_signature || '',
         tempo: song.tempo || '',
         lyrics: lyricsText,
       });
+      
+      // Store the ORIGINAL artist_id when song is first loaded
+      // This will be used to detect actual artist changes
+      setOriginalArtistId(loadedArtistId);
 
       if (song.artists?.name) {
         setArtistSearchQuery(song.artists.name);
@@ -210,22 +220,24 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
     try {
       setIsSaving(true);
 
-      // CRITICAL: Capture the OLD artist_id BEFORE saving (from current songData state)
-      // This is the artist_id that was loaded when the page opened
-      const oldArtistId = songData.artist_id;
+      // CRITICAL: Use the ORIGINAL artist_id from when song was first loaded
+      // This is the artist_id that was in the database before any edits
+      const oldArtistId = originalArtistId || songData.artist_id;
+      const newArtistId = songData.artist_id; // This is the artist_id the user selected/kept
 
       const payload = {
         title: songData.title.trim(),
-        artist_id: songData.artist_id, // This is the NEW artist_id the user selected
+        artist_id: newArtistId,
         key_signature: songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature.trim() : null,
         tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
         lyrics: songData.lyrics.trim() || '',
       };
 
       console.log('🎨 Artist change tracking:', {
+        originalArtistId: originalArtistId,
         oldArtistId: oldArtistId,
-        newArtistId: payload.artist_id,
-        changed: oldArtistId !== payload.artist_id
+        newArtistId: newArtistId,
+        changed: oldArtistId && newArtistId && oldArtistId !== newArtistId
       });
 
       console.log('💾 Admin: Saving song with payload:', {
@@ -247,14 +259,18 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       }
 
       const data = await response.json();
-      const newArtistId = data.song?.artist_id;
+      const savedArtistId = data.song?.artist_id;
+      
+      // Use the saved artist_id from database as the final newArtistId
+      const finalNewArtistId = savedArtistId || newArtistId;
       
       console.log('✅ Admin: Song saved successfully, response:', {
         songId: data.song?.id,
         title: data.song?.title,
+        originalArtistId: originalArtistId,
         oldArtistId: oldArtistId,
-        newArtistId: newArtistId,
-        artistChanged: oldArtistId !== newArtistId,
+        newArtistId: finalNewArtistId,
+        artistChanged: oldArtistId && finalNewArtistId && oldArtistId !== finalNewArtistId,
         lyricsLength: data.song?.lyrics?.length || 0,
         lyricsType: typeof data.song?.lyrics,
         hasLyrics: !!data.song?.lyrics
@@ -290,14 +306,15 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       const publicUrl = `${window.location.origin}/songs/${songId}`;
       console.log('🔗 Public page:', publicUrl);
 
-      // Check if artist was changed
-      const artistChanged = oldArtistId && newArtistId && oldArtistId !== newArtistId;
+      // Check if artist was actually changed (compare original to saved)
+      const artistChanged = oldArtistId && finalNewArtistId && oldArtistId !== finalNewArtistId;
       
       if (artistChanged) {
         console.log('🎨 ARTIST CHANGED:', {
           from: oldArtistId,
-          to: newArtistId,
-          songId: songId
+          to: finalNewArtistId,
+          songId: songId,
+          message: `Song moved from artist ${oldArtistId} to ${finalNewArtistId}`
         });
         showNotification(`Song artist changed successfully! Song moved from old artist to new artist.`, 'success');
       } else {
@@ -307,14 +324,20 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       console.log('🔄 Reloading song data from database...');
       await loadSongData();
       
+      // Update originalArtistId to reflect the new state after save
+      setOriginalArtistId(finalNewArtistId);
+      
       // Notify other pages that a song was updated (so artist pages can refresh song counts)
       // Include both old and new artist IDs so both artist pages can update
       if (artistChanged) {
-        // Artist changed - notify with both IDs
-        console.log('📢 Broadcasting artist change event...');
+        // Artist changed - notify with both IDs so BOTH artist pages update their counts
+        console.log('📢 Broadcasting artist change event to update both artists...');
+        console.log(`   → Old artist ${oldArtistId} should DECREASE count by 1`);
+        console.log(`   → New artist ${finalNewArtistId} should INCREASE count by 1`);
+        
         window.dispatchEvent(new CustomEvent('songUpdated', { 
           detail: { 
-            artistId: newArtistId,
+            artistId: finalNewArtistId,
             oldArtistId: oldArtistId,
             songId: songId,
             action: 'artistChanged',
@@ -324,7 +347,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         
         // Also use localStorage for cross-tab communication
         localStorage.setItem('songUpdated', JSON.stringify({
-          artistId: newArtistId,
+          artistId: finalNewArtistId,
           oldArtistId: oldArtistId,
           songId: songId,
           action: 'artistChanged',
@@ -337,14 +360,14 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         // Just a regular update - only notify with current artist
         window.dispatchEvent(new CustomEvent('songUpdated', { 
           detail: { 
-            artistId: newArtistId,
+            artistId: finalNewArtistId,
             songId: songId,
             action: 'updated'
           } 
         }));
         
         localStorage.setItem('songUpdated', JSON.stringify({
-          artistId: newArtistId,
+          artistId: finalNewArtistId,
           songId: songId,
           action: 'updated',
           timestamp: Date.now()
