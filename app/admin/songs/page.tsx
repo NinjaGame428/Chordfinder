@@ -331,7 +331,7 @@ ${songData.lyrics || 'No lyrics available'}
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || errorData.details || `HTTP ${response.status}: ${response.statusText}`;
         console.error('Error adding song:', errorMessage, errorData);
-        alert(`Failed to add song: ${errorMessage}`);
+        alert(`${t('admin.songs.addError')}: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error adding song:', error);

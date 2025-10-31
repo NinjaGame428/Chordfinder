@@ -18,6 +18,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface YouTubeVideo {
   id: string;
@@ -32,6 +33,7 @@ interface YouTubeVideo {
 }
 
 const YouTubePage = () => {
+  const { t } = useLanguage();
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,19 +89,19 @@ const YouTubePage = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">YouTube Management</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.youtube.title')}</h1>
                 <p className="text-muted-foreground">
-                  Import and manage YouTube videos for your chord collection
+                  {t('admin.youtube.subtitle')}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={fetchVideos}>
                   <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh
+                  {t('admin.youtube.refresh')}
                 </Button>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Import Video
+                  {t('admin.youtube.importVideo')}
                 </Button>
               </div>
             </div>
@@ -110,10 +112,10 @@ const YouTubePage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Youtube className="h-5 w-5 mr-2" />
-                Import YouTube Video
+                {t('admin.youtube.importYouTubeVideo')}
               </CardTitle>
               <CardDescription>
-                Add new videos to your collection by pasting YouTube URLs
+                {t('admin.youtube.addNewVideos')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -124,7 +126,7 @@ const YouTubePage = () => {
                 />
                 <Button>
                   <Search className="h-4 w-4 mr-2" />
-                  Import
+                  {t('admin.youtube.import')}
                 </Button>
               </div>
             </CardContent>
@@ -164,16 +166,16 @@ const YouTubePage = () => {
               <Card>
                 <CardContent className="p-12 text-center">
                   <Youtube className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No videos found</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('admin.youtube.noVideos')}</h3>
                   <p className="text-muted-foreground mb-4">
                     {searchQuery || filterStatus !== 'all' 
-                      ? 'Try adjusting your search or filter criteria'
-                      : 'Start by importing your first YouTube video'
+                      ? t('resources.noResources')
+                      : t('admin.youtube.importFirstVideo')
                     }
                   </p>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Import First Video
+                    {t('admin.youtube.importFirst')}
                   </Button>
                 </CardContent>
               </Card>

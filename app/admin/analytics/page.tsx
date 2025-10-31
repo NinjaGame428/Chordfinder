@@ -18,6 +18,7 @@ import {
   Monitor
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface AnalyticsData {
   overview: {
@@ -50,6 +51,7 @@ interface AnalyticsData {
 }
 
 const AnalyticsPage = () => {
+  const { t } = useLanguage();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -110,14 +112,14 @@ const AnalyticsPage = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Analytics Dashboard</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.analytics.title')}</h1>
                 <p className="text-muted-foreground">
-                  Comprehensive insights into your platform's performance and user engagement
+                  {t('admin.analytics.subtitle')}
                 </p>
               </div>
               <Button variant="outline">
                 <Activity className="h-4 w-4 mr-2" />
-                Export Report
+                {t('admin.analytics.exportReport')}
               </Button>
             </div>
           </div>
@@ -130,7 +132,7 @@ const AnalyticsPage = () => {
                   <Music className="h-8 w-8 text-primary" />
                   <div>
                     <p className="text-2xl font-bold">{analytics.overview.totalSongs}</p>
-                    <p className="text-sm text-muted-foreground">Total Songs</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.analytics.totalSongs')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -141,7 +143,7 @@ const AnalyticsPage = () => {
                   <Users className="h-8 w-8 text-blue-600" />
                   <div>
                     <p className="text-2xl font-bold">{analytics.overview.totalUsers}</p>
-                    <p className="text-sm text-muted-foreground">Total Users</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.analytics.totalUsers')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -152,7 +154,7 @@ const AnalyticsPage = () => {
                   <Eye className="h-8 w-8 text-green-600" />
                   <div>
                     <p className="text-2xl font-bold">{analytics.engagement.totalPageViews}</p>
-                    <p className="text-sm text-muted-foreground">Page Views</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.analytics.pageViews')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -163,7 +165,7 @@ const AnalyticsPage = () => {
                   <Download className="h-8 w-8 text-purple-600" />
                   <div>
                     <p className="text-2xl font-bold">{analytics.content.totalDownloads}</p>
-                    <p className="text-sm text-muted-foreground">Downloads</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.analytics.downloads')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -177,28 +179,28 @@ const AnalyticsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <TrendingUp className="h-5 w-5 mr-2" />
-                  User Growth
+                  {t('admin.analytics.userGrowth')}
                 </CardTitle>
                 <CardDescription>
-                  User acquisition and growth metrics
+                  {t('admin.analytics.userAcquisitionGrowth')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span>New Users Today</span>
+                    <span>{t('admin.analytics.newUsersToday')}</span>
                     <span className="font-medium">{analytics.userGrowth.newUsersToday}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>New Users This Week</span>
+                    <span>{t('admin.analytics.newUsersThisWeek')}</span>
                     <span className="font-medium">{analytics.userGrowth.newUsersThisWeek}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>New Users This Month</span>
+                    <span>{t('admin.analytics.newUsersThisMonth')}</span>
                     <span className="font-medium">{analytics.userGrowth.newUsersThisMonth}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Growth Rate</span>
+                    <span>{t('admin.analytics.growthRate')}</span>
                     <Badge variant={analytics.userGrowth.userGrowthRate > 0 ? "default" : "secondary"}>
                       {analytics.userGrowth.userGrowthRate > 0 ? '+' : ''}{analytics.userGrowth.userGrowthRate}%
                     </Badge>
@@ -212,28 +214,28 @@ const AnalyticsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Activity className="h-5 w-5 mr-2" />
-                  User Engagement
+                  {t('admin.analytics.userEngagement')}
                 </CardTitle>
                 <CardDescription>
-                  How users interact with your platform
+                  {t('admin.analytics.howUsersInteract')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span>Avg Sessions per User</span>
+                    <span>{t('admin.analytics.avgSessionsPerUser')}</span>
                     <span className="font-medium">{analytics.engagement.averageSessionsPerUser}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Avg Session Duration</span>
+                    <span>{t('admin.analytics.avgSessionDuration')}</span>
                     <span className="font-medium">{analytics.engagement.averageSessionDuration}m</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Bounce Rate</span>
+                    <span>{t('admin.analytics.bounceRate')}</span>
                     <span className="font-medium">{analytics.engagement.bounceRate}%</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Active Users</span>
+                    <span>{t('admin.analytics.activeUsers')}</span>
                     <span className="font-medium">{analytics.overview.activeUsers}</span>
                   </div>
                 </div>
@@ -248,10 +250,10 @@ const AnalyticsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Music className="h-5 w-5 mr-2" />
-                  Most Popular Songs
+                  {t('admin.analytics.mostPopularSongs')}
                 </CardTitle>
                 <CardDescription>
-                  Top performing songs by views
+                  {t('admin.analytics.topPerformingSongs')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -260,7 +262,7 @@ const AnalyticsPage = () => {
                     <div key={index} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{song.title}</p>
-                        <p className="text-sm text-muted-foreground">by {song.artist}</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.analytics.by')} {song.artist}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4 text-muted-foreground" />
@@ -277,10 +279,10 @@ const AnalyticsPage = () => {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="h-5 w-5 mr-2" />
-                  Most Popular Artists
+                  {t('admin.analytics.mostPopularArtists')}
                 </CardTitle>
                 <CardDescription>
-                  Artists with the most songs
+                  {t('admin.analytics.artistsWithMostSongs')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -289,11 +291,11 @@ const AnalyticsPage = () => {
                     <div key={index} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{artist.name}</p>
-                        <p className="text-sm text-muted-foreground">Artist</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.analytics.artist')}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <Music className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{artist.songCount} songs</span>
+                        <span className="font-medium">{artist.songCount} {t('admin.analytics.songs')}</span>
                       </div>
                     </div>
                   ))}

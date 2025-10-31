@@ -18,6 +18,7 @@ import {
   Link
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Resource {
   id: string;
@@ -31,6 +32,7 @@ interface Resource {
 }
 
 const ResourcesPage = () => {
+  const { t } = useLanguage();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,19 +99,19 @@ const ResourcesPage = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Resource Management</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.resources.title')}</h1>
                 <p className="text-muted-foreground">
-                  Manage learning resources, documents, and educational content
+                  {t('admin.resources.subtitle')}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
-                  Import
+                  {t('admin.resources.import')}
                 </Button>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Resource
+                  {t('admin.resources.addResource')}
                 </Button>
               </div>
             </div>
@@ -149,16 +151,16 @@ const ResourcesPage = () => {
               <Card>
                 <CardContent className="p-12 text-center">
                   <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No resources found</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('admin.resources.noResources')}</h3>
                   <p className="text-muted-foreground mb-4">
                     {searchQuery || filterType !== 'all' 
-                      ? 'Try adjusting your search or filter criteria'
-                      : 'Start by adding your first resource to the collection'
+                      ? t('resources.noResources')
+                      : t('admin.resources.addFirstResource')
                     }
                   </p>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add First Resource
+                    {t('admin.resources.addFirst')}
                   </Button>
                 </CardContent>
               </Card>

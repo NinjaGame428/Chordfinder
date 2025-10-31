@@ -304,7 +304,7 @@ const UserManagementPage = () => {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Online Now</p>
+                        <p className="text-sm font-medium text-muted-foreground">{t('admin.users.onlineNow')}</p>
                         <p className="text-2xl font-bold">{users.filter(u => u.status === 'active').length}</p>
                       </div>
                       <Clock className="h-8 w-8 text-orange-500" />
@@ -316,8 +316,8 @@ const UserManagementPage = () => {
               {/* Search and Filters */}
               <Card>
                 <CardHeader>
-                  <CardTitle>User Management</CardTitle>
-                  <CardDescription>Search, filter, and manage your users</CardDescription>
+                  <CardTitle>{t('admin.users.userManagement')}</CardTitle>
+                  <CardDescription>{t('admin.users.searchFilterManage')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -454,14 +454,14 @@ const UserManagementPage = () => {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Clock className="h-4 w-4" />
-                                <span>Last login: {new Date(user.lastLogin).toLocaleDateString()}</span>
+                                <span>{t('admin.users.lastLogin')}: {new Date(user.lastLogin).toLocaleDateString()}</span>
                               </div>
                             </div>
 
                             <div className="pt-2 border-t">
                               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span>Page views: {user.analytics.pageViews}</span>
-                                <span>Downloads: {user.analytics.downloads}</span>
+                                <span>{t('admin.users.pageViews')}: {user.analytics.pageViews}</span>
+                                <span>{t('admin.users.downloads')}: {user.analytics.downloads}</span>
                               </div>
                             </div>
                           </div>

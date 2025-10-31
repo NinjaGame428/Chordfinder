@@ -21,8 +21,10 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const SettingsPage = () => {
+  const { t } = useLanguage();
   const [settings, setSettings] = useState({
     // General Settings
     siteName: 'PhinAccords',
@@ -94,19 +96,19 @@ const SettingsPage = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Settings</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.settings.title')}</h1>
                 <p className="text-muted-foreground">
-                  Configure your application settings and preferences
+                  {t('admin.settings.subtitle')}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={handleSave} disabled={saving}>
                   <RefreshCw className={`h-4 w-4 mr-2 ${saving ? 'animate-spin' : ''}`} />
-                  Reset
+                  {t('admin.settings.reset')}
                 </Button>
                 <Button onClick={handleSave} disabled={saving}>
                   <Save className="h-4 w-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? t('dashboard.updating') : t('admin.settings.saveChanges')}
                 </Button>
               </div>
             </div>
@@ -131,16 +133,16 @@ const SettingsPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Globe className="h-5 w-5 mr-2" />
-                General Settings
+                {t('admin.settings.generalSettings')}
               </CardTitle>
               <CardDescription>
-                Basic application configuration
+                {t('admin.settings.basicConfiguration')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="siteName">Site Name</Label>
+                  <Label htmlFor="siteName">{t('admin.settings.siteName')}</Label>
                   <Input
                     id="siteName"
                     value={settings.siteName}
@@ -148,7 +150,7 @@ const SettingsPage = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="adminEmail">Admin Email</Label>
+                  <Label htmlFor="adminEmail">{t('admin.settings.adminEmail')}</Label>
                   <Input
                     id="adminEmail"
                     type="email"
@@ -158,7 +160,7 @@ const SettingsPage = () => {
                 </div>
               </div>
               <div>
-                <Label htmlFor="siteDescription">Site Description</Label>
+                <Label htmlFor="siteDescription">{t('admin.settings.siteDescription')}</Label>
                 <Textarea
                   id="siteDescription"
                   value={settings.siteDescription}
@@ -167,7 +169,7 @@ const SettingsPage = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="siteUrl">Site URL</Label>
+                <Label htmlFor="siteUrl">{t('admin.settings.siteUrl')}</Label>
                 <Input
                   id="siteUrl"
                   value={settings.siteUrl}
@@ -182,30 +184,30 @@ const SettingsPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Database className="h-5 w-5 mr-2" />
-                Database Settings
+                {t('admin.settings.databaseSettings')}
               </CardTitle>
               <CardDescription>
-                Database connection and health status
+                {t('admin.settings.connectionHealth')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span>Database Status</span>
+                <span>{t('admin.settings.databaseStatus')}</span>
                 <Badge className={getStatusColor(settings.databaseStatus)}>
-                  {settings.databaseStatus}
+                  {t('admin.settings.healthy')}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span>Connection</span>
+                <span>{t('admin.settings.connection')}</span>
                 <span className="text-sm text-muted-foreground">{settings.databaseUrl}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Last Backup</span>
+                <span>{t('admin.settings.lastBackup')}</span>
                 <span className="text-sm text-muted-foreground">{settings.lastBackup}</span>
               </div>
               <Button variant="outline" className="w-full">
                 <Database className="h-4 w-4 mr-2" />
-                Test Database Connection
+                {t('admin.settings.testConnection')}
               </Button>
             </CardContent>
           </Card>
@@ -215,17 +217,17 @@ const SettingsPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Shield className="h-5 w-5 mr-2" />
-                Security Settings
+                {t('admin.settings.securitySettings')}
               </CardTitle>
               <CardDescription>
-                Configure security and access controls
+                {t('admin.settings.configureSecurity')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="twoFactorAuth">Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Require 2FA for admin access</p>
+                  <Label htmlFor="twoFactorAuth">{t('admin.settings.twoFactorAuth')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.require2FA')}</p>
                 </div>
                 <Switch
                   id="twoFactorAuth"
@@ -235,8 +237,8 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="ipWhitelist">IP Whitelist</Label>
-                  <p className="text-sm text-muted-foreground">Restrict admin access to specific IPs</p>
+                  <Label htmlFor="ipWhitelist">{t('admin.settings.ipWhitelist')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.restrictAdminAccess')}</p>
                 </div>
                 <Switch
                   id="ipWhitelist"
@@ -245,7 +247,7 @@ const SettingsPage = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
+                <Label htmlFor="sessionTimeout">{t('admin.settings.sessionTimeout')}</Label>
                 <Input
                   id="sessionTimeout"
                   type="number"
@@ -261,17 +263,17 @@ const SettingsPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Bell className="h-5 w-5 mr-2" />
-                Notification Settings
+                {t('admin.settings.notificationSettings')}
               </CardTitle>
               <CardDescription>
-                Configure system notifications and alerts
+                {t('admin.settings.configureNotifications')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="emailNotifications">Email Notifications</Label>
-                  <p className="text-sm text-muted-foreground">Send email alerts for system events</p>
+                  <Label htmlFor="emailNotifications">{t('admin.settings.emailNotifications')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.sendEmailAlerts')}</p>
                 </div>
                 <Switch
                   id="emailNotifications"
@@ -281,8 +283,8 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="systemAlerts">System Alerts</Label>
-                  <p className="text-sm text-muted-foreground">Show system alerts in admin panel</p>
+                  <Label htmlFor="systemAlerts">{t('admin.settings.systemAlerts')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.showSystemAlerts')}</p>
                 </div>
                 <Switch
                   id="systemAlerts"
@@ -292,8 +294,8 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="maintenanceMode">Maintenance Mode</Label>
-                  <p className="text-sm text-muted-foreground">Put the site in maintenance mode</p>
+                  <Label htmlFor="maintenanceMode">{t('admin.settings.maintenanceMode')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.putSiteInMaintenance')}</p>
                 </div>
                 <Switch
                   id="maintenanceMode"
@@ -309,17 +311,17 @@ const SettingsPage = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Settings className="h-5 w-5 mr-2" />
-                Performance Settings
+                {t('admin.settings.performanceSettings')}
               </CardTitle>
               <CardDescription>
-                Optimize application performance and caching
+                {t('admin.settings.optimizePerformance')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="cachingEnabled">Caching Enabled</Label>
-                  <p className="text-sm text-muted-foreground">Enable application caching</p>
+                  <Label htmlFor="cachingEnabled">{t('admin.settings.cachingEnabled')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.enableApplicationCaching')}</p>
                 </div>
                 <Switch
                   id="cachingEnabled"
@@ -329,8 +331,8 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="cdnEnabled">CDN Enabled</Label>
-                  <p className="text-sm text-muted-foreground">Use CDN for static assets</p>
+                  <Label htmlFor="cdnEnabled">{t('admin.settings.cdnEnabled')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.useCDN')}</p>
                 </div>
                 <Switch
                   id="cdnEnabled"
@@ -340,8 +342,8 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="compressionEnabled">Compression Enabled</Label>
-                  <p className="text-sm text-muted-foreground">Enable gzip compression</p>
+                  <Label htmlFor="compressionEnabled">{t('admin.settings.compressionEnabled')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.enableGzipCompression')}</p>
                 </div>
                 <Switch
                   id="compressionEnabled"
@@ -351,8 +353,8 @@ const SettingsPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="imageOptimization">Image Optimization</Label>
-                  <p className="text-sm text-muted-foreground">Optimize images automatically</p>
+                  <Label htmlFor="imageOptimization">{t('admin.settings.imageOptimization')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('admin.settings.optimizeImagesAutomatically')}</p>
                 </div>
                 <Switch
                   id="imageOptimization"

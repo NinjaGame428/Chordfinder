@@ -245,12 +245,12 @@ const ArtistsPage = () => {
         website: '',
       });
       await fetchArtists();
-      alert('Artist added successfully');
+      alert(t('admin.artists.addSuccess'));
       // Refresh other open admin pages via localStorage event
       window.dispatchEvent(new CustomEvent('artistUpdated'));
     } catch (error: any) {
       console.error('Error adding artist:', error);
-      alert(error.message || 'Failed to add artist');
+        alert(error.message || t('admin.artists.addError'));
     } finally {
       setIsSaving(false);
     }
@@ -301,12 +301,12 @@ const ArtistsPage = () => {
         website: '',
       });
       await fetchArtists();
-      alert('Artist updated successfully');
+      alert(t('admin.artists.updateSuccess'));
       // Refresh other open admin pages via localStorage event
       window.dispatchEvent(new CustomEvent('artistUpdated'));
     } catch (error: any) {
       console.error('Error updating artist:', error);
-      alert(error.message || 'Failed to update artist');
+      alert(error.message || t('admin.artists.updateError'));
     } finally {
       setIsSaving(false);
     }
@@ -314,7 +314,7 @@ const ArtistsPage = () => {
 
   // Handle delete artist
   const handleDeleteArtist = async (artistId: string, artistName: string) => {
-    if (!confirm(`Are you sure you want to delete "${artistName}"? This action cannot be undone.`)) {
+    if (!confirm(`${t('admin.artists.deleteConfirm')} "${artistName}"?`)) {
       return;
     }
 
@@ -349,12 +349,12 @@ const ArtistsPage = () => {
       }
 
       await fetchArtists();
-      alert('Artist deleted successfully');
+      alert(t('admin.artists.deleteSuccess'));
       // Refresh other open admin pages via localStorage event
       window.dispatchEvent(new CustomEvent('artistUpdated'));
     } catch (error: any) {
       console.error('Error deleting artist:', error);
-      alert(error.message || 'Failed to delete artist');
+      alert(error.message || t('admin.artists.deleteError'));
     } finally {
       setIsDeleting(null);
     }
@@ -368,14 +368,14 @@ const ArtistsPage = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Artist Management</h1>
+                <h1 className="text-3xl font-bold mb-2">{t('admin.artists.title')}</h1>
                 <p className="text-muted-foreground">
-                  Manage artists, their profiles, and associated songs
+                  {t('admin.artists.subtitle')}
                 </p>
               </div>
               <Button onClick={() => setIsAddModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Artist
+                {t('admin.artists.addArtist')}
               </Button>
           </div>
 
@@ -397,7 +397,7 @@ const ArtistsPage = () => {
                   onClick={() => setViewMode('grid')}
                 >
                   <Grid3x3 className="h-4 w-4 mr-2" />
-                  Grid
+                  {t('admin.artists.grid')}
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'outline'}
@@ -405,7 +405,7 @@ const ArtistsPage = () => {
                   onClick={() => setViewMode('list')}
                 >
                   <List className="h-4 w-4 mr-2" />
-                  List
+                  {t('admin.artists.list')}
                 </Button>
               </div>
             </div>
@@ -421,16 +421,16 @@ const ArtistsPage = () => {
               <Card>
                 <CardContent className="p-12 text-center">
                   <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No artists found</h3>
+                  <h3 className="text-lg font-semibold mb-2">{t('admin.artists.noArtists')}</h3>
                   <p className="text-muted-foreground mb-4">
                     {searchQuery 
-                      ? 'Try adjusting your search criteria'
-                      : 'Start by adding your first artist to the collection'
+                      ? t('artists.tryAdjusting')
+                      : t('admin.artists.addFirstArtist')
                     }
                   </p>
                   <Button onClick={() => setIsAddModalOpen(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add First Artist
+                    {t('admin.artists.addFirst')}
                   </Button>
                 </CardContent>
               </Card>
@@ -488,7 +488,7 @@ const ArtistsPage = () => {
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1">
                               <Music className="h-4 w-4" />
-                              <span>{artist.song_count || 0} songs</span>
+                              <span>{artist.song_count || 0} {t('admin.analytics.songs')}</span>
                             </div>
                             {artist.created_at && (
                               <div className="flex items-center gap-1">
@@ -576,7 +576,7 @@ const ArtistsPage = () => {
                   <Users className="h-8 w-8 text-primary" />
                   <div>
                     <p className="text-2xl font-bold">{artists.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Artists</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.artists.totalArtists')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -589,7 +589,7 @@ const ArtistsPage = () => {
                     <p className="text-2xl font-bold">
                       {artists.reduce((sum, artist) => sum + (artist.song_count || 0), 0)}
                     </p>
-                    <p className="text-sm text-muted-foreground">Total Songs</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.artists.totalSongs')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -605,7 +605,7 @@ const ArtistsPage = () => {
                         : 0
                       }
                     </p>
-                    <p className="text-sm text-muted-foreground">Avg Songs/Artist</p>
+                    <p className="text-sm text-muted-foreground">{t('admin.artists.avgSongsPerArtist')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -628,66 +628,66 @@ const ArtistsPage = () => {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Artist</DialogTitle>
+            <DialogTitle>{t('admin.artists.addArtist')}</DialogTitle>
             <DialogDescription>
-              Enter the details for the new artist
+              {t('admin.artists.addFirstArtist')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name *</Label>
+              <Label htmlFor="name">{t('admin.artists.nameLabel')} *</Label>
               <Input
                 id="name"
                 value={artistForm.name}
                 onChange={(e) => setArtistForm({ ...artistForm, name: e.target.value })}
-                placeholder="Enter artist name"
+                placeholder={t('admin.artists.namePlaceholder')}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="bio">Bio</Label>
+              <Label htmlFor="bio">{t('admin.artists.bioLabel')}</Label>
               <Textarea
                 id="bio"
                 value={artistForm.bio}
                 onChange={(e) => setArtistForm({ ...artistForm, bio: e.target.value })}
-                placeholder="Enter artist bio"
+                placeholder={t('admin.artists.bioPlaceholder')}
                 rows={4}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="image_url">Image URL</Label>
+                <Label htmlFor="image_url">{t('admin.artists.imageUrlLabel')}</Label>
                 <Input
                   id="image_url"
                   value={artistForm.image_url}
                   onChange={(e) => setArtistForm({ ...artistForm, image_url: e.target.value })}
-                  placeholder="https://..."
+                  placeholder={t('admin.artists.imageUrlPlaceholder')}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="website">Website</Label>
+                <Label htmlFor="website">{t('admin.artists.websiteLabel')}</Label>
                 <Input
                   id="website"
                   value={artistForm.website}
                   onChange={(e) => setArtistForm({ ...artistForm, website: e.target.value })}
-                  placeholder="https://..."
+                  placeholder={t('admin.artists.websitePlaceholder')}
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Cancel
+              {t('admin.artists.cancel')}
             </Button>
             <Button onClick={handleAddArtist} disabled={isSaving || !artistForm.name.trim()}>
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Adding...
+                  {t('dashboard.updating')}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Artist
+                  {t('admin.artists.addArtist')}
                 </>
               )}
             </Button>
@@ -710,66 +710,66 @@ const ArtistsPage = () => {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Artist</DialogTitle>
+            <DialogTitle>{t('admin.artists.editArtist')}</DialogTitle>
             <DialogDescription>
-              Update the artist details
+              {t('admin.artists.updateSuccess')}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="edit-name">Name *</Label>
+              <Label htmlFor="edit-name">{t('admin.artists.nameLabel')} *</Label>
               <Input
                 id="edit-name"
                 value={artistForm.name}
                 onChange={(e) => setArtistForm({ ...artistForm, name: e.target.value })}
-                placeholder="Enter artist name"
+                placeholder={t('admin.artists.namePlaceholder')}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="edit-bio">Bio</Label>
+              <Label htmlFor="edit-bio">{t('admin.artists.bioLabel')}</Label>
               <Textarea
                 id="edit-bio"
                 value={artistForm.bio}
                 onChange={(e) => setArtistForm({ ...artistForm, bio: e.target.value })}
-                placeholder="Enter artist bio"
+                placeholder={t('admin.artists.bioPlaceholder')}
                 rows={4}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-image_url">Image URL</Label>
+                <Label htmlFor="edit-image_url">{t('admin.artists.imageUrlLabel')}</Label>
                 <Input
                   id="edit-image_url"
                   value={artistForm.image_url}
                   onChange={(e) => setArtistForm({ ...artistForm, image_url: e.target.value })}
-                  placeholder="https://..."
+                  placeholder={t('admin.artists.imageUrlPlaceholder')}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-website">Website</Label>
+                <Label htmlFor="edit-website">{t('admin.artists.websiteLabel')}</Label>
                 <Input
                   id="edit-website"
                   value={artistForm.website}
                   onChange={(e) => setArtistForm({ ...artistForm, website: e.target.value })}
-                  placeholder="https://..."
+                  placeholder={t('admin.artists.websitePlaceholder')}
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
+              {t('admin.artists.cancel')}
             </Button>
             <Button onClick={handleUpdateArtist} disabled={isSaving || !artistForm.name.trim()}>
               {isSaving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  {t('dashboard.updating')}
                 </>
               ) : (
                 <>
                   <Edit className="h-4 w-4 mr-2" />
-                  Save Changes
+                  {t('admin.artists.save')}
                 </>
               )}
             </Button>
