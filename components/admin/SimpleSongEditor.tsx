@@ -232,13 +232,25 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         return;
       }
 
-      const payload = {
+      // Build payload with all fields - ensure everything is saved to database
+      const payload: {
+        title: string;
+        artist_id: string;
+        key_signature: string | null;
+        tempo: number | null;
+        lyrics: string;
+      } = {
         title: songData.title.trim(),
         artist_id: newArtistId.trim(), // Ensure trimmed and valid
         key_signature: songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature.trim() : null,
-        tempo: songData.tempo ? parseInt(songData.tempo.toString()) : null,
+        tempo: songData.tempo && songData.tempo.toString().trim() !== '' ? parseInt(songData.tempo.toString()) : null,
         lyrics: songData.lyrics.trim() || '',
       };
+
+      // Validate tempo is a valid number if provided
+      if (payload.tempo !== null && isNaN(payload.tempo)) {
+        payload.tempo = null;
+      }
 
       // Double-check payload before sending
       if (!payload.artist_id || payload.artist_id.trim() === '') {
@@ -255,10 +267,14 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       });
 
       console.log('💾 Admin: Saving song with payload:', {
-        ...payload,
+        title: payload.title,
+        artist_id: payload.artist_id,
+        key_signature: payload.key_signature,
+        tempo: payload.tempo,
         lyricsLength: payload.lyrics.length,
         lyricsPreview: payload.lyrics.substring(0, 100) + '...',
-        lyricsType: typeof payload.lyrics
+        lyricsType: typeof payload.lyrics,
+        allFields: '✅ All fields included in payload'
       });
 
       const response = await fetch(`/api/songs/${songId}`, {

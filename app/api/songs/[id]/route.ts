@@ -78,29 +78,49 @@ export async function PUT(
     // Lyrics - critical field, always include (can be empty string or null)
     // Use !== undefined to allow empty strings to be saved
     if (lyrics !== undefined) {
-      updateData.lyrics = lyrics || null;
+      // Convert empty strings to null for consistency
+      updateData.lyrics = lyrics && lyrics.trim() !== '' ? lyrics.trim() : null;
     }
     
     // Key Signature - optional field
-    if (key_signature !== undefined && key_signature !== null && key_signature !== '' && key_signature.trim() !== '') {
-      updateData.key_signature = key_signature.trim();
-    } else if (key !== undefined && key !== null && key !== '' && key.trim() !== '') {
-      updateData.key_signature = key.trim();
-    } else if (key_signature === '' || key === '' || key_signature === null || key === null) {
-      // Explicitly set to null if empty string or null is provided
-      updateData.key_signature = null;
+    // Explicitly handle null/empty to clear key signature if needed
+    if (key_signature !== undefined) {
+      if (key_signature === null || key_signature === '' || key_signature.trim() === '') {
+        updateData.key_signature = null;
+      } else {
+        updateData.key_signature = key_signature.trim();
+      }
+    } else if (key !== undefined) {
+      if (key === null || key === '' || key.trim() === '') {
+        updateData.key_signature = null;
+      } else {
+        updateData.key_signature = key.trim();
+      }
     }
     
     // Tempo/BPM - optional field
-    if (tempo !== undefined && tempo !== null && tempo !== '') {
-      const tempoValue = parseInt(tempo.toString());
-      if (!isNaN(tempoValue)) {
-        updateData.tempo = tempoValue;
+    // Explicitly handle null/empty to clear tempo if needed
+    if (tempo !== undefined) {
+      if (tempo === null || tempo === '' || tempo === 0) {
+        updateData.tempo = null;
+      } else {
+        const tempoValue = parseInt(tempo.toString());
+        if (!isNaN(tempoValue) && tempoValue > 0) {
+          updateData.tempo = tempoValue;
+        } else {
+          updateData.tempo = null;
+        }
       }
-    } else if (bpm !== undefined && bpm !== null && bpm !== '') {
-      const bpmValue = parseInt(bpm.toString());
-      if (!isNaN(bpmValue)) {
-        updateData.tempo = bpmValue;
+    } else if (bpm !== undefined) {
+      if (bpm === null || bpm === '' || bpm === 0) {
+        updateData.tempo = null;
+      } else {
+        const bpmValue = parseInt(bpm.toString());
+        if (!isNaN(bpmValue) && bpmValue > 0) {
+          updateData.tempo = bpmValue;
+        } else {
+          updateData.tempo = null;
+        }
       }
     }
     
@@ -128,15 +148,17 @@ export async function PUT(
     }
     
     // Log what we're about to save for debugging
-    console.log('💾 Saving song:', {
+    console.log('💾 Saving song to database:', {
       id: resolvedParams.id,
       title: updateData.title,
       artist_id: updateData.artist_id,
-      key_signature: updateData.key_signature,
-      tempo: updateData.tempo,
+      key_signature: updateData.key_signature ?? 'null',
+      tempo: updateData.tempo ?? 'null',
       lyricsLength: updateData.lyrics?.length || 0,
       hasLyrics: !!updateData.lyrics,
-      lyricsPreview: updateData.lyrics ? updateData.lyrics.substring(0, 100) + '...' : 'null'
+      lyricsPreview: updateData.lyrics ? updateData.lyrics.substring(0, 100) + '...' : 'null',
+      allFieldsPresent: '✅ All fields ready to save',
+      updateDataKeys: Object.keys(updateData)
     });
     
     console.log('📦 Full update payload:', JSON.stringify(updateData, null, 2));
@@ -191,16 +213,19 @@ export async function PUT(
     }
 
     // Log successful save with detailed info including artist information
-    console.log('✅ Song saved successfully:', {
+    console.log('✅ Song saved successfully to database:', {
       id: song.id,
       title: song.title,
       artist_id: song.artist_id,
       artist_name: song.artists?.name,
+      key_signature: song.key_signature ?? 'null',
+      tempo: song.tempo ?? 'null',
       lyricsLength: song.lyrics?.length || 0,
       lyricsType: typeof song.lyrics,
       lyricsPreview: song.lyrics ? song.lyrics.substring(0, 100) + '...' : 'null',
       hasLyrics: !!song.lyrics,
-      updated_at: song.updated_at
+      updated_at: song.updated_at,
+      allFieldsSaved: '✅ All fields persisted to database'
     });
     
     return NextResponse.json({ 
