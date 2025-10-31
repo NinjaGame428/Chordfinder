@@ -63,15 +63,21 @@ const SongsPage = () => {
     lyrics: '',
   });
 
-  // Fetch songs
-  const fetchSongs = async () => {
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 50; // Load 50 songs at a time
+
+  // Fetch songs with pagination
+  const fetchSongs = async (pageNum: number = 1, append: boolean = false) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/songs');
+      const response = await fetch(`/api/songs?page=${pageNum}&limit=${pageSize}`);
       if (!response.ok) {
         throw new Error('Failed to fetch songs');
       }
       const data = await response.json();
+      
       // Ensure artist_id is included in the songs data
       // Only include songs that have valid artist data
       const songsWithArtistId = (data.songs || [])
@@ -89,7 +95,20 @@ const SongsPage = () => {
             artist: artistName
           };
         });
-      setSongs(songsWithArtistId);
+      
+      if (append && pageNum > 1) {
+        // Append to existing songs for infinite scroll
+        setSongs(prev => [...prev, ...songsWithArtistId]);
+      } else {
+        // Replace for pagination
+        setSongs(songsWithArtistId);
+      }
+      
+      // Update pagination info
+      if (data.pagination) {
+        setTotalPages(data.pagination.totalPages || 1);
+        setHasMore(pageNum < (data.pagination.totalPages || 1));
+      }
     } catch (err) {
       console.error('Error fetching songs:', err);
     } finally {
@@ -276,7 +295,7 @@ ${songData.lyrics || 'No lyrics available'}
           tempo: '',
           lyrics: '',
         });
-        fetchSongs();
+        fetchSongs(1, false); // Refresh from page 1
         
         // Notify other pages that a song was added
         const newArtistId = songData.song?.artist_id || artistId;
@@ -336,7 +355,7 @@ ${songData.lyrics || 'No lyrics available'}
 
       alert(`Successfully imported ${successCount} out of ${songs.length} songs`);
       setIsImportModalOpen(false);
-      fetchSongs();
+      fetchSongs(1, false);
     } catch (error) {
       console.error('Error importing file:', error);
       alert('Failed to import file. Please check the format.');
@@ -344,7 +363,7 @@ ${songData.lyrics || 'No lyrics available'}
   };
 
   useEffect(() => {
-    fetchSongs();
+    fetchSongs(1, false);
     fetchArtists();
   }, []);
 
@@ -497,6 +516,30 @@ ${songData.lyrics || 'No lyrics available'}
                   </CardContent>
                 </Card>
               ))
+            )}
+            
+            {/* Load More Button */}
+            {!loading && hasMore && filteredSongs.length >= pageSize && (
+              <div className="flex justify-center mt-6">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    const nextPage = page + 1;
+                    setPage(nextPage);
+                    fetchSongs(nextPage, true); // Append mode
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                      Loading...
+                    </>
+                  ) : (
+                    `Load More (Page ${page + 1} of ${totalPages})`
+                  )}
+                </Button>
+              </div>
             )}
           </div>
 

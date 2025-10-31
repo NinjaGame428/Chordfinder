@@ -45,10 +45,10 @@ const ArtistsPage = () => {
       }
 
       try {
-        // Fetch all artists
+        // Optimized: Only fetch needed fields (exclude bio for list view)
         const { data: artistsData, error: artistsError } = await supabase
           .from('artists')
-          .select('*')
+          .select('id, name, image_url, website, created_at, updated_at')
           .order('name', { ascending: true });
 
         if (artistsError) {

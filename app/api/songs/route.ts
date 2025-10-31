@@ -1,32 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
     }
     
-    const { data: songs, error } = await supabase
+    // Parse query parameters for pagination
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50'); // Default 50, max 200
+    const maxLimit = Math.min(limit, 200);
+    const offset = (page - 1) * maxLimit;
+    
+    // Optimized: Only select fields we actually need (exclude lyrics for list views)
+    // Lyrics can be fetched separately on detail pages where needed
+    const { data: songs, error, count } = await supabase
       .from('songs')
       .select(`
-        *,
-        artists (
+        id,
+        title,
+        artist_id,
+        key_signature,
+        tempo,
+        genre,
+        downloads,
+        rating,
+        created_at,
+        updated_at,
+        slug,
+        artists!inner (
           id,
           name
         )
-      `)
-      .order('created_at', { ascending: false });
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + maxLimit - 1);
 
     if (error) {
+      console.error('Error fetching songs:', error);
       return NextResponse.json({ error: 'Failed to fetch songs' }, { status: 500 });
     }
 
-    const response = NextResponse.json({ songs });
-    response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+    const response = NextResponse.json({ 
+      songs: songs || [], 
+      pagination: {
+        page,
+        limit: maxLimit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / maxLimit)
+      }
+    });
+    
+    // Aggressive caching for public data
+    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     
     return response;
   } catch (error) {
+    console.error('Error in GET /api/songs:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

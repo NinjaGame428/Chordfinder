@@ -50,28 +50,48 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
     }
     
-    // Fetch artists - only select columns that exist in the table
-    // Based on schema: id, name, bio, image_url, website, created_at, updated_at
-    const { data: artists, error } = await supabase
+    // Parse query parameters for pagination
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '100'); // Default 100, max 500
+    const maxLimit = Math.min(limit, 500);
+    const offset = (page - 1) * maxLimit;
+    
+    // Optimized: Only select needed columns (exclude long bio text if not needed)
+    // Bio can be fetched separately on detail pages
+    const { data: artists, error, count } = await supabase
       .from('artists')
-      .select('id, name, bio, image_url, website, created_at, updated_at')
-      .order('name', { ascending: true });
+      .select('id, name, image_url, website, created_at, updated_at', { count: 'exact' })
+      .order('name', { ascending: true })
+      .range(offset, offset + maxLimit - 1);
 
     if (error) {
+      console.error('Error fetching artists:', error);
       return NextResponse.json({ error: 'Failed to fetch artists' }, { status: 500 });
     }
 
-    const response = NextResponse.json({ artists: artists || [] });
-    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    const response = NextResponse.json({ 
+      artists: artists || [],
+      pagination: {
+        page,
+        limit: maxLimit,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / maxLimit)
+      }
+    });
+    
+    // Aggressive caching - artists change less frequently
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     
     return response;
   } catch (error) {
+    console.error('Error in GET /api/artists:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
