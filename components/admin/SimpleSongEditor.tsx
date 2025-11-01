@@ -444,15 +444,31 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songSlug, so
       setOriginalArtistId(finalNewArtistId);
       
       // Force update local state immediately with the data we know was saved
+      // This ensures UI shows updated values immediately, even before reload
       setSongData(prev => ({
         ...prev,
-        title: payload.title.trim(),
-        artist_id: finalNewArtistId,
-        artist_name: data.song?.artists?.name || prev.artist_name,
+        title: payload.title.trim(), // Use the exact title we saved
+        artist_id: finalNewArtistId, // Use the confirmed artist ID
+        artist_name: data.song?.artists?.name || data.newArtistName || prev.artist_name, // Use API response artist name
         key_signature: payload.key_signature || prev.key_signature,
         tempo: payload.tempo?.toString() || prev.tempo,
-        lyrics: payload.lyrics || prev.lyrics
+        lyrics: payload.lyrics || prev.lyrics // Always use the lyrics we just saved
       }));
+      
+      // Update slug if title changed (slug is generated from title)
+      if (data.song?.slug) {
+        setCurrentSongSlug(data.song.slug);
+      } else if (payload.slug) {
+        setCurrentSongSlug(payload.slug);
+      }
+      
+      console.log('✅ Local state updated with saved data:', {
+        title: payload.title.trim(),
+        artist_id: finalNewArtistId,
+        artist_name: data.song?.artists?.name || data.newArtistName,
+        lyricsLength: payload.lyrics.length,
+        slug: data.song?.slug || payload.slug
+      });
       
       // Reload song data to verify the save and get latest state (with cache-busting)
       try {
