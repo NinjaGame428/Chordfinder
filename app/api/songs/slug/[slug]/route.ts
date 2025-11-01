@@ -89,6 +89,16 @@ export async function GET(
       return NextResponse.json({ error: 'Song not found' }, { status: 404 });
     }
 
+    // Handle null artist_id - ensure artist info is populated from text field if needed
+    if (song && !song.artists && song.artist) {
+      song.artists = {
+        id: song.artist_id || null,
+        name: song.artist,
+        bio: null,
+        image_url: null
+      };
+    }
+
     const response = NextResponse.json({ song });
     // Add headers to prevent stale caching
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');

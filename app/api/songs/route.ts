@@ -14,25 +14,17 @@ export async function GET(request: NextRequest) {
     const maxLimit = Math.min(limit, 200);
     const offset = (page - 1) * maxLimit;
     
-    // Optimized: Only select fields we actually need (exclude lyrics for list views)
-    // Lyrics can be fetched separately on detail pages where needed
+    // Select ALL fields including artist text field and handle null artist_ids
+    // Use left join (artists) instead of inner join (!inner) to include songs with null artist_id
     const { data: songs, error, count } = await supabase
       .from('songs')
       .select(`
-        id,
-        title,
-        artist_id,
-        key_signature,
-        tempo,
-        genre,
-        downloads,
-        rating,
-        created_at,
-        updated_at,
-        slug,
-        artists!inner (
+        *,
+        artists (
           id,
-          name
+          name,
+          bio,
+          image_url
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -41,6 +33,21 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Error fetching songs:', error);
       return NextResponse.json({ error: 'Failed to fetch songs' }, { status: 500 });
+    }
+
+    // Handle null artist_ids - populate artist info from text field if needed
+    if (songs) {
+      songs = songs.map((song: any) => {
+        if (!song.artists && song.artist) {
+          song.artists = {
+            id: song.artist_id || null,
+            name: song.artist,
+            bio: null,
+            image_url: null
+          };
+        }
+        return song;
+      });
     }
 
     const response = NextResponse.json({ 

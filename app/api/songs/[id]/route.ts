@@ -11,17 +11,30 @@ export async function GET(
     }
     
     const resolvedParams = await params;
+    // Select ALL fields including artist text field
     const { data: song, error } = await supabase
       .from('songs')
       .select(`
         *,
         artists (
           id,
-          name
+          name,
+          bio,
+          image_url
         )
       `)
       .eq('id', resolvedParams.id)
       .single();
+    
+    // Handle null artist_id - ensure artist info is populated from text field if needed
+    if (song && !song.artists && song.artist) {
+      song.artists = {
+        id: song.artist_id || null,
+        name: song.artist,
+        bio: null,
+        image_url: null
+      };
+    }
 
     if (error) {
       return NextResponse.json({ error: 'Song not found' }, { status: 404 });
@@ -268,7 +281,7 @@ export async function PUT(
 
     console.log(`✅ Update successful - affected ${updateResult.length} row(s)`);
 
-    // Now fetch the updated song data separately
+    // Now fetch the updated song data separately - select ALL fields
     const { data: updatedRows, error: fetchError } = await supabase
       .from('songs')
       .select(`
@@ -282,6 +295,16 @@ export async function PUT(
       `)
       .eq('id', resolvedParams.id)
       .single();
+    
+    // Handle null artist_id - populate artist info from text field if needed
+    if (updatedRows && !updatedRows.artists && updatedRows.artist) {
+      updatedRows.artists = {
+        id: updatedRows.artist_id || null,
+        name: updatedRows.artist,
+        bio: null,
+        image_url: null
+      };
+    }
 
     if (fetchError) {
       console.error('❌ Failed to fetch updated song:', fetchError);
@@ -316,8 +339,19 @@ export async function PUT(
 
     // Construct response from what we KNOW was saved (updateData)
     // Use updatedRows if available, otherwise construct from updateData
+    // Ensure artist info is always populated, even if artist_id is null
+    let finalArtistInfo = artistInfo || updatedRows?.artists;
+    if (!finalArtistInfo && (updateData.artist || updatedRows?.artist)) {
+      finalArtistInfo = {
+        id: updateData.artist_id || updatedRows?.artist_id || null,
+        name: updateData.artist || updatedRows?.artist || 'Unknown Artist',
+        bio: null,
+        image_url: null
+      };
+    }
+
     const song = updatedRows ? {
-      ...updatedRows, // Start with fetched data
+      ...updatedRows, // Start with fetched data - includes ALL fields from database
       // FORCE critical fields to match what we saved (most reliable)
       title: updateData.title,
       artist_id: updateData.artist_id,
@@ -327,29 +361,32 @@ export async function PUT(
       lyrics: updateData.lyrics !== undefined ? updateData.lyrics : updatedRows.lyrics,
       updated_at: new Date().toISOString(),
       slug: updateData.slug || updatedRows?.slug || createSlug(updateData.title || updatedRows?.title || ''),
-      // Use fresh artist info
-      artists: artistInfo ? {
-        id: artistInfo.id,
-        name: artistInfo.name || updateData.artist,
-        bio: artistInfo.bio,
-        image_url: artistInfo.image_url
-      } : (updatedRows.artists || { id: updateData.artist_id, name: updateData.artist })
+      // Use fresh artist info, or fallback to text field
+      artists: finalArtistInfo || (updateData.artist ? {
+        id: updateData.artist_id || null,
+        name: updateData.artist,
+        bio: null,
+        image_url: null
+      } : null)
     } : {
-      // Fallback: construct from updateData if fetch failed
+      // Fallback: construct from updateData if fetch failed - include ALL fields
       id: resolvedParams.id,
       title: updateData.title,
-      artist_id: updateData.artist_id,
-      artist: updateData.artist || artistInfo?.name,
+      artist_id: updateData.artist_id || null,
+      artist: updateData.artist || artistInfo?.name || null,
       key_signature: updateData.key_signature || null,
       tempo: updateData.tempo || null,
       lyrics: updateData.lyrics || null,
+      slug: updateData.slug || createSlug(updateData.title || ''),
       updated_at: new Date().toISOString(),
-      artists: artistInfo ? {
-        id: artistInfo.id,
-        name: artistInfo.name || updateData.artist,
-        bio: artistInfo.bio,
-        image_url: artistInfo.image_url
-      } : { id: updateData.artist_id, name: updateData.artist }
+      created_at: new Date().toISOString(), // Fallback
+      // Ensure artist info is populated even if artist_id is null
+      artists: finalArtistInfo || (updateData.artist ? {
+        id: updateData.artist_id || null,
+        name: updateData.artist,
+        bio: null,
+        image_url: null
+      } : null)
     };
 
     console.log('✅ Constructed verified response data:', {
