@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-    
     // Parse query parameters for pagination
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -14,49 +10,54 @@ export async function GET(request: NextRequest) {
     const maxLimit = Math.min(limit, 200);
     const offset = (page - 1) * maxLimit;
     
-    // Select ALL fields including artist text field and handle null artist_ids
-    // Use left join (artists) instead of inner join (!inner) to include songs with null artist_id
-    const { data: songs, error, count } = await supabase
-      .from('songs')
-      .select(`
-        *,
-        artists (
-          id,
-          name,
-          bio,
-          image_url
-        )
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + maxLimit - 1);
+    const songsData = await query(async (sql) => {
+      // Get total count
+      const countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM songs
+      `;
+      const total = parseInt(countResult[0]?.total || '0');
 
-    if (error) {
-      console.error('Error fetching songs:', error);
-      return NextResponse.json({ error: 'Failed to fetch songs' }, { status: 500 });
-    }
+      // Fetch songs with artist info using LEFT JOIN
+      const songs = await sql`
+        SELECT 
+          s.*,
+          json_build_object(
+            'id', a.id,
+            'name', a.name,
+            'bio', a.bio,
+            'image_url', a.image_url
+          ) as artists
+        FROM songs s
+        LEFT JOIN artists a ON s.artist_id = a.id
+        ORDER BY s.created_at DESC
+        LIMIT ${maxLimit}
+        OFFSET ${offset}
+      `;
+
+      return { songs, total };
+    });
 
     // Handle null artist_ids - populate artist info from text field if needed
-    if (songs) {
-      songs = songs.map((song: any) => {
-        if (!song.artists && song.artist) {
-          song.artists = {
-            id: song.artist_id || null,
-            name: song.artist,
-            bio: null,
-            image_url: null
-          };
-        }
-        return song;
-      });
-    }
+    const processedSongs = songsData.songs.map((song: any) => {
+      if (!song.artists && song.artist) {
+        song.artists = {
+          id: song.artist_id || null,
+          name: song.artist,
+          bio: null,
+          image_url: null
+        };
+      }
+      return song;
+    });
 
     const response = NextResponse.json({ 
-      songs: songs || [], 
+      songs: processedSongs || [], 
       pagination: {
         page,
         limit: maxLimit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / maxLimit)
+        total: songsData.total || 0,
+        totalPages: Math.ceil((songsData.total || 0) / maxLimit)
       }
     });
     
@@ -74,9 +75,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
     const body = await request.json();
     
     const { 
@@ -96,46 +94,63 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Title and artist are required' }, { status: 400 });
     }
 
-    // Create song data - only use columns that exist in database
-    const songData = {
-      title,
-      key_signature: key_signature || key || null,
-      tempo: tempo || bpm || null,
-      chords: chords ? JSON.stringify(chords) : null,
-      lyrics: lyrics || null,
-      artist_id,
-      // Generate slug if not provided
-      slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-    };
-
-    const { data: song, error } = await supabase
-      .from('songs')
-      .insert([songData])
-      .select(`
-        *,
-        artists (
-          id,
-          name
+    // Generate slug if not provided
+    const songSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
+    const songData = await query(async (sql) => {
+      // Insert song
+      const [song] = await sql`
+        INSERT INTO songs (
+          title,
+          key_signature,
+          tempo,
+          chords,
+          lyrics,
+          artist_id,
+          slug,
+          rating,
+          downloads,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${title},
+          ${key_signature || key || null},
+          ${tempo || bpm || null},
+          ${chords ? JSON.stringify(chords) : null},
+          ${lyrics || null},
+          ${artist_id},
+          ${songSlug},
+          0,
+          0,
+          NOW(),
+          NOW()
         )
-      `)
-      .single();
+        RETURNING *
+      `;
 
-    if (error) {
-      console.error('Supabase error creating song:', error);
-      return NextResponse.json({ 
-        error: 'Failed to create song', 
-        details: error.message,
-        code: error.code,
-        hint: error.hint
-      }, { status: 500 });
-    }
+      // Fetch artist info
+      const [artist] = await sql`
+        SELECT id, name
+        FROM artists
+        WHERE id = ${artist_id}
+      `;
 
-    if (!song) {
+      return {
+        ...song,
+        artists: artist || null
+      };
+    });
+
+    if (!songData) {
       return NextResponse.json({ error: 'Failed to create song: No data returned' }, { status: 500 });
     }
 
-    return NextResponse.json({ song }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ song: songData }, { status: 201 });
+  } catch (error: any) {
+    console.error('Error creating song:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create song', 
+      details: error.message
+    }, { status: 500 });
   }
 }

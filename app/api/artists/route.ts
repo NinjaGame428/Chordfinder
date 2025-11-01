@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-
     const body = await request.json();
     const { name, bio, image_url, website } = body;
 
@@ -15,47 +11,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Artist name is required' }, { status: 400 });
     }
 
-    // Create artist data - only use columns that exist in the table
-    // Based on schema: name, bio, image_url, website
-    const artistData: any = {
-      name: name.trim(),
-      bio: bio || null,
-      image_url: image_url || null,
-      website: website || null,
-    };
+    const artistData = await query(async (sql) => {
+      const [artist] = await sql`
+        INSERT INTO artists (
+          name,
+          bio,
+          image_url,
+          website,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${name.trim()},
+          ${bio || null},
+          ${image_url || null},
+          ${website || null},
+          NOW(),
+          NOW()
+        )
+        RETURNING id, name, bio, image_url, website, created_at, updated_at
+      `;
 
-    const { data: artist, error } = await supabase
-      .from('artists')
-      .insert([artistData])
-      .select('id, name, bio, image_url, website, created_at, updated_at')
-      .single();
+      return artist;
+    });
 
-    if (error) {
-      console.error('Supabase error creating artist:', error);
-      return NextResponse.json({ 
-        error: 'Failed to create artist', 
-        details: error.message,
-        code: error.code,
-        hint: error.hint
-      }, { status: 500 });
-    }
-
-    if (!artist) {
+    if (!artistData) {
       return NextResponse.json({ error: 'Failed to create artist: No data returned' }, { status: 500 });
     }
 
-    return NextResponse.json({ artist }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ artist: artistData }, { status: 201 });
+  } catch (error: any) {
+    console.error('Error creating artist:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create artist', 
+      details: error.message
+    }, { status: 500 });
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-    
     // Parse query parameters for pagination
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -63,26 +57,33 @@ export async function GET(request: NextRequest) {
     const maxLimit = Math.min(limit, 500);
     const offset = (page - 1) * maxLimit;
     
-    // Optimized: Only select needed columns (exclude long bio text if not needed)
-    // Bio can be fetched separately on detail pages
-    const { data: artists, error, count } = await supabase
-      .from('artists')
-      .select('id, name, image_url, website, created_at, updated_at', { count: 'exact' })
-      .order('name', { ascending: true })
-      .range(offset, offset + maxLimit - 1);
+    const artistsData = await query(async (sql) => {
+      // Get total count
+      const countResult = await sql`
+        SELECT COUNT(*) as total
+        FROM artists
+      `;
+      const total = parseInt(countResult[0]?.total || '0');
 
-    if (error) {
-      console.error('Error fetching artists:', error);
-      return NextResponse.json({ error: 'Failed to fetch artists' }, { status: 500 });
-    }
+      // Fetch artists (excluding bio for list view)
+      const artists = await sql`
+        SELECT id, name, image_url, website, created_at, updated_at
+        FROM artists
+        ORDER BY name ASC
+        LIMIT ${maxLimit}
+        OFFSET ${offset}
+      `;
+
+      return { artists, total };
+    });
 
     const response = NextResponse.json({ 
-      artists: artists || [],
+      artists: artistsData.artists || [],
       pagination: {
         page,
         limit: maxLimit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / maxLimit)
+        total: artistsData.total || 0,
+        totalPages: Math.ceil((artistsData.total || 0) / maxLimit)
       }
     });
     
