@@ -4,10 +4,11 @@ type PostgresClient = Sql<{}>;
 
 // Function to create PostgreSQL client for Neon
 const createDbClient = (): PostgresClient | null => {
+  // Try NEON_DATABASE_URL first, then DATABASE_URL
   const databaseUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    console.warn('Neon database URL not found');
+    console.error('Database URL not found. Please set NEON_DATABASE_URL or DATABASE_URL environment variable.');
     return null;
   }
 
@@ -17,6 +18,7 @@ const createDbClient = (): PostgresClient | null => {
       max: 1, // Limit connections for serverless
       idle_timeout: 20,
       connect_timeout: 10,
+      ssl: 'require'
     });
     
     return sql;
@@ -32,12 +34,24 @@ const db = createDbClient();
 // Helper function to safely execute queries
 export const query = async <T = any>(queryFn: (sql: PostgresClient) => Promise<T>): Promise<T> => {
   if (!db) {
-    throw new Error('Database connection not available');
+    throw new Error('Database connection not available. Please check your NEON_DATABASE_URL or DATABASE_URL environment variable.');
   }
-  return queryFn(db);
+  try {
+    return await queryFn(db);
+  } catch (error: any) {
+    console.error('Database query error:', error);
+    // Provide more helpful error messages
+    if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+      throw new Error('Database table does not exist. Please run the migration script in Neon SQL Editor.');
+    }
+    if (error.message?.includes('connection')) {
+      throw new Error('Database connection failed. Please check your connection string.');
+    }
+    throw error;
+  }
 };
 
-// Database types (same as before, but now compatible with Neon)
+// Export database types
 export interface Database {
   public: {
     Tables: {
@@ -45,29 +59,12 @@ export interface Database {
         Row: {
           id: string;
           email: string;
+          password_hash: string | null;
           full_name: string | null;
           avatar_url: string | null;
           role: 'user' | 'moderator' | 'admin';
           created_at: string;
           updated_at: string;
-        };
-        Insert: {
-          id: string;
-          email: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          role?: 'user' | 'moderator' | 'admin';
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          email?: string;
-          full_name?: string | null;
-          avatar_url?: string | null;
-          role?: 'user' | 'moderator' | 'admin';
-          created_at?: string;
-          updated_at?: string;
         };
       };
       artists: {
@@ -79,24 +76,6 @@ export interface Database {
           website: string | null;
           created_at: string;
           updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          bio?: string | null;
-          image_url?: string | null;
-          website?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          bio?: string | null;
-          image_url?: string | null;
-          website?: string | null;
-          created_at?: string;
-          updated_at?: string;
         };
       };
       songs: {
@@ -118,42 +97,6 @@ export interface Database {
           slug?: string | null;
           artist?: string | null;
         };
-        Insert: {
-          id?: string;
-          title: string;
-          artist_id: string;
-          genre?: string | null;
-          key_signature?: string | null;
-          tempo?: number | null;
-          chords?: string[] | null;
-          lyrics?: string | null;
-          description?: string | null;
-          year?: number | null;
-          rating?: number;
-          downloads?: number;
-          created_at?: string;
-          updated_at?: string;
-          slug?: string | null;
-          artist?: string | null;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          artist_id?: string;
-          genre?: string | null;
-          key_signature?: string | null;
-          tempo?: number | null;
-          chords?: string[] | null;
-          lyrics?: string | null;
-          description?: string | null;
-          year?: number | null;
-          rating?: number;
-          downloads?: number;
-          created_at?: string;
-          updated_at?: string;
-          slug?: string | null;
-          artist?: string | null;
-        };
       };
       resources: {
         Row: {
@@ -170,124 +113,6 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: {
-          id?: string;
-          title: string;
-          description?: string | null;
-          type?: 'pdf' | 'video' | 'audio' | 'image' | 'document' | null;
-          category?: string | null;
-          file_url?: string | null;
-          file_size?: number | null;
-          downloads?: number;
-          rating?: number;
-          author?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          description?: string | null;
-          type?: 'pdf' | 'video' | 'audio' | 'image' | 'document' | null;
-          category?: string | null;
-          file_url?: string | null;
-          file_size?: number | null;
-          downloads?: number;
-          rating?: number;
-          author?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      favorites: {
-        Row: {
-          id: string;
-          user_id: string;
-          song_id: string | null;
-          resource_id: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          song_id?: string | null;
-          resource_id?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          song_id?: string | null;
-          resource_id?: string | null;
-          created_at?: string;
-        };
-      };
-      ratings: {
-        Row: {
-          id: string;
-          user_id: string;
-          song_id: string | null;
-          resource_id: string | null;
-          rating: number;
-          comment: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          song_id?: string | null;
-          resource_id?: string | null;
-          rating: number;
-          comment?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          song_id?: string | null;
-          resource_id?: string | null;
-          rating?: number;
-          comment?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      song_requests: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          artist: string | null;
-          genre: string | null;
-          message: string | null;
-          status: 'pending' | 'in_progress' | 'completed';
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          title: string;
-          artist?: string | null;
-          genre?: string | null;
-          message?: string | null;
-          status?: 'pending' | 'in_progress' | 'completed';
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          artist?: string | null;
-          genre?: string | null;
-          message?: string | null;
-          status?: 'pending' | 'in_progress' | 'completed';
-          created_at?: string;
-          updated_at?: string;
-        };
       };
     };
   };
@@ -295,4 +120,3 @@ export interface Database {
 
 export { db };
 export default db;
-
