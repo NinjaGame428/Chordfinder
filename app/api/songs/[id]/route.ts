@@ -123,39 +123,50 @@ export async function PUT(
     }
     
     // Artist ID - required field
-    // Also update the artist text field for backward compatibility
+    // Always update both artist_id and artist text field for data consistency
     if (artist_id !== undefined && artist_id !== null && artist_id !== '' && artist_id.trim() !== '') {
-      updateData.artist_id = artist_id.trim();
+      const trimmedArtistId = artist_id.trim();
+      updateData.artist_id = trimmedArtistId;
       
-      // Fetch the artist name to update the artist text field
+      // CRITICAL: Always fetch and update the artist name to keep text field in sync
       try {
         const { data: artist, error: artistError } = await supabase
           .from('artists')
           .select('name')
-          .eq('id', artist_id.trim())
+          .eq('id', trimmedArtistId)
           .single();
         
-        if (!artistError && artist) {
+        if (!artistError && artist && artist.name) {
           // Update the artist text field with the artist's name
-          updateData.artist = artist.name;
+          updateData.artist = artist.name.trim();
+          console.log('✅ Fetched artist name for artist_id:', trimmedArtistId, '→', artist.name);
+        } else {
+          console.warn('⚠️ Could not fetch artist name for artist_id:', trimmedArtistId, artistError);
+          // If fetch fails, we still update artist_id but artist text may be stale
+          // This is acceptable as the relationship is maintained via artist_id
         }
       } catch (error) {
-        console.warn('Could not fetch artist name for artist_id:', artist_id, error);
-        // Continue without updating artist text field if fetch fails
+        console.error('❌ Error fetching artist name for artist_id:', trimmedArtistId, error);
+        // Continue with artist_id update even if name fetch fails
       }
+    } else if (artist_id === null || artist_id === '') {
+      // Allow null artist_id to be set (though not recommended)
+      updateData.artist_id = null;
     }
     
-    // Lyrics - critical field, always include (can be empty string or null)
-    // Always include lyrics in update - even if empty, it's a valid value
-    if (lyrics !== undefined && lyrics !== null) {
-      // Keep as string even if empty - don't convert to null
-      updateData.lyrics = lyrics.trim();
-    } else if (lyrics === null) {
-      // Explicitly allow null
-      updateData.lyrics = null;
-    } else if (lyrics === '') {
-      // Empty string is valid
-      updateData.lyrics = '';
+    // Lyrics - ALWAYS include if provided (can be empty string or null)
+    // This ensures lyrics are always saved, even if empty
+    if (lyrics !== undefined) {
+      if (lyrics === null) {
+        updateData.lyrics = null;
+      } else if (typeof lyrics === 'string') {
+        // Trim but keep empty string if result is empty (don't convert to null)
+        const trimmed = lyrics.trim();
+        updateData.lyrics = trimmed || ''; // Keep as empty string, not null
+      } else {
+        // Convert to string if it's not already
+        updateData.lyrics = String(lyrics).trim() || '';
+      }
     }
     
     // Key Signature - optional field
@@ -228,20 +239,27 @@ export async function PUT(
       id: resolvedParams.id,
       title: updateData.title,
       artist_id: updateData.artist_id,
+      artist_text: updateData.artist || 'null',
       key_signature: updateData.key_signature ?? 'null',
       tempo: updateData.tempo ?? 'null',
       lyricsLength: updateData.lyrics?.length || 0,
       hasLyrics: !!updateData.lyrics,
       lyricsPreview: updateData.lyrics ? updateData.lyrics.substring(0, 100) + '...' : 'null',
+      slug: updateData.slug || 'null',
+      updated_at: updateData.updated_at,
       allFieldsPresent: '✅ All fields ready to save',
       updateDataKeys: Object.keys(updateData)
     });
     
-    console.log('📦 Full update payload:', JSON.stringify(updateData, null, 2));
+    console.log('📦 Full update payload:', JSON.stringify({
+      ...updateData,
+      lyrics: updateData.lyrics ? `[${updateData.lyrics.length} chars]` : 'null'
+    }, null, 2));
 
-    // First, update the song
+    // CRITICAL: Update the song with ALL fields including artist text field
     // Don't use .single() here as it can fail if no rows match
-    // We'll fetch the updated data separately if needed
+    // We'll fetch the updated data separately to verify
+    console.log('🔄 Executing database update for song:', resolvedParams.id);
     const { error: updateError, data: updateResult } = await supabase
       .from('songs')
       .update(updateData)
@@ -281,7 +299,10 @@ export async function PUT(
 
     console.log(`✅ Update successful - affected ${updateResult.length} row(s)`);
 
-    // Now fetch the updated song data separately - select ALL fields
+    // Now fetch the updated song data separately - select ALL fields to verify save
+    // Use a small delay to ensure database write is committed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const { data: updatedRows, error: fetchError } = await supabase
       .from('songs')
       .select(`
@@ -296,14 +317,27 @@ export async function PUT(
       .eq('id', resolvedParams.id)
       .single();
     
-    // Handle null artist_id - populate artist info from text field if needed
-    if (updatedRows && !updatedRows.artists && updatedRows.artist) {
-      updatedRows.artists = {
-        id: updatedRows.artist_id || null,
-        name: updatedRows.artist,
-        bio: null,
-        image_url: null
-      };
+    // Verify the data was actually saved
+    if (updatedRows) {
+      console.log('✅ Verified saved data:', {
+        title: updatedRows.title,
+        artist_id: updatedRows.artist_id,
+        artist_text: updatedRows.artist,
+        lyricsLength: updatedRows.lyrics?.length || 0,
+        slug: updatedRows.slug
+      });
+      
+      // Handle null artist_id - populate artist info from text field if needed
+      if (!updatedRows.artists && updatedRows.artist) {
+        updatedRows.artists = {
+          id: updatedRows.artist_id || null,
+          name: updatedRows.artist,
+          bio: null,
+          image_url: null
+        };
+      }
+    } else {
+      console.warn('⚠️ Could not fetch updated rows after save, but update succeeded');
     }
 
     if (fetchError) {
