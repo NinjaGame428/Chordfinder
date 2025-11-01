@@ -11,33 +11,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
     }
 
-    const fullName = firstName && lastName ? `${firstName} ${lastName}` : null;
-
-    const user = await createUser({
-      email,
-      password,
-      full_name: fullName || undefined
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+    if (password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
     }
 
-    const token = generateToken(user);
+    const fullName = firstName && lastName ? `${firstName} ${lastName}`.trim() : null;
 
-    // Set cookie
-    const cookieStore = await cookies();
-    cookieStore.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7 // 7 days
-    });
+    try {
+      const user = await createUser({
+        email,
+        password,
+        full_name: fullName || undefined
+      });
 
-    return NextResponse.json({ user }, { status: 201 });
+      if (!user) {
+        return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+      }
+
+      const token = generateToken(user);
+
+      // Set cookie
+      const cookieStore = await cookies();
+      cookieStore.set('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/'
+      });
+
+      return NextResponse.json({ user }, { status: 201 });
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      if (error.message && error.message.includes('already exists')) {
+        return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
+      }
+      return NextResponse.json({ 
+        error: 'Failed to create user',
+        details: error.message 
+      }, { status: 500 });
+    }
   } catch (error: any) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message 
+    }, { status: 500 });
   }
 }
-
