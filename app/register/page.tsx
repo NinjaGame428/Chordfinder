@@ -66,24 +66,24 @@ export default function RegisterPage() {
     setIsLoading(true);
     
     try {
-      const success = await register({
+      const result = await register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password
       });
 
-      if (success) {
+      if (result.success) {
         // Small delay to ensure auth state updates before redirect
         setTimeout(() => {
           router.push(getTranslatedRoute("/dashboard", language));
         }, 100);
       } else {
-        setError(t('auth.registrationFailed'));
+        setError(result.error || t('auth.registrationFailed'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      setError(t('auth.registrationFailed'));
+      setError(error.message || t('auth.registrationFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -148,7 +148,7 @@ export default function RegisterPage() {
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                   <div className="w-2 h-2 rounded-full bg-white" />
                 </div>
-                <span>{t('auth.saveFavorites')}</span>
+                <span>{t('auth.transposeChords')}</span>
               </li>
             </ul>
           </div>
@@ -169,11 +169,11 @@ export default function RegisterPage() {
             </div>
             <div className="flex items-center space-x-2 lg:hidden">
               <Music className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl font-bold">HeavenKeys</h1>
+              <h1 className="text-2xl font-bold">PhinAccords</h1>
             </div>
             <div>
-              <h1 className="text-3xl font-bold">{t('auth.createAccountTitle')}</h1>
-              <p className="text-muted-foreground mt-1">{t('auth.startJourney')}</p>
+              <h1 className="text-3xl font-bold">{t('auth.signUpTitle')}</h1>
+              <p className="text-muted-foreground mt-1">{t('auth.createAccount')}</p>
             </div>
           </div>
 
@@ -182,7 +182,7 @@ export default function RegisterPage() {
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">{t('auth.signUp')}</CardTitle>
               <CardDescription>
-                {t('auth.createAccountDescription')}
+                {t('auth.signUpDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -194,10 +194,11 @@ export default function RegisterPage() {
                       id="firstName"
                       name="firstName"
                       type="text"
-                      placeholder="John"
+                      placeholder={t('auth.enterFirstName')}
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -206,14 +207,14 @@ export default function RegisterPage() {
                       id="lastName"
                       name="lastName"
                       type="text"
-                      placeholder="Doe"
+                      placeholder={t('auth.enterLastName')}
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="email">{t('auth.email')}</Label>
                   <Input
@@ -224,37 +225,38 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
+                    disabled={isLoading}
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="password">{t('auth.password')}</Label>
                   <Input
                     id="password"
                     name="password"
                     type="password"
-                    placeholder={t('auth.createPassword')}
+                    placeholder={t('auth.enterPassword')}
                     value={formData.password}
                     onChange={handleInputChange}
                     required
+                    disabled={isLoading}
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
                   <Input
                     id="confirmPassword"
                     name="confirmPassword"
                     type="password"
-                    placeholder={t('auth.confirmYourPassword')}
+                    placeholder={t('auth.enterPasswordAgain')}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
                 {error && (
-                  <div className="text-sm text-destructive text-center">
+                  <div className="text-sm text-destructive text-center bg-destructive/10 p-3 rounded-md">
                     {error}
                   </div>
                 )}
@@ -264,31 +266,23 @@ export default function RegisterPage() {
                   className="w-full" 
                   disabled={isLoading}
                 >
-                  {isLoading ? t('auth.creatingAccount') : t('auth.createAccount')}
+                  {isLoading ? t('auth.creatingAccount') : t('auth.signUp')}
                 </Button>
               </form>
 
+              <Separator />
+
               <div className="text-center text-sm">
-                <span className="text-muted-foreground">{t('auth.alreadyHaveAccount')} </span>
-                <Link href={getTranslatedRoute('/login', language)} className="text-primary hover:underline">
+                <span className="text-muted-foreground">{t('auth.alreadyHaveAccount')}</span>{" "}
+                <Link 
+                  href={getTranslatedRoute("/login", language)} 
+                  className="text-primary hover:underline font-medium"
+                >
                   {t('auth.signIn')}
                 </Link>
               </div>
             </CardContent>
           </Card>
-
-          {/* Footer */}
-          <div className="text-center text-sm text-muted-foreground pt-4">
-            {t('auth.builtBy')}{" "}
-            <Link 
-              href="https://heavenkeys.ca" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Heavenkeys Ltd
-            </Link>
-          </div>
         </div>
       </div>
     </div>

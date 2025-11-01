@@ -42,19 +42,19 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      const success = await login(email, password);
+      const result = await login(email, password);
       
-      if (success) {
+      if (result.success) {
         // Small delay to ensure auth state updates before redirect
         setTimeout(() => {
           router.push(getTranslatedRoute("/dashboard", language));
         }, 100);
       } else {
-        setError(t('auth.invalidEmailPassword'));
+        setError(result.error || t('auth.invalidEmailPassword'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      setError(t('auth.loginFailed'));
+      setError(error.message || t('auth.loginFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -124,6 +124,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -140,11 +141,12 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
                 {error && (
-                  <div className="text-sm text-destructive text-center">
+                  <div className="text-sm text-destructive text-center bg-destructive/10 p-3 rounded-md">
                     {error}
                   </div>
                 )}
@@ -158,31 +160,23 @@ export default function LoginPage() {
                 </Button>
               </form>
 
+              <Separator />
+
               <div className="text-center text-sm">
-                <span className="text-muted-foreground">{t('auth.dontHaveAccount')} </span>
-                <Link href={getTranslatedRoute('/register', language)} className="text-primary hover:underline">
+                <span className="text-muted-foreground">{t('auth.dontHaveAccount')}</span>{" "}
+                <Link 
+                  href={getTranslatedRoute("/register", language)} 
+                  className="text-primary hover:underline font-medium"
+                >
                   {t('auth.signUp')}
                 </Link>
               </div>
             </CardContent>
           </Card>
-
-          {/* Footer */}
-          <div className="text-center text-sm text-muted-foreground pt-4">
-            {t('auth.builtBy')}{" "}
-            <Link 
-              href="https://heavenkeys.ca" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
-            >
-              Heavenkeys Ltd
-            </Link>
-          </div>
         </div>
       </div>
 
-      {/* Right Column - Full Screen Image */}
+      {/* Right Column - Full Screen Image (Desktop only) */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -218,7 +212,7 @@ export default function LoginPage() {
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                   <div className="w-2 h-2 rounded-full bg-white" />
                 </div>
-                <span>{t('auth.saveFavorites')}</span>
+                <span>{t('auth.transposeChords')}</span>
               </li>
             </ul>
           </div>

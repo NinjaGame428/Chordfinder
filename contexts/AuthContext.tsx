@@ -26,8 +26,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (userData: RegisterData) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<boolean>;
   updatePreferences: (preferences: Partial<User['preferences']>) => Promise<boolean>;
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
       
@@ -115,26 +115,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        return false;
+        return { 
+          success: false, 
+          error: data.error || 'Invalid email or password' 
+        };
       }
 
-      const data = await response.json();
       if (data.user) {
         await loadUserProfile(data.user);
-        return true;
+        return { success: true };
       }
       
-      return false;
-    } catch (error) {
+      return { success: false, error: 'Login failed' };
+    } catch (error: any) {
       console.error('Login error:', error);
-      return false;
+      return { 
+        success: false, 
+        error: error.message || 'Network error. Please try again.' 
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (userData: RegisterData): Promise<boolean> => {
+  const register = async (userData: RegisterData): Promise<{ success: boolean; error?: string }> => {
     try {
       setIsLoading(true);
       
@@ -150,20 +157,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        return false;
+        return { 
+          success: false, 
+          error: data.error || data.details || 'Registration failed' 
+        };
       }
 
-      const data = await response.json();
       if (data.user) {
         await loadUserProfile(data.user);
-        return true;
+        return { success: true };
       }
       
-      return false;
-    } catch (error) {
+      return { success: false, error: 'Registration failed' };
+    } catch (error: any) {
       console.error('Registration error:', error);
-      return false;
+      return { 
+        success: false, 
+        error: error.message || 'Network error. Please try again.' 
+      };
     } finally {
       setIsLoading(false);
     }
