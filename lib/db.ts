@@ -1,7 +1,9 @@
-import postgres from 'postgres';
+import postgres, { Sql } from 'postgres';
+
+type PostgresClient = Sql<{}>;
 
 // Function to create PostgreSQL client for Neon
-const createDbClient = () => {
+const createDbClient = (): PostgresClient | null => {
   const databaseUrl = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
 
   if (!databaseUrl) {
@@ -28,7 +30,7 @@ const createDbClient = () => {
 const db = createDbClient();
 
 // Helper function to safely execute queries
-export const query = async <T = any>(queryFn: (sql: typeof db) => Promise<T>): Promise<T> => {
+export const query = async <T = any>(queryFn: (sql: PostgresClient) => Promise<T>): Promise<T> => {
   if (!db) {
     throw new Error('Database connection not available');
   }
