@@ -68,12 +68,20 @@ export async function verifyToken(token: string): Promise<AuthUser | null> {
 export async function getUserById(id: string): Promise<AuthUser | null> {
   try {
     return await query(async (sql) => {
-      const [user] = await sql`
+      const result = await sql`
         SELECT id, email, full_name, avatar_url, role
         FROM users
         WHERE id = ${id}
+        LIMIT 1
       `;
-      return user || null;
+      const user = result[0] as any;
+      return user ? {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        role: user.role
+      } as AuthUser : null;
     });
   } catch (error) {
     console.error('Error getting user by ID:', error);
@@ -84,13 +92,21 @@ export async function getUserById(id: string): Promise<AuthUser | null> {
 export async function getUserByEmail(email: string): Promise<(AuthUser & { password_hash?: string }) | null> {
   try {
     return await query(async (sql) => {
-      const [user] = await sql`
+      const result = await sql`
         SELECT id, email, full_name, avatar_url, role, password_hash
         FROM users
         WHERE email = ${email}
         LIMIT 1
       `;
-      return user || null;
+      const user = result[0] as any;
+      return user ? {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        role: user.role,
+        password_hash: user.password_hash
+      } : null;
     });
   } catch (error) {
     console.error('Error getting user by email:', error);
@@ -131,7 +147,7 @@ export async function createUser(userData: {
       }
       
       // Insert new user - let database generate UUID
-      const [user] = await sql`
+      const result = await sql`
         INSERT INTO users (
           email,
           password_hash,
@@ -149,7 +165,14 @@ export async function createUser(userData: {
         )
         RETURNING id, email, full_name, avatar_url, role
       `;
-      return user || null;
+      const user = result[0] as any;
+      return user ? {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        avatar_url: user.avatar_url,
+        role: user.role
+      } as AuthUser : null;
     });
   } catch (error: any) {
     console.error('Error creating user:', error);
