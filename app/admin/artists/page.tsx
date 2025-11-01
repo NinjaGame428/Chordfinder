@@ -34,26 +34,6 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { createClient } from '@supabase/supabase-js';
-
-// Create supabase client inside component to avoid SSR issues
-const getSupabaseClient = () => {
-  if (typeof window === 'undefined') return null;
-  
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return null;
-  }
-  
-  try {
-    return createClient(supabaseUrl, supabaseAnonKey);
-  } catch (error) {
-    console.error('Failed to create Supabase client:', error);
-    return null;
-  }
-};
 
 interface Artist {
   id: string;
@@ -91,45 +71,35 @@ const ArtistsPage = () => {
     try {
       setLoading(true);
       
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        console.error('Supabase client not initialized');
+      // Fetch artists from API
+      const response = await fetch('/api/artists');
+      
+      if (!response.ok) {
+        console.error('Error fetching artists');
         setArtists([]);
         return;
       }
 
-      // Fetch artists from database - only select columns that exist
-      const { data: artistsData, error: artistsError } = await supabase
-        .from('artists')
-        .select('id, name, bio, image_url, website, created_at, updated_at')
-        .order('name', { ascending: true });
-
-      if (artistsError) {
-        console.error('Error fetching artists:', artistsError);
-        setArtists([]);
-        return;
-      }
+      const data = await response.json();
+      const artistsData = data.artists || [];
 
       if (!artistsData || artistsData.length === 0) {
         setArtists([]);
         return;
       }
 
-      // Optimize: Get all song counts in a single query instead of N+1 queries
-      const artistIds = artistsData.map(a => a.id);
-      const { data: songCounts, error: countsError } = await supabase
-        .from('songs')
-        .select('artist_id')
-        .in('artist_id', artistIds);
+      // Fetch songs to count
+      const songsResponse = await fetch('/api/songs?limit=1000');
+      const songsData = songsResponse.ok ? (await songsResponse.json()).songs || [] : [];
 
       // Create a map of artist_id -> count
       const countMap = new Map<string, number>();
-      if (songCounts && !countsError) {
-        songCounts.forEach((song: any) => {
+      songsData.forEach((song: any) => {
+        if (song.artist_id) {
           const artistId = song.artist_id;
           countMap.set(artistId, (countMap.get(artistId) || 0) + 1);
-        });
-      }
+        }
+      });
 
       // Map artists with their counts
       const artistsWithCounts = artistsData.map((artist) => ({
@@ -356,20 +326,16 @@ const ArtistsPage = () => {
       setIsDeleting(artistId);
       
       // First check if artist has songs
-      const supabase = getSupabaseClient();
-      if (!supabase) {
-        throw new Error('Database connection not available');
-      }
+      const songsResponse = await fetch('/api/songs?limit=1000');
+      if (songsResponse.ok) {
+        const songsData = await songsResponse.json();
+        const songCount = songsData.songs?.filter((song: any) => song.artist_id === artistId).length || 0;
 
-      const { count } = await supabase
-        .from('songs')
-        .select('*', { count: 'exact', head: true })
-        .eq('artist_id', artistId);
-
-      if (count && count > 0) {
-        if (!confirm(`This artist has ${count} song(s). Deleting will remove the artist. Continue?`)) {
-          setIsDeleting(null);
-          return;
+        if (songCount > 0) {
+          if (!confirm(`This artist has ${songCount} song(s). Deleting will remove the artist. Continue?`)) {
+            setIsDeleting(null);
+            return;
+          }
         }
       }
 

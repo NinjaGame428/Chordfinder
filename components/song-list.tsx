@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Music, User, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getTranslatedRoute } from "@/lib/url-translations";
@@ -25,56 +24,36 @@ const SongList = () => {
   const [popularSongs, setPopularSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch 12 songs from Supabase
+  // Fetch 12 songs from API
   useEffect(() => {
     async function fetchSongs() {
       console.log('🏠 Fetching songs for home page...');
-      
-      if (!supabase) {
-        console.error('❌ Supabase client not initialized');
-        setIsLoading(false);
-        return;
-      }
 
       try {
         setIsLoading(true);
-        // Optimized: Fetch songs with artists in a single query
-        const { data: songsData, error: songsError } = await supabase
-          .from('songs')
-          .select(`
-            id,
-            title,
-            artist_id,
-            key_signature,
-            genre,
-            created_at,
-            artists!inner (
-              id,
-              name
-            )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(12); // Optimized: fetch only 12 songs for home page
-
-        if (songsError) {
-          console.error('❌ Error fetching songs:', songsError);
+        const response = await fetch('/api/songs?limit=12');
+        
+        if (!response.ok) {
+          console.error('❌ Error fetching songs');
           setIsLoading(false);
           return;
         }
 
+        const data = await response.json();
+        const songsData = data.songs || [];
+
         if (songsData && songsData.length > 0) {
-          // Filter out songs without artists before mapping
           const formattedSongs: Song[] = songsData
-            .filter((song: any) => song.artists?.name || (Array.isArray(song.artists) && song.artists[0]?.name))
+            .filter((song: any) => song.artists?.name || song.artist)
             .map((song: any) => ({
               id: song.id,
               title: song.title,
-              artist: song.artists?.name || (Array.isArray(song.artists) ? song.artists[0]?.name : ''),
+              artist: song.artists?.name || song.artist || 'Unknown',
               key: song.key_signature || 'C',
-            difficulty: 'Medium',
-            category: song.genre || 'Gospel',
-            slug: song.slug || song.id,
-          }));
+              difficulty: 'Medium',
+              category: song.genre || 'Gospel',
+              slug: song.slug || song.id,
+            }));
 
           console.log(`✅ Loaded ${formattedSongs.length} songs for home page`);
           setPopularSongs(formattedSongs);
@@ -102,97 +81,77 @@ const SongList = () => {
     }
   };
 
-  const getDifficultyText = (difficulty: string) => {
-    if (difficulty === 'Easy') return t('chord.easy');
-    if (difficulty === 'Medium') return t('chord.medium');
-    if (difficulty === 'Hard') return t('chord.hard');
-    return difficulty;
-  };
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mt-2"></div>
+            </CardHeader>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (popularSongs.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-500 dark:text-gray-400">{t('songs.noSongsFound')}</p>
+      </div>
+    );
+  }
 
   return (
-    <section className="pt-5 pb-16 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl xs:text-4xl font-bold tracking-tight">
-            {language === 'fr' ? 'Chansons Gospel Populaires' : 'Popular Gospel Songs'}
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            {language === 'fr' 
-              ? 'Explorez notre collection organisée de chansons gospel bien-aimées avec grilles d\'accords et ressources'
-              : 'Explore our organized collection of beloved gospel songs with chord charts and resources'
-            }
-          </p>
-        </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {popularSongs.map((song) => {
+        const songSlug = song.slug || song.id;
+        const songUrl = getTranslatedRoute(`/songs/${songSlug}`, language);
 
-        {isLoading ? (
-          <div className="text-center py-20">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-            <p className="mt-4 text-muted-foreground">{t('song.loading')}</p>
-          </div>
-        ) : popularSongs.length === 0 ? (
-          <div className="text-center py-20">
-            <Music className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">{t('song.noSongs')}</h3>
-            <p className="text-muted-foreground">{t('song.comeBack')}</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularSongs.map((song) => (
-            <Card key={song.id} className="group hover:shadow-lg transition-all duration-300">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg font-semibold group-hover:text-primary transition-colors">
-                      {song.title}
-                    </CardTitle>
-                    <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                      <User className="h-4 w-4 mr-1" />
-                      {song.artist}
-                    </div>
+        return (
+          <Card key={song.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg mb-2 line-clamp-2">
+                    {song.title}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <User className="h-4 w-4" />
+                    <span className="line-clamp-1">{song.artist}</span>
                   </div>
-                  <Badge variant="outline" className="ml-2">
+                </div>
+                <Music className="h-5 w-5 text-muted-foreground flex-shrink-0 ml-2" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">
                     {song.key}
                   </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge className={getDifficultyColor(song.difficulty)}>
-                    {getDifficultyText(song.difficulty)}
+                  <Badge
+                    className={`text-xs ${getDifficultyColor(song.difficulty)}`}
+                  >
+                    {song.difficulty}
                   </Badge>
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="text-xs">
                     {song.category}
                   </Badge>
                 </div>
-                <Button 
-                  className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                  variant="outline"
-                  asChild
-                >
-                  <Link href={getTranslatedRoute(`/songs/${song.id}`, language)}>
-                    <Music className="mr-2 h-4 w-4" />
-                    {t('song.viewChords')}
-                    <ExternalLink className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-            ))}
-          </div>
-        )}
-
-        {!isLoading && popularSongs.length > 0 && (
-          <div className="text-center mt-12">
-            <Button size="lg" className="rounded-full" asChild>
-              <Link href={getTranslatedRoute('/songs', language)}>
-                {t('song.viewAll')}
-                <ExternalLink className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
-    </section>
+                <Link href={songUrl}>
+                  <Button variant="ghost" size="sm" className="h-8">
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 };
 

@@ -1,8 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -47,94 +45,47 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
 
-  // Optimized: Check for existing session on mount with faster timeout
+  // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
-      if (!supabase) {
-        setIsLoading(false);
-        return;
-      }
-      
-      // Faster timeout - show buttons immediately if no session
-      const timeout = setTimeout(() => {
-        setIsLoading(false);
-      }, 500); // Reduced from 2000ms to 500ms
-      
       try {
-        // Optimized: getSession with timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<{ data: { session: null }, error: null }>((resolve) => 
-          setTimeout(() => resolve({ data: { session: null }, error: null }), 1000)
-        );
+        setIsLoading(true);
+        const response = await fetch('/api/auth/me', { credentials: 'include' });
         
-        const { data: { session }, error } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]);
-        
-        if (!error && session?.user) {
-          await loadUserProfile(session.user);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setUser(data.user);
+          }
         }
       } catch (error) {
         console.error('Error checking auth:', error);
       } finally {
-        clearTimeout(timeout);
         setIsLoading(false);
       }
     };
 
     checkAuth();
-
-    // Listen for auth changes
-    if (supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (session?.user) {
-            await loadUserProfile(session.user);
-          } else {
-            setUser(null);
-          }
-          setIsLoading(false);
-        }
-      );
-
-      return () => subscription.unsubscribe();
-    }
   }, []);
 
-  const loadUserProfile = async (supabaseUser: SupabaseUser) => {
-    if (!supabase) return;
-    
+  const loadUserProfile = async (authUser: any) => {
     try {
-      // Optimized: Only fetch essential fields
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('id, full_name, email, avatar_url, role, created_at')
-        .eq('id', supabaseUser.id)
-        .single(); // Optimized: only fetch essential fields
-
-      if (error) {
-        console.error('Error loading user profile:', error);
-        return;
-      }
-
       // Extract first and last name from full_name if available
-      const fullName = profile.full_name || '';
+      const fullName = authUser.full_name || '';
       const nameParts = fullName.split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 
       const userData: User = {
-        id: profile.id,
-        firstName: firstName,
-        lastName: lastName,
-        email: profile.email,
-        avatar: profile.avatar_url || undefined,
-        role: profile.role as 'user' | 'admin' | 'moderator',
-        joinDate: profile.created_at,
-        preferences: {
+        id: authUser.id,
+        firstName: firstName || authUser.first_name || '',
+        lastName: lastName || authUser.last_name || '',
+        email: authUser.email,
+        avatar: authUser.avatar_url || undefined,
+        role: authUser.role as 'user' | 'admin' | 'moderator',
+        joinDate: authUser.created_at || new Date().toISOString(),
+        preferences: authUser.preferences || {
           language: 'en',
           theme: 'light',
           notifications: true
@@ -154,23 +105,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    if (!supabase) {
-      throw new Error('Authentication not configured');
-    }
-    
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password })
       });
 
-      if (error) {
-        console.error('Login error:', error);
+      if (!response.ok) {
         return false;
       }
 
+      const data = await response.json();
       if (data.user) {
         await loadUserProfile(data.user);
         return true;
@@ -186,58 +135,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (userData: RegisterData): Promise<boolean> => {
-    if (!supabase) {
-      throw new Error('Authentication not configured');
-    }
-    
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-            full_name: `${userData.firstName} ${userData.lastName}`
-          }
-        }
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          firstName: userData.firstName,
+          lastName: userData.lastName
+        })
       });
 
-      if (error) {
-        console.error('Registration error:', error);
+      if (!response.ok) {
         return false;
       }
 
+      const data = await response.json();
       if (data.user) {
-        // Create user profile manually if trigger doesn't exist
-        try {
-          const { error: profileError } = await supabase
-            .from('users')
-            .insert({
-              id: data.user.id,
-              email: data.user.email,
-              full_name: `${userData.firstName} ${userData.lastName}`,
-              role: 'user',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            // Continue anyway - user is created in auth
-          }
-
-          // Load the user profile
-          await loadUserProfile(data.user);
-          return true;
-        } catch (profileError) {
-          console.error('Profile creation error:', profileError);
-          // Continue anyway - user is created in auth
-          await loadUserProfile(data.user);
-          return true;
-        }
+        await loadUserProfile(data.user);
+        return true;
       }
       
       return false;
@@ -250,10 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    if (!supabase) return;
-    
     try {
-      await supabase.auth.signOut();
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
       setUser(null);
       // Redirect to homepage after logout
       if (typeof window !== 'undefined') {
@@ -261,36 +182,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Logout error:', error);
+      setUser(null);
     }
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
-    if (!supabase) {
-      throw new Error('Authentication not configured');
-    }
-    
     try {
       if (!user) return false;
       
-      const { error } = await supabase
-        .from('users')
-        .update({
+      // Update via API if endpoint exists, otherwise just update local state
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           full_name: userData.firstName && userData.lastName 
             ? `${userData.firstName} ${userData.lastName}` 
-            : userData.firstName || userData.lastName || user.firstName + ' ' + user.lastName,
-          avatar_url: userData.avatar,
-          updated_at: new Date().toISOString()
+            : undefined,
+          avatar_url: userData.avatar
         })
-        .eq('id', user.id);
+      });
 
-      if (error) {
-        console.error('Profile update error:', error);
-        return false;
+      if (response.ok) {
+        const updatedUser = { ...user, ...userData };
+        setUser(updatedUser);
+        return true;
       }
 
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      return true;
+      return false;
     } catch (error) {
       console.error('Profile update error:', error);
       return false;
@@ -301,7 +220,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!user) return false;
       
-      // For now, just update the local state since preferences column doesn't exist in current schema
       const updatedUser = {
         ...user,
         preferences: { ...user.preferences, ...preferences }

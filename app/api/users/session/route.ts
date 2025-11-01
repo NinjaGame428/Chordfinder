@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-
     const body = await request.json();
     const {
       userId,
@@ -27,35 +23,54 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // Insert user session
-    const { data: session, error } = await supabase
-      .from('user_sessions')
-      .insert({
-        user_id: userId,
-        device_type: deviceType,
-        browser,
-        operating_system: operatingSystem,
-        screen_resolution: screenResolution,
-        country,
-        city,
-        region,
-        ip_address: ipAddress,
-        timezone,
-        user_agent: userAgent,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error saving user session:', error);
-      return NextResponse.json({ error: 'Failed to save user session' }, { status: 500 });
-    }
+    const session = await query(async (sql) => {
+      const [result] = await sql`
+        INSERT INTO user_sessions (
+          user_id,
+          session_token,
+          device_type,
+          browser,
+          operating_system,
+          screen_resolution,
+          country,
+          city,
+          region,
+          ip_address,
+          timezone,
+          user_agent,
+          created_at,
+          updated_at,
+          expires_at,
+          last_activity
+        ) VALUES (
+          ${userId},
+          ${sessionId || crypto.randomUUID()},
+          ${deviceType || null},
+          ${browser || null},
+          ${operatingSystem || null},
+          ${screenResolution || null},
+          ${country || null},
+          ${city || null},
+          ${region || null},
+          ${ipAddress || null},
+          ${timezone || null},
+          ${userAgent || null},
+          NOW(),
+          NOW(),
+          NOW() + INTERVAL '7 days',
+          NOW()
+        )
+        RETURNING *
+      `;
+      return result;
+    });
 
     return NextResponse.json({ session });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in POST /api/users/session:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message
+    }, { status: 500 });
   }
 }

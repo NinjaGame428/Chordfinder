@@ -1,21 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-
-    // Get email campaigns
-    const { data: campaigns, error } = await supabase
-      .from('email_campaigns')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch campaigns' }, { status: 500 });
-    }
+    const campaigns = await query(async (sql) => {
+      const results = await sql`
+        SELECT *
+        FROM email_campaigns
+        ORDER BY created_at DESC
+      `;
+      return results;
+    });
 
     return NextResponse.json({ campaigns }, { status: 200 });
   } catch (error) {
@@ -26,34 +21,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-
     const body = await request.json();
     const { name, subject, content, recipients, scheduledFor } = body;
 
-    const { data: campaign, error } = await supabase
-      .from('email_campaigns')
-      .insert({
-        name,
-        subject,
-        content,
-        recipients,
-        scheduled_for: scheduledFor,
-        status: 'draft',
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 });
-    }
+    const campaign = await query(async (sql) => {
+      const [result] = await sql`
+        INSERT INTO email_campaigns (
+          name,
+          subject,
+          body,
+          recipient_type,
+          recipient_ids,
+          status,
+          scheduled_at,
+          created_at,
+          updated_at
+        ) VALUES (
+          ${name},
+          ${subject},
+          ${content},
+          ${recipients?.type || 'all'},
+          ${recipients?.ids ? recipients.ids : null},
+          'draft',
+          ${scheduledFor || null},
+          NOW(),
+          NOW()
+        )
+        RETURNING *
+      `;
+      return result;
+    });
 
     return NextResponse.json({ campaign }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating campaign:', error);
-    return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to create campaign',
+      details: error.message
+    }, { status: 500 });
   }
 }

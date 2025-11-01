@@ -9,7 +9,6 @@ import Footer from "@/components/footer";
 import EnhancedSearch from "@/components/enhanced-search";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getTranslatedRoute } from "@/lib/url-translations";
 
@@ -33,52 +32,42 @@ const ArtistsPage = () => {
   const [artists, setArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch artists from Supabase
+  // Fetch artists from API
   useEffect(() => {
     async function fetchArtists() {
-      console.log('🔄 Fetching artists from Supabase...');
+      console.log('🔄 Fetching artists from API...');
       
-      if (!supabase) {
-        console.error('❌ Supabase client not initialized');
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        // Optimized: Only fetch needed fields (exclude bio for list view)
-        const { data: artistsData, error: artistsError } = await supabase
-          .from('artists')
-          .select('id, name, image_url, website, created_at, updated_at')
-          .order('name', { ascending: true });
-
-        if (artistsError) {
-          console.error('❌ Error fetching artists:', artistsError);
+        setIsLoading(true);
+        const response = await fetch('/api/artists');
+        
+        if (!response.ok) {
+          console.error('❌ Error fetching artists');
           setIsLoading(false);
           return;
         }
 
-        console.log(`✅ Retrieved ${artistsData?.length || 0} artists`);
+        const data = await response.json();
+        const artistsData = data.artists || [];
 
-        if (artistsData && artistsData.length > 0 && supabase) {
-          // Optimize: Get all song counts in a single query instead of N+1 queries
-          const artistIds = artistsData.map(a => a.id);
-          const { data: songCounts, error: countsError } = await supabase
-            .from('songs')
-            .select('artist_id')
-            .in('artist_id', artistIds);
+        console.log(`✅ Retrieved ${artistsData.length} artists`);
+
+        if (artistsData && artistsData.length > 0) {
+          // Fetch song counts for all artists
+          const artistIds = artistsData.map((a: any) => a.id);
+          const songsResponse = await fetch('/api/songs?limit=1000');
+          const songsData = songsResponse.ok ? (await songsResponse.json()).songs || [] : [];
 
           // Create a map of artist_id -> count
           const countMap = new Map<string, number>();
-          if (songCounts && !countsError) {
-            songCounts.forEach((song: any) => {
-              const artistId = song.artist_id;
-              countMap.set(artistId, (countMap.get(artistId) || 0) + 1);
-            });
-          }
+          songsData.forEach((song: any) => {
+            if (song.artist_id) {
+              countMap.set(song.artist_id, (countMap.get(song.artist_id) || 0) + 1);
+            }
+          });
 
           // Map artists with their counts
-          const artistsWithCounts = artistsData.map((artist) => {
-            // Clean up artist name - remove "Artist from YouTube channel" suffix if present
+          const artistsWithCounts = artistsData.map((artist: any) => {
             const cleanName = artist.name?.replace(/\s*Artist from YouTube channel\s*/i, '').trim() || artist.name;
             
             return {
@@ -87,9 +76,7 @@ const ArtistsPage = () => {
               bio: artist.bio || undefined,
               image_url: artist.image_url || undefined,
               website: artist.website || undefined,
-              genre: artist.genre || 'Gospel',
-              country: artist.country || undefined,
-              founded: artist.founded || undefined,
+              genre: 'Gospel',
               songs: countMap.get(artist.id) || 0,
             };
           });

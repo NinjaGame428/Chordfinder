@@ -25,7 +25,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
 
 interface AdminActivity {
   id: string;
@@ -51,48 +50,22 @@ const AdminPage = () => {
   const [activityLoading, setActivityLoading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<AdminActivity[]>([]);
 
-  // Fetch admin activities from user_activities table
+  // Fetch admin activities from API
   const fetchAdminActivities = async () => {
-    if (!supabase || !user) return;
+    if (!user) return;
     
     try {
       setActivityLoading(true);
-      // Get all admin users first
-      const { data: adminUsers, error: adminError } = await supabase
-        .from('users')
-        .select('id')
-        .in('role', ['admin', 'moderator']);
-
-      if (adminError || !adminUsers || adminUsers.length === 0) {
+      // Fetch activities via API
+      const response = await fetch('/api/users/activity?admin=true');
+      
+      if (!response.ok) {
         setRecentActivity([]);
         return;
       }
 
-      const adminUserIds = adminUsers.map(u => u.id);
-
-      // Fetch activities from admin users
-      const { data: activities, error: activitiesError } = await supabase
-        .from('user_activities')
-        .select(`
-          id,
-          activity_type,
-          description,
-          metadata,
-          page,
-          action,
-          created_at,
-          user_id,
-          users!inner (role)
-        `)
-        .in('user_id', adminUserIds)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (activitiesError) {
-        console.error('Error fetching admin activities:', activitiesError);
-        setRecentActivity([]);
-        return;
-      }
+      const data = await response.json();
+      const activities = data.activities || [];
 
       if (!activities || activities.length === 0) {
         setRecentActivity([]);

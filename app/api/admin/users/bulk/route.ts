@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-// PATCH - Bulk update users
 export const PATCH = async (request: NextRequest) => {
   try {
     const body = await request.json();
@@ -23,62 +22,41 @@ export const PATCH = async (request: NextRequest) => {
       );
     }
 
-    if (!supabase) {
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: `Bulk ${action} simulated for ${userIds.length} users (database not configured)` 
-        },
-        { status: 200 }
-      );
-    }
-
-    // Determine update data based on action
-    let updateData: any = {};
+    let updateData: any = { updated_at: new Date().toISOString() };
 
     switch (action) {
       case 'activate':
-        updateData = { status: 'active' };
+        updateData.status = 'active';
         break;
       case 'deactivate':
-        updateData = { status: 'inactive' };
+        updateData.status = 'inactive';
         break;
       case 'ban':
-        updateData = { status: 'banned' };
+        updateData.status = 'banned';
         break;
       case 'unban':
-        updateData = { status: 'active' };
+        updateData.status = 'active';
         break;
       case 'delete':
-        // Handle delete separately
-        const { error: deleteError } = await supabase
-          .from('users')
-          .delete()
-          .in('id', userIds);
-
-        if (deleteError) {
-          console.error('Error deleting users:', deleteError);
-          return NextResponse.json(
-            { 
-              success: true, 
-              message: `Bulk delete simulated for ${userIds.length} users` 
-            },
-            { status: 200 }
-          );
-        }
+        await query(async (sql) => {
+          await sql`
+            DELETE FROM users
+            WHERE id = ANY(${userIds})
+          `;
+        });
 
         return NextResponse.json({
           success: true,
           message: `Successfully deleted ${userIds.length} users`,
         });
       case 'make_admin':
-        updateData = { role: 'admin' };
+        updateData.role = 'admin';
         break;
       case 'make_moderator':
-        updateData = { role: 'moderator' };
+        updateData.role = 'moderator';
         break;
       case 'make_user':
-        updateData = { role: 'user' };
+        updateData.role = 'user';
         break;
       default:
         return NextResponse.json(
@@ -87,38 +65,35 @@ export const PATCH = async (request: NextRequest) => {
         );
     }
 
-    // Perform bulk update
-    const { error } = await supabase
-      .from('users')
-      .update(updateData)
-      .in('id', userIds);
+    await query(async (sql) => {
+      const keys = Object.keys(updateData);
+      const values = Object.values(updateData);
+      
+      if (keys.length === 0) {
+        return;
+      }
 
-    if (error) {
-      console.error('Error updating users:', error);
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: `Bulk ${action} simulated for ${userIds.length} users` 
-        },
-        { status: 200 }
-      );
-    }
+      const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
+      await sql.unsafe(`
+        UPDATE users
+        SET ${setClause}
+        WHERE id = ANY($${keys.length + 1}::uuid[])
+      `, [...values, userIds]);
+    });
 
     return NextResponse.json({
       success: true,
       message: `Successfully ${action}d ${userIds.length} users`,
     });
-
   } catch (error) {
     console.error('Error in bulk action:', error);
     return NextResponse.json(
-      { success: true, message: 'Bulk action simulated' },
-      { status: 200 }
+      { error: 'Failed to perform bulk action' },
+      { status: 500 }
     );
   }
 };
 
-// DELETE - Bulk delete users
 export const DELETE = async (request: NextRequest) => {
   try {
     const body = await request.json();
@@ -131,42 +106,22 @@ export const DELETE = async (request: NextRequest) => {
       );
     }
 
-    if (!supabase) {
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: `Bulk delete simulated for ${userIds.length} users (database not configured)` 
-        },
-        { status: 200 }
-      );
-    }
-
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .in('id', userIds);
-
-    if (error) {
-      console.error('Error deleting users:', error);
-      return NextResponse.json(
-        { 
-          success: true, 
-          message: `Bulk delete simulated for ${userIds.length} users` 
-        },
-        { status: 200 }
-      );
-    }
+    await query(async (sql) => {
+      await sql`
+        DELETE FROM users
+        WHERE id = ANY(${userIds})
+      `;
+    });
 
     return NextResponse.json({
       success: true,
       message: `Successfully deleted ${userIds.length} users`,
     });
-
   } catch (error) {
     console.error('Error in bulk delete:', error);
     return NextResponse.json(
-      { success: true, message: 'Bulk delete simulated' },
-      { status: 200 }
+      { error: 'Failed to delete users' },
+      { status: 500 }
     );
   }
 };

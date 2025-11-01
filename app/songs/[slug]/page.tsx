@@ -10,7 +10,6 @@ import { ArrowLeft, Play, Music, Guitar, Piano, ExternalLink, Heart, RefreshCw, 
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTranslatedRoute } from '@/lib/url-translations';
 
@@ -41,89 +40,21 @@ const SongDetailsPage = () => {
       }
       setError(null);
 
-      if (!supabase) {
-        throw new Error('Database connection not available');
-      }
-
       console.log('🔍 Fetching song with slug:', songSlug);
 
-      // Try to fetch song by ID if slug looks like a UUID
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(songSlug as string);
+      // Fetch song by slug using API
+      const encodedSlug = encodeURIComponent(songSlug as string);
+      const response = await fetch(`/api/songs/slug/${encodedSlug}`);
       
-      let songsData = null;
-      let songsError = null;
-
-      if (isUUID) {
-        // Fetch by ID directly (fastest)
-        // Use cache-busting by ensuring fresh query
-        const result = await supabase
-          .from('songs')
-          .select(`
-            *,
-            artists (
-              id,
-              name,
-              bio,
-              image_url
-            )
-          `)
-          .eq('id', songSlug)
-          .single();
-        
-        songsData = result.data ? [result.data] : null;
-        songsError = result.error;
-        console.log('📌 Fetched by ID');
-      } else {
-        // Try slug column first
-        const result = await supabase
-          .from('songs')
-          .select(`
-            *,
-            artists (
-              id,
-              name,
-              bio,
-              image_url
-            )
-          `)
-          .eq('slug', songSlug);
-        
-        songsData = result.data;
-        songsError = result.error;
-
-        // If slug column doesn't exist or no results, try title matching with ILIKE (case-insensitive)
-        if ((songsError && songsError.message.includes('column songs.slug does not exist')) || 
-            (!songsData || songsData.length === 0)) {
-          console.log('🔄 Trying title match...');
-          
-          // Convert slug back to title format for matching
-          const titleFromSlug = (songSlug as string)
-            .split('-')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-          
-          const titleResult = await supabase
-            .from('songs')
-            .select(`
-              *,
-              artists (
-                id,
-                name,
-                bio,
-                image_url
-              )
-            `)
-            .ilike('title', `%${titleFromSlug}%`)
-            .limit(1);
-          
-          songsData = titleResult.data;
-          songsError = titleResult.error;
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Song not found');
         }
+        throw new Error(`Failed to fetch song: ${response.statusText}`);
       }
 
-      if (songsError && !songsError.message.includes('column songs.slug does not exist')) {
-        throw new Error(`Database error: ${songsError.message}`);
-      }
+      const data = await response.json();
+      const songsData = data.song ? [data.song] : null;
 
       if (songsData && songsData.length > 0) {
         const foundSong = songsData[0];

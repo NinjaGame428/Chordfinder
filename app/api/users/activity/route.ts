@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
-    if (!supabase) {
-      return NextResponse.json({ error: 'Database connection not available' }, { status: 500 });
-    }
-
     const body = await request.json();
     const {
       userId,
@@ -21,29 +17,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User ID and activity type are required' }, { status: 400 });
     }
 
-    // Insert user activity
-    const { data: activity, error } = await supabase
-      .from('user_activities')
-      .insert({
-        user_id: userId,
-        activity_type: activityType,
-        description,
-        metadata: metadata ? JSON.stringify(metadata) : null,
-        page,
-        action,
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error saving user activity:', error);
-      return NextResponse.json({ error: 'Failed to save user activity' }, { status: 500 });
-    }
+    const activity = await query(async (sql) => {
+      const [result] = await sql`
+        INSERT INTO user_activities (
+          user_id,
+          activity_type,
+          description,
+          metadata,
+          page,
+          action,
+          created_at
+        ) VALUES (
+          ${userId},
+          ${activityType},
+          ${description || null},
+          ${metadata ? JSON.stringify(metadata) : null},
+          ${page || null},
+          ${action || null},
+          NOW()
+        )
+        RETURNING *
+      `;
+      return result;
+    });
 
     return NextResponse.json({ activity });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in POST /api/users/activity:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message
+    }, { status: 500 });
   }
 }

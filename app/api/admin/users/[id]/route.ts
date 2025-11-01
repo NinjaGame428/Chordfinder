@@ -1,30 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-// GET - Fetch single user
 export const GET = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const userId = params.id;
+    const resolvedParams = await params;
+    const userId = resolvedParams.id;
 
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not configured' },
-        { status: 500 }
-      );
-    }
+    const user = await query(async (sql) => {
+      const [result] = await sql`
+        SELECT *
+        FROM users
+        WHERE id = ${userId}
+      `;
+      return result;
+    });
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (error) {
+    if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
         { status: 404 }
@@ -32,7 +28,6 @@ export const GET = async (
     }
 
     return NextResponse.json({ user });
-
   } catch (error) {
     console.error('Error fetching user:', error);
     return NextResponse.json(
@@ -42,27 +37,19 @@ export const GET = async (
   }
 };
 
-// PATCH - Update user or perform action
 export const PATCH = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const userId = params.id;
+    const resolvedParams = await params;
+    const userId = resolvedParams.id;
     const body = await request.json();
     const { action, ...updates } = body;
 
-    if (!supabase) {
-      return NextResponse.json(
-        { success: true, message: 'Action simulated (database not configured)' },
-        { status: 200 }
-      );
-    }
+    let updateData: any = {};
 
-    // Handle specific actions
     if (action) {
-      let updateData: any = {};
-
       switch (action) {
         case 'activate':
           updateData = { status: 'active' };
@@ -91,90 +78,65 @@ export const PATCH = async (
             { status: 400 }
           );
       }
+    } else {
+      updateData = updates;
+    }
 
-      const { error } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', userId);
+    updateData.updated_at = new Date().toISOString();
 
-      if (error) {
-        console.error('Error updating user:', error);
-        return NextResponse.json(
-          { success: true, message: 'Action simulated' },
-          { status: 200 }
-        );
+    await query(async (sql) => {
+      const keys = Object.keys(updateData);
+      const values = Object.values(updateData);
+      
+      if (keys.length === 0) {
+        return;
       }
 
-      return NextResponse.json({
-        success: true,
-        message: `User ${action} successfully`,
-      });
-    }
-
-    // Handle general updates
-    const { error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', userId);
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to update user' },
-        { status: 500 }
-      );
-    }
+      const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
+      await sql.unsafe(`
+        UPDATE users
+        SET ${setClause}
+        WHERE id = $${keys.length + 1}
+      `, [...values, userId]);
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'User updated successfully',
+      message: action ? `User ${action} successfully` : 'User updated successfully',
     });
-
   } catch (error) {
     console.error('Error updating user:', error);
     return NextResponse.json(
-      { success: true, message: 'Action simulated' },
-      { status: 200 }
+      { error: 'Failed to update user' },
+      { status: 500 }
     );
   }
 };
 
-// DELETE - Delete user
 export const DELETE = async (
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
-    const userId = params.id;
+    const resolvedParams = await params;
+    const userId = resolvedParams.id;
 
-    if (!supabase) {
-      return NextResponse.json(
-        { success: true, message: 'Delete simulated (database not configured)' },
-        { status: 200 }
-      );
-    }
-
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', userId);
-
-    if (error) {
-      return NextResponse.json(
-        { success: true, message: 'Delete simulated' },
-        { status: 200 }
-      );
-    }
+    await query(async (sql) => {
+      await sql`
+        DELETE FROM users
+        WHERE id = ${userId}
+      `;
+    });
 
     return NextResponse.json({
       success: true,
       message: 'User deleted successfully',
     });
-
   } catch (error) {
     console.error('Error deleting user:', error);
     return NextResponse.json(
-      { success: true, message: 'Delete simulated' },
-      { status: 200 }
+      { error: 'Failed to delete user' },
+      { status: 500 }
     );
   }
 };

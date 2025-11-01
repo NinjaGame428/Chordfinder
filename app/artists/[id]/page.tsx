@@ -10,7 +10,6 @@ import Footer from "@/components/footer";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getTranslatedRoute } from "@/lib/url-translations";
 
@@ -45,29 +44,25 @@ const ArtistDetailPage = () => {
 
   useEffect(() => {
     const fetchArtist = async () => {
-      if (!supabase || !artistId) {
+      if (!artistId) {
         setIsLoading(false);
         return;
       }
 
       try {
         setIsLoading(true);
-        const { data, error } = await supabase
-          .from('artists')
-          .select('*')
-          .eq('id', artistId)
-          .single();
-
-        if (error) {
-          console.error('❌ Error fetching artist:', error);
+        const response = await fetch(`/api/artists/${artistId}`);
+        
+        if (!response.ok) {
+          console.error('❌ Error fetching artist');
           setIsLoading(false);
           return;
         }
 
-        if (data) {
-          // Clean up artist name - remove "Artist from YouTube channel" suffix if present
-          const cleanName = data.name?.replace(/\s*Artist from YouTube channel\s*/i, '').trim() || data.name;
-          setArtist({ ...data, name: cleanName });
+        const data = await response.json();
+        if (data.artist) {
+          const cleanName = data.artist.name?.replace(/\s*Artist from YouTube channel\s*/i, '').trim() || data.artist.name;
+          setArtist({ ...data.artist, name: cleanName });
         }
       } catch (error) {
         console.error('❌ Exception while fetching artist:', error);
@@ -77,29 +72,25 @@ const ArtistDetailPage = () => {
     };
 
     const fetchSongs = async () => {
-      if (!supabase || !artistId) {
+      if (!artistId) {
         setIsLoadingSongs(false);
         return;
       }
 
       try {
         setIsLoadingSongs(true);
-        const { data: songsData, error: songsError } = await supabase
-          .from('songs')
-          .select(`
-            id,
-            title,
-            key_signature,
-            tempo,
-            genre,
-            created_at,
-            slug
-          `)
-          .eq('artist_id', artistId)
-          .order('created_at', { ascending: false });
+        const response = await fetch('/api/songs?limit=1000');
+        
+        if (!response.ok) {
+          setIsLoadingSongs(false);
+          return;
+        }
 
-        if (songsError) {
-          console.error('❌ Error fetching songs:', songsError);
+        const data = await response.json();
+        const songsData = data.songs?.filter((song: any) => song.artist_id === artistId) || [];
+
+        if (!songsData) {
+          console.error('❌ Error fetching songs');
           setIsLoadingSongs(false);
           return;
         }

@@ -10,7 +10,6 @@ import EnhancedSearch from "@/components/enhanced-search";
 import ResourceRating from "@/components/resource-rating";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getTranslatedRoute } from "@/lib/url-translations";
 
@@ -22,42 +21,17 @@ const ResourcesPage = () => {
   const [resources, setResources] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch resources from Supabase
+  // Fetch resources from API
   useEffect(() => {
     const fetchResources = async () => {
-      console.log('🔄 Fetching resources from Supabase...');
+      console.log('🔄 Fetching resources from API...');
       setIsLoading(true);
 
-      if (!supabase) {
-        console.error('❌ Supabase client not initialized');
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        const { data, error } = await supabase
-          .from('resources')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('❌ Error fetching resources:', error);
-          return;
-        }
-
-        if (data) {
-          console.log(`✅ Loaded ${data.length} resources from Supabase`);
-          
-          // Map the data to include icon based on category
-          const mappedResources = data.map((resource: any) => ({
-            ...resource,
-            icon: getIconForCategory(resource.category),
-            size: resource.file_size ? `${(resource.file_size / 1024).toFixed(1)} MB` : 'Online',
-            totalRatings: Math.floor(Math.random() * 200) + 50 // Placeholder
-          }));
-          
-          setResources(mappedResources);
-        }
+        // TODO: Create /api/resources endpoint
+        // For now, return empty array
+        setResources([]);
+        console.log('⚠️ Resources API endpoint not yet implemented');
       } catch (error) {
         console.error('❌ Error:', error);
       } finally {

@@ -13,7 +13,6 @@ import LazyLoad from "@/components/lazy-load";
 import { ViewToggle } from "@/components/view-toggle";
 import Link from "next/link";
 import { Song } from "@/lib/song-data";
-import { supabase } from "@/lib/supabase";
 import { getTranslatedRoute } from "@/lib/url-translations";
 import { useState, useEffect, useMemo } from "react";
 
@@ -33,51 +32,29 @@ const SongsPage = () => {
   const [supabaseSongs, setSupabaseSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch songs from Supabase with pagination and caching
+  // Fetch songs from API with pagination and caching
   useEffect(() => {
     async function fetchSongs() {
-      if (!supabase) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         setIsLoading(true);
-        // Fetch only initial batch with optimized query
-        const { data: songsData, error: songsError } = await supabase
-          .from('songs')
-          .select(`
-            id,
-            title,
-            artist_id,
-            key_signature,
-            tempo,
-            downloads,
-            rating,
-            created_at,
-            artists!inner (
-              id,
-              name
-            )
-          `)
-          .order('created_at', { ascending: false })
-          .limit(24); // Reduced initial load - fetch more as needed
-
-        if (songsError) {
-          console.error('❌ Error fetching songs:', songsError);
+        const response = await fetch('/api/songs?limit=24');
+        
+        if (!response.ok) {
+          console.error('❌ Error fetching songs');
           setIsLoading(false);
           return;
         }
 
+        const data = await response.json();
+        const songsData = data.songs || [];
+
         if (songsData && songsData.length > 0) {
-          // Optimized: Minimal data mapping
-          // Filter out songs without artists before mapping
           const formattedSongs: Song[] = songsData
-            .filter((song: any) => song.artists?.name || (Array.isArray(song.artists) && song.artists[0]?.name))
+            .filter((song: any) => song.artists?.name || song.artist)
             .map((song: any) => ({
               id: song.id,
               title: song.title,
-              artist: song.artists?.name || (Array.isArray(song.artists) ? song.artists[0]?.name : ''),
+              artist: song.artists?.name || song.artist || '',
               key: song.key_signature || 'C',
             difficulty: 'Medium',
             category: 'Gospel',
@@ -95,7 +72,7 @@ const SongsPage = () => {
             downloads: song.downloads || 0,
             rating: song.rating || 0,
             description: '',
-            slug: song.id,
+            slug: song.slug || song.id,
             language: 'en',
             captions_available: false
           }));
