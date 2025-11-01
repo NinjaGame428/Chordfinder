@@ -53,8 +53,10 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    // Aggressive caching for public data
-    response.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    // Prevent caching to ensure fresh data after updates
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
     
     return response;
   } catch (error) {
@@ -76,7 +78,6 @@ export async function POST(request: NextRequest) {
       key_signature,
       bpm,
       tempo,
-      youtube_id, 
       slug,
       chords,
       lyrics,
@@ -96,7 +97,6 @@ export async function POST(request: NextRequest) {
       chords: chords ? JSON.stringify(chords) : null,
       lyrics: lyrics || null,
       artist_id,
-      youtube_id: youtube_id || null,
       // Generate slug if not provided
       slug: slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     };

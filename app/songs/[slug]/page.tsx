@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Play, Music, Guitar, Piano, ExternalLink, Heart } from 'lucide-react';
+import { ArrowLeft, Play, Music, Guitar, Piano, ExternalLink, Heart, RefreshCw, Clock, Edit } from 'lucide-react';
 import { Navbar } from '@/components/navbar';
 import Footer from '@/components/footer';
-import YouTubePlayer from '@/components/youtube-player';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,133 +16,300 @@ import { getTranslatedRoute } from '@/lib/url-translations';
 
 const SongDetailsPage = () => {
   const params = useParams();
+  const router = useRouter();
   const songSlug = params.slug;
   const { t, language } = useLanguage();
   const [song, setSong] = useState<any>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Helper function to create slug from title
   const createSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   };
 
-  useEffect(() => {
-    const fetchSong = async () => {
-      try {
+  const fetchSong = async (showRefreshIndicator = false) => {
+    try {
+      if (showRefreshIndicator) {
+        setIsRefreshing(true);
+      } else {
         setIsLoading(true);
-        setError(null);
-
-        if (!supabase) {
-          throw new Error('Database connection not available');
-        }
-
-        console.log('🔍 Fetching song with slug:', songSlug);
-        
-        // Add cache-busting query parameter to ensure fresh data
-        const cacheBuster = new Date().getTime();
-
-        // Try to fetch song by ID if slug looks like a UUID
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(songSlug as string);
-        
-        let songsData = null;
-        let songsError = null;
-
-        if (isUUID) {
-          // Fetch by ID directly (fastest)
-          const result = await supabase
-            .from('songs')
-            .select(`
-              *,
-              artists (
-                id,
-                name
-              )
-            `)
-            .eq('id', songSlug)
-            .single();
-          
-          songsData = result.data ? [result.data] : null;
-          songsError = result.error;
-          console.log('📌 Fetched by ID');
-        } else {
-          // Try slug column first
-          const result = await supabase
-            .from('songs')
-            .select(`
-              *,
-              artists (
-                id,
-                name
-              )
-            `)
-            .eq('slug', songSlug);
-          
-          songsData = result.data;
-          songsError = result.error;
-
-          // If slug column doesn't exist or no results, try title matching with ILIKE (case-insensitive)
-          if ((songsError && songsError.message.includes('column songs.slug does not exist')) || 
-              (!songsData || songsData.length === 0)) {
-            console.log('🔄 Trying title match...');
-            
-            // Convert slug back to title format for matching
-            const titleFromSlug = (songSlug as string)
-              .split('-')
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(' ');
-            
-            const titleResult = await supabase
-              .from('songs')
-              .select(`
-                *,
-                artists (
-                  id,
-                  name
-                )
-              `)
-              .ilike('title', `%${titleFromSlug}%`)
-              .limit(1);
-            
-            songsData = titleResult.data;
-            songsError = titleResult.error;
-          }
-        }
-
-        if (songsError && !songsError.message.includes('column songs.slug does not exist')) {
-          throw new Error(`Database error: ${songsError.message}`);
-        }
-
-        if (songsData && songsData.length > 0) {
-          const foundSong = songsData[0];
-          console.log('✅ Song loaded:', {
-            id: foundSong.id,
-            title: foundSong.title,
-            hasLyrics: !!foundSong.lyrics,
-            lyricsLength: foundSong.lyrics?.length || 0
-          });
-          setSong(foundSong);
-        } else {
-          console.error('❌ Song not found for slug:', songSlug);
-          setError(t('songDetail.notFound'));
-        }
-      } catch (err) {
-        console.error('❌ Error fetching song:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load song');
-      } finally {
-        setIsLoading(false);
       }
-    };
+      setError(null);
 
+      if (!supabase) {
+        throw new Error('Database connection not available');
+      }
+
+      console.log('🔍 Fetching song with slug:', songSlug);
+
+      // Try to fetch song by ID if slug looks like a UUID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(songSlug as string);
+      
+      let songsData = null;
+      let songsError = null;
+
+      if (isUUID) {
+        // Fetch by ID directly (fastest)
+        // Use cache-busting by ensuring fresh query
+        const result = await supabase
+          .from('songs')
+          .select(`
+            *,
+            artists (
+              id,
+              name,
+              bio,
+              image_url
+            )
+          `)
+          .eq('id', songSlug)
+          .single();
+        
+        songsData = result.data ? [result.data] : null;
+        songsError = result.error;
+        console.log('📌 Fetched by ID');
+      } else {
+        // Try slug column first
+        const result = await supabase
+          .from('songs')
+          .select(`
+            *,
+            artists (
+              id,
+              name,
+              bio,
+              image_url
+            )
+          `)
+          .eq('slug', songSlug);
+        
+        songsData = result.data;
+        songsError = result.error;
+
+        // If slug column doesn't exist or no results, try title matching with ILIKE (case-insensitive)
+        if ((songsError && songsError.message.includes('column songs.slug does not exist')) || 
+            (!songsData || songsData.length === 0)) {
+          console.log('🔄 Trying title match...');
+          
+          // Convert slug back to title format for matching
+          const titleFromSlug = (songSlug as string)
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+          
+          const titleResult = await supabase
+            .from('songs')
+            .select(`
+              *,
+              artists (
+                id,
+                name,
+                bio,
+                image_url
+              )
+            `)
+            .ilike('title', `%${titleFromSlug}%`)
+            .limit(1);
+          
+          songsData = titleResult.data;
+          songsError = titleResult.error;
+        }
+      }
+
+      if (songsError && !songsError.message.includes('column songs.slug does not exist')) {
+        throw new Error(`Database error: ${songsError.message}`);
+      }
+
+      if (songsData && songsData.length > 0) {
+        const foundSong = songsData[0];
+        const previousUpdatedAt = song?.updated_at;
+        const newUpdatedAt = foundSong.updated_at;
+        
+        console.log('✅ Song loaded:', {
+          id: foundSong.id,
+          title: foundSong.title,
+          artist: foundSong.artists?.name,
+          hasLyrics: !!foundSong.lyrics,
+          lyricsLength: foundSong.lyrics?.length || 0,
+          updated_at: foundSong.updated_at,
+          created_at: foundSong.created_at
+        });
+        
+        setSong(foundSong);
+        
+        // Track if song was updated
+        if (previousUpdatedAt && newUpdatedAt && previousUpdatedAt !== newUpdatedAt) {
+          setLastUpdated(newUpdatedAt);
+          console.log('🔄 Song was updated:', {
+            previous: previousUpdatedAt,
+            current: newUpdatedAt
+          });
+        } else if (!previousUpdatedAt) {
+          setLastUpdated(foundSong.updated_at || foundSong.created_at);
+        }
+      } else {
+        console.error('❌ Song not found for slug:', songSlug);
+        setError(t('songDetail.notFound'));
+      }
+    } catch (err) {
+      console.error('❌ Error fetching song:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load song');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     if (songSlug) {
       fetchSong();
     } else {
-      // If no slug provided, stop loading immediately
       setIsLoading(false);
       setError('No song specified');
     }
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
   }, [songSlug, t]);
+
+  // Listen for song update and deletion events from admin panel
+  useEffect(() => {
+    if (!song?.id) return;
+
+    const handleSongUpdate = (event: CustomEvent) => {
+      const detail = event.detail;
+      // Check if this update is for the current song
+      // Also refresh if artist was changed (affects all songs)
+      if (detail.songId === song.id || detail.artistChanged) {
+        console.log('🔄 Song update detected, refreshing...', {
+          detail,
+          currentSongId: song.id,
+          matches: detail.songId === song.id
+        });
+        fetchSong(true);
+        router.refresh();
+      }
+    };
+
+    const handleSongDeleted = (event: CustomEvent) => {
+      const detail = event.detail;
+      // If this song was deleted, redirect to songs list
+      if (detail.songId === song.id) {
+        console.log('🗑️ Song deleted, redirecting to songs list...', {
+          detail,
+          currentSongId: song.id
+        });
+        router.push(getTranslatedRoute('/songs', language));
+      }
+    };
+
+    // Listen for CustomEvent updates and deletions
+    window.addEventListener('songUpdated', handleSongUpdate as EventListener);
+    window.addEventListener('songDeleted', handleSongDeleted as EventListener);
+    
+    // Also check localStorage for cross-tab updates
+    const checkLocalStorage = () => {
+      try {
+        // Check for song updates
+        const updateData = localStorage.getItem('songUpdated');
+        if (updateData) {
+          const parsed = JSON.parse(updateData);
+          // Only process recent updates (within last 30 seconds)
+          if (Date.now() - parsed.timestamp < 30000) {
+            if (parsed.songId === song.id || parsed.artistChanged) {
+              if (parsed.action === 'deleted') {
+                // Song was deleted, redirect
+                router.push(getTranslatedRoute('/songs', language));
+                localStorage.removeItem('songUpdated');
+              } else {
+                console.log('🔄 Cross-tab song update detected, refreshing...', {
+                  parsed,
+                  currentSongId: song.id
+                });
+                fetchSong(true);
+                router.refresh();
+                // Clear the update flag
+                localStorage.removeItem('songUpdated');
+              }
+            }
+          }
+        }
+        
+        // Check for song deletions
+        const deleteData = localStorage.getItem('songDeleted');
+        if (deleteData) {
+          const parsed = JSON.parse(deleteData);
+          if (Date.now() - parsed.timestamp < 30000) {
+            if (parsed.songId === song.id) {
+              console.log('🗑️ Cross-tab song deletion detected, redirecting...', {
+                parsed,
+                currentSongId: song.id
+              });
+              router.push(getTranslatedRoute('/songs', language));
+              localStorage.removeItem('songDeleted');
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore errors
+      }
+    };
+
+    // Check localStorage on mount and periodically
+    checkLocalStorage();
+    const localStorageInterval = setInterval(checkLocalStorage, 2000);
+
+    return () => {
+      window.removeEventListener('songUpdated', handleSongUpdate as EventListener);
+      window.removeEventListener('songDeleted', handleSongDeleted as EventListener);
+      clearInterval(localStorageInterval);
+    };
+  }, [song?.id, router, language]);
+
+  // Set up auto-refresh when song is loaded
+  useEffect(() => {
+    if (!song?.id) return;
+
+    // Set up auto-refresh every 30 seconds to check for updates
+    refreshIntervalRef.current = setInterval(() => {
+      fetchSong(true);
+    }, 30000);
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, [song?.id, songSlug]);
+
+  const handleManualRefresh = () => {
+    fetchSong(true);
+    router.refresh();
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Unknown';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -224,26 +390,81 @@ const SongDetailsPage = () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-3xl mb-2">{song.title}</CardTitle>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CardTitle className="text-3xl">{song.title}</CardTitle>
+                        {isRefreshing && (
+                          <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </div>
                       {song.english_title && (
                         <CardDescription className="text-lg">{song.english_title}</CardDescription>
                       )}
+                      {/* Modification Info */}
+                      {(song.updated_at || song.created_at) && (
+                        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                          {song.updated_at && (
+                            <div className="flex items-center gap-1">
+                              <Edit className="h-3 w-3" />
+                              <span>Updated {formatDate(song.updated_at)}</span>
+                            </div>
+                          )}
+                          {song.created_at && (
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>Created {formatDate(song.created_at)}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsFavorite(!isFavorite)}
-                    >
-                      <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleManualRefresh}
+                        disabled={isRefreshing}
+                        title="Refresh song data"
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsFavorite(!isFavorite)}
+                      >
+                        <Heart className={`h-4 w-4 ${isFavorite ? 'fill-red-500 text-red-500' : ''}`} />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{t('songDetail.artist')}</p>
-                      <p className="text-lg">{song.artists?.name || song.artist || 'Unknown Artist'}</p>
+                      <div className="flex items-center gap-2">
+                        {song.artists?.image_url && (
+                          <img 
+                            src={song.artists.image_url} 
+                            alt={song.artists.name}
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                        )}
+                        {song.artists?.id ? (
+                          <Link 
+                            href={`/artists/${song.artists.id}`}
+                            className="text-lg font-semibold hover:underline flex items-center gap-1"
+                          >
+                            {song.artists.name}
+                            <ExternalLink className="h-3 w-3 opacity-60" />
+                          </Link>
+                        ) : (
+                          <p className="text-lg font-semibold">{song.artists?.name || song.artist || 'Unknown Artist'}</p>
+                        )}
+                      </div>
+                      {song.artists?.bio && (
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{song.artists.bio}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{t('songDetail.language')}</p>
@@ -278,6 +499,16 @@ const SongDetailsPage = () => {
                     <div className="mb-4">
                       <p className="text-sm font-medium text-muted-foreground">Album</p>
                       <p className="text-lg">{song.album}</p>
+                    </div>
+                  )}
+
+                  {/* Show update notification if recently updated */}
+                  {lastUpdated && song.updated_at === lastUpdated && (
+                    <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm text-green-800 dark:text-green-200">
+                        <Edit className="h-4 w-4" />
+                        <span>This song was recently updated. Data is current.</span>
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -388,41 +619,6 @@ const SongDetailsPage = () => {
               </Card>
             </div>
 
-            {/* Sticky YouTube Video Player - Right Side */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-4">
-                {song.youtube_id ? (
-                  <YouTubePlayer 
-                    videoId={song.youtube_id}
-                    title={song.title}
-                    onTimeUpdate={(time) => {
-                      // This can be used to highlight current lyrics section
-                      console.log('Current time:', time);
-                    }}
-                  />
-                ) : (
-                  <Card className="shadow-lg">
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Play className="h-5 w-5 mr-2" />
-                        Play Along
-                      </CardTitle>
-                      <CardDescription>
-                        No video available for this song
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="aspect-video w-full bg-muted rounded-lg flex items-center justify-center">
-                        <div className="text-center">
-                          <Music className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-muted-foreground">No video available</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
           </div>
         </div>
       </main>

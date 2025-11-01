@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Music, 
-  Youtube, 
   Database, 
   Users,
   BarChart3,
@@ -46,7 +45,6 @@ const AdminPage = () => {
     totalResources: 0,
     totalUsers: 0,
     activeUsers: 0,
-    youtubeVideos: 0,
     collections: 0
   });
   const [statsLoading, setStatsLoading] = useState(true);
@@ -154,7 +152,6 @@ const AdminPage = () => {
         totalResources: 30,
         totalUsers: 2,
         activeUsers: 1,
-        youtubeVideos: 0,
         collections: 1
       });
     } finally {
@@ -347,10 +344,6 @@ const AdminPage = () => {
                       <BookOpen className="mr-2 h-4 w-4" />
                       {t('admin.dashboard.manageResources')}
                     </Button>
-                    <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/youtube")}>
-                      <Youtube className="mr-2 h-4 w-4" />
-                      {t('admin.dashboard.importYouTubeVideos')}
-                    </Button>
                     <Button variant="outline" className="w-full justify-start" onClick={() => router.push("/admin/analytics")}>
                       <BarChart3 className="mr-2 h-4 w-4" />
                       {t('admin.dashboard.viewAnalytics')}
@@ -382,10 +375,6 @@ const AdminPage = () => {
                       <div className="flex items-center justify-between">
                         <span>{t('admin.dashboard.collections')}</span>
                         <span className="font-medium">{adminStats.collections}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>{t('admin.dashboard.youtubeVideos')}</span>
-                        <span className="font-medium">{adminStats.youtubeVideos}</span>
                       </div>
                     </div>
                     <div className="space-y-4">

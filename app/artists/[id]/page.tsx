@@ -127,10 +127,17 @@ const ArtistDetailPage = () => {
     fetchArtist();
     fetchSongs();
     
-    // Listen for song updates and refresh the songs list
+    // Listen for song updates and deletions and refresh the songs list
     const handleSongUpdate = (event: any) => {
       console.log('🔄 Song updated, refreshing songs list...', event?.detail);
       const detail = event?.detail;
+      
+      // If song was deleted and belongs to this artist, refresh immediately
+      if (detail?.action === 'deleted' && detail?.artistId === artistId) {
+        console.log('🗑️ Song deleted from this artist, refreshing...');
+        fetchSongs();
+        return;
+      }
       
       // If artist was changed, check if it affects this artist page
       if (detail?.action === 'artistChanged') {
@@ -147,10 +154,26 @@ const ArtistDetailPage = () => {
       }
     };
     
+    const handleSongDeleted = (event: any) => {
+      const detail = event?.detail;
+      // If a song from this artist was deleted, refresh the list
+      if (detail?.artistId === artistId) {
+        console.log('🗑️ Song deleted from this artist, refreshing...', detail);
+        fetchSongs();
+      }
+    };
+    
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'songUpdated') {
+      if (e.key === 'songUpdated' || e.key === 'songDeleted') {
         try {
           const updateData = JSON.parse(e.newValue || '{}');
+          
+          // If song was deleted and belongs to this artist, refresh
+          if (updateData.action === 'deleted' && updateData.artistId === artistId) {
+            fetchSongs();
+            return;
+          }
+          
           // Refresh if this update affects the current artist
           if (updateData.action === 'artistChanged') {
             // Check if song moved to or from this artist
@@ -167,6 +190,7 @@ const ArtistDetailPage = () => {
     };
     
     window.addEventListener('songUpdated', handleSongUpdate);
+    window.addEventListener('songDeleted', handleSongDeleted);
     window.addEventListener('storage', handleStorageChange);
     
     // Refresh on window focus
@@ -178,6 +202,7 @@ const ArtistDetailPage = () => {
     
     return () => {
       window.removeEventListener('songUpdated', handleSongUpdate);
+      window.removeEventListener('songDeleted', handleSongDeleted);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleFocus);
     };

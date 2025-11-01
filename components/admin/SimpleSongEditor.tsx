@@ -20,7 +20,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SimpleSongEditorProps {
-  songId: string;
+  songSlug?: string;
+  songId?: string; // Keep for backward compatibility
 }
 
 interface SongData {
@@ -32,8 +33,17 @@ interface SongData {
   lyrics: string;
 }
 
-export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) => {
+// Helper function to create slug from title
+const createSlug = (title: string) => {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+};
+
+export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songSlug, songId }) => {
+  // Use slug if provided, otherwise fall back to ID
+  const identifier = songSlug || songId || '';
   const router = useRouter();
+  const [currentSongId, setCurrentSongId] = useState<string>(''); // Track actual song ID after loading
+  const [currentSongSlug, setCurrentSongSlug] = useState<string>(''); // Track current song slug
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -67,8 +77,8 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
   };
 
   const loadSongData = async () => {
-    if (!songId || songId === 'null' || songId === 'undefined' || songId === '{songId}') {
-      setLoadError('Invalid song ID');
+    if (!identifier || identifier === 'null' || identifier === 'undefined' || identifier === '{songId}') {
+      setLoadError('Invalid song identifier');
       setIsLoading(false);
       return;
     }
@@ -77,7 +87,18 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       setIsLoading(true);
       setLoadError(null);
 
-      const response = await fetch(`/api/songs/${songId}`);
+      // Use slug-based API if we have a slug (non-UUID), otherwise use ID
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
+      const apiUrl = isUUID ? `/api/songs/${identifier}` : `/api/songs/slug/${identifier}`;
+      
+      // Add cache-busting timestamp to ensure fresh data
+      const response = await fetch(`${apiUrl}?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!response.ok) throw new Error('Failed to load song');
 
       const data = await response.json();
@@ -100,11 +121,16 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       console.log('📝 Admin: Loaded song data:', {
         id: song.id,
         title: song.title,
+        slug: song.slug,
         lyricsLength: lyricsText.length,
         lyricsPreview: lyricsText.substring(0, 100) + '...',
         hasArtist: !!song.artist_id
       });
 
+      // Store the actual song ID and slug for API calls
+      setCurrentSongId(song.id);
+      const loadedSongSlug = song.slug || createSlug(song.title || '');
+      setCurrentSongSlug(loadedSongSlug);
       const loadedArtistId = song.artist_id || '';
       
       setSongData({
@@ -154,7 +180,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
   useEffect(() => {
     loadSongData();
     loadArtists();
-  }, [songId]);
+  }, [identifier]);
 
   useEffect(() => {
     if (artistSearchQuery.trim() === '') {
@@ -232,6 +258,9 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         return;
       }
 
+      // Generate slug from title
+      const generatedSlug = createSlug(songData.title.trim());
+
       // Build payload with all fields - ensure everything is saved to database
       const payload: {
         title: string;
@@ -239,12 +268,14 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         key_signature: string | null;
         tempo: number | null;
         lyrics: string;
+        slug: string;
       } = {
         title: songData.title.trim(),
         artist_id: newArtistId.trim(), // Ensure trimmed and valid
         key_signature: songData.key_signature && songData.key_signature.trim() !== '' ? songData.key_signature.trim() : null,
         tempo: songData.tempo && songData.tempo.toString().trim() !== '' ? parseInt(songData.tempo.toString()) : null,
         lyrics: songData.lyrics.trim() || '',
+        slug: generatedSlug, // Always generate slug from title
       };
 
       // Validate tempo is a valid number if provided
@@ -277,7 +308,13 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         allFields: '✅ All fields included in payload'
       });
 
-      const response = await fetch(`/api/songs/${songId}`, {
+      // Use the actual song ID for API calls
+      if (!currentSongId) {
+        showNotification('Song ID not available', 'error');
+        return;
+      }
+
+      const response = await fetch(`/api/songs/${currentSongId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -311,6 +348,19 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       if (!data.song) {
         console.error('❌ API returned success but no song data:', data);
         throw new Error('Server returned success but no song data. Please refresh and try again.');
+      }
+      
+      // CRITICAL: Verify the saved data matches what we sent
+      if (data.song.title !== payload.title.trim()) {
+        console.warn('⚠️ Title mismatch! Expected:', payload.title.trim(), 'Got:', data.song.title);
+        // Force update local state with what we sent
+        data.song.title = payload.title.trim();
+      }
+      
+      if (data.song.artist_id !== payload.artist_id.trim()) {
+        console.warn('⚠️ Artist ID mismatch! Expected:', payload.artist_id.trim(), 'Got:', data.song.artist_id);
+        // Force update local state with what we sent
+        data.song.artist_id = payload.artist_id.trim();
       }
       
       const savedArtistId = data.song.artist_id;
@@ -357,18 +407,24 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         }
       }
 
-      const publicUrl = `${window.location.origin}/songs/${songId}`;
+      // Use slug for public URL, fall back to ID if slug not available
+      const publicUrl = `${window.location.origin}/songs/${currentSongSlug || currentSongId}`;
       console.log('🔗 Public page:', publicUrl);
 
-      // Check if artist was actually changed (compare original to saved)
-      const artistChanged = oldArtistId && finalNewArtistId && oldArtistId !== finalNewArtistId;
+      // Check if artist was actually changed (use API response data if available)
+      const apiArtistChanged = data.artistChanged || data.artistUpdated;
+      const apiOldArtistId = data.oldArtistId;
+      const apiNewArtistId = data.newArtistId || finalNewArtistId;
+      
+      const artistChanged = apiArtistChanged || (oldArtistId && apiNewArtistId && oldArtistId !== apiNewArtistId);
+      const confirmedOldArtistId = apiOldArtistId || oldArtistId;
       
       if (artistChanged) {
         console.log('🎨 ARTIST CHANGED:', {
-          from: oldArtistId,
-          to: finalNewArtistId,
-          songId: songId,
-          message: `Song moved from artist ${oldArtistId} to ${finalNewArtistId}`
+          from: confirmedOldArtistId,
+          to: apiNewArtistId,
+          songId: currentSongId,
+          message: `Song moved from artist ${confirmedOldArtistId} to ${apiNewArtistId}`
         });
         showNotification(`Song artist changed successfully! Song moved from old artist to new artist.`, 'success');
       } else {
@@ -381,61 +437,101 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
       // This ensures that if loadSongData fails, we don't lose track of the save state
       setOriginalArtistId(finalNewArtistId);
       
-      // Reload song data to verify the save and get latest state
+      // Force update local state immediately with the data we know was saved
+      setSongData(prev => ({
+        ...prev,
+        title: payload.title.trim(),
+        artist_id: finalNewArtistId,
+        artist_name: data.song?.artists?.name || prev.artist_name,
+        key_signature: payload.key_signature || prev.key_signature,
+        tempo: payload.tempo?.toString() || prev.tempo,
+        lyrics: payload.lyrics || prev.lyrics
+      }));
+      
+      // Reload song data to verify the save and get latest state (with cache-busting)
       try {
-        await loadSongData();
+        // Add timestamp to force fresh fetch - use ID for API calls
+        const reloadUrl = `/api/songs/${currentSongId}?t=${Date.now()}`;
+        const reloadResponse = await fetch(reloadUrl, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        if (reloadResponse.ok) {
+          const reloadData = await reloadResponse.json();
+          if (reloadData.song) {
+            await loadSongData(); // Use existing function but it will get fresh data
+          }
+        } else {
+          await loadSongData(); // Fallback to existing function
+        }
       } catch (reloadError) {
         console.warn('⚠️ Failed to reload song data after save (but save was successful):', reloadError);
-        // Don't throw - the save was successful, reload failure is non-critical
-        // Just update the local state to reflect what we saved
-        setSongData(prev => ({
-          ...prev,
-          artist_id: finalNewArtistId,
-          artist_name: data.song?.artists?.name || prev.artist_name
-        }));
+        // State is already updated above, so we're good
       }
       
       // Notify other pages that a song was updated (so artist pages can refresh song counts)
       // Include both old and new artist IDs so both artist pages can update
-      if (artistChanged) {
+      const finalOldArtistId = confirmedOldArtistId || oldArtistId;
+      // Use the confirmed new artist ID from API, or fall back to the one we saved earlier
+      const confirmedNewArtistId = apiNewArtistId || finalNewArtistId;
+      
+      if (artistChanged && finalOldArtistId && confirmedNewArtistId) {
         // Artist changed - notify with both IDs so BOTH artist pages update their counts
         console.log('📢 Broadcasting artist change event to update both artists...');
-        console.log(`   → Old artist ${oldArtistId} should DECREASE count by 1`);
-        console.log(`   → New artist ${finalNewArtistId} should INCREASE count by 1`);
+        console.log(`   → Old artist ${finalOldArtistId} should DECREASE count by 1`);
+        console.log(`   → New artist ${confirmedNewArtistId} should INCREASE count by 1`);
         
         window.dispatchEvent(new CustomEvent('songUpdated', { 
           detail: { 
-            artistId: finalNewArtistId,
-            oldArtistId: oldArtistId,
-            songId: songId,
+            artistId: confirmedNewArtistId,
+            oldArtistId: finalOldArtistId,
+            songId: currentSongId,
             action: 'artistChanged',
-            artistChanged: true
+            artistChanged: true,
+            newArtistName: data.song?.artists?.name || data.newArtistName,
+            timestamp: Date.now()
           } 
         }));
         
         // Also use localStorage for cross-tab communication
         localStorage.setItem('songUpdated', JSON.stringify({
-          artistId: finalNewArtistId,
-          oldArtistId: oldArtistId,
-          songId: songId,
+          artistId: confirmedNewArtistId,
+          oldArtistId: finalOldArtistId,
+          songId: currentSongId,
           action: 'artistChanged',
           artistChanged: true,
+          newArtistName: data.song?.artists?.name || data.newArtistName,
           timestamp: Date.now()
+        }));
+        
+        // Also notify artist pages specifically
+        window.dispatchEvent(new CustomEvent('artistSongCountChanged', { 
+          detail: { 
+            oldArtistId: finalOldArtistId,
+            newArtistId: confirmedNewArtistId,
+            songId: currentSongId,
+            timestamp: Date.now()
+          } 
         }));
         
         console.log('📢 Event broadcast complete. Both artists should update their counts now.');
       } else {
-        // Just a regular update - only notify with current artist
+        // Just a regular update - notify with current song
         window.dispatchEvent(new CustomEvent('songUpdated', { 
           detail: { 
-            artistId: finalNewArtistId,
-            songId: songId,
-            action: 'updated'
+            artistId: confirmedNewArtistId,
+            songId: currentSongId,
+            action: 'updated',
+            timestamp: Date.now()
           } 
         }));
         
         localStorage.setItem('songUpdated', JSON.stringify({
-          artistId: finalNewArtistId,
+          artistId: confirmedNewArtistId,
           songId: songId,
           action: 'updated',
           timestamp: Date.now()
@@ -450,7 +546,7 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
         console.log('✅ Song update complete. Changes should now be visible across the site.');
         // Trigger a hard refresh notification for all pages
         window.dispatchEvent(new CustomEvent('forceRefresh', { 
-          detail: { type: 'song', id: songId } 
+          detail: { type: 'song', id: currentSongId } 
         }));
       }, 500);
     } catch (error: any) {
@@ -468,7 +564,8 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songId }) =>
   };
 
   const handlePreviewPublicPage = () => {
-    const publicUrl = `${window.location.origin}/songs/${songId}`;
+    // Use slug for public URL, fall back to ID if slug not available
+    const publicUrl = `${window.location.origin}/songs/${currentSongSlug || currentSongId}`;
     window.open(publicUrl, '_blank');
   };
 

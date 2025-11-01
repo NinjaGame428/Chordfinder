@@ -22,7 +22,6 @@ import {
   Shield,
   Database,
   Activity,
-  Youtube,
   BookOpen
 } from "lucide-react";
 import Link from "next/link";
@@ -85,12 +84,6 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       description: "Site analytics and reports"
     },
     {
-      name: t('admin.common.youtube'),
-      href: "/admin/youtube",
-      icon: Youtube,
-      description: "YouTube video management"
-    },
-    {
       name: t('admin.common.settings'),
       href: "/admin/settings",
       icon: Settings,
@@ -104,12 +97,6 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       href: "/admin/songs",
       icon: Music,
       description: "Add new song to collection"
-    },
-    {
-      name: t('admin.common.importYouTube'),
-      href: "/admin/youtube",
-      icon: Youtube,
-      description: "Import videos from YouTube"
     },
     {
       name: t('admin.common.viewAnalytics'),

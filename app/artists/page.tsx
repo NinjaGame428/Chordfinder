@@ -106,28 +106,64 @@ const ArtistsPage = () => {
 
     fetchArtists();
     
-    // Listen for song updates and refresh artist counts
+    // Listen for song updates and deletions and refresh artist counts
     const handleSongUpdate = (event: any) => {
       console.log('🔄 Song updated, refreshing artist counts...', event?.detail);
-      // If artist was changed, refresh immediately to update counts
-      if (event?.detail?.action === 'artistChanged') {
-        console.log('🎨 Artist changed - refreshing counts for both old and new artists');
+      const detail = event?.detail;
+      
+      // If song was deleted, refresh immediately to update counts
+      if (detail?.action === 'deleted') {
+        console.log('🗑️ Song deleted - refreshing artist counts...', detail);
+        setTimeout(() => fetchArtists(), 100);
+        return;
       }
-      fetchArtists();
+      
+      // If artist was changed, refresh immediately to update counts
+      if (detail?.action === 'artistChanged' || detail?.artistChanged) {
+        console.log('🎨 Artist changed - refreshing counts for both old and new artists', {
+          oldArtistId: detail?.oldArtistId,
+          newArtistId: detail?.artistId || detail?.newArtistId
+        });
+        // Force immediate refresh when artist changes
+        setTimeout(() => fetchArtists(), 100);
+      } else {
+        fetchArtists();
+      }
+    };
+    
+    const handleSongDeleted = (event: any) => {
+      console.log('🗑️ Song deleted event received, refreshing artist counts...', event.detail);
+      setTimeout(() => fetchArtists(), 100);
+    };
+    
+    // Also listen for artistSongCountChanged event
+    const handleArtistSongCountChanged = (event: any) => {
+      console.log('🎨 Artist song count changed event received:', event.detail);
+      setTimeout(() => fetchArtists(), 100);
     };
     
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'songUpdated') {
+      if (e.key === 'songUpdated' || e.key === 'songDeleted') {
         try {
           const updateData = JSON.parse(e.newValue || '{}');
-          handleSongUpdate({ detail: updateData });
+          if (e.key === 'songDeleted') {
+            handleSongDeleted({ detail: updateData });
+          } else {
+            handleSongUpdate({ detail: updateData });
+          }
         } catch (err) {
-          handleSongUpdate({ detail: {} });
+          if (e.key === 'songDeleted') {
+            handleSongDeleted({ detail: {} });
+          } else {
+            handleSongUpdate({ detail: {} });
+          }
         }
       }
     };
     
     window.addEventListener('songUpdated', handleSongUpdate);
+    window.addEventListener('songDeleted', handleSongDeleted);
+    window.addEventListener('artistSongCountChanged', handleArtistSongCountChanged);
     window.addEventListener('storage', handleStorageChange);
     
     // Refresh on window focus to get latest counts
@@ -139,6 +175,8 @@ const ArtistsPage = () => {
     
     return () => {
       window.removeEventListener('songUpdated', handleSongUpdate);
+      window.removeEventListener('songDeleted', handleSongDeleted);
+      window.removeEventListener('artistSongCountChanged', handleArtistSongCountChanged);
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('focus', handleFocus);
     };

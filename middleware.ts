@@ -11,10 +11,46 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
-    pathname.startsWith('/admin') ||
     // Exclude file extensions (CSS, JS, images, fonts, etc.)
     /\.(css|js|jsx|ts|tsx|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|otf|mp4|webm|pdf)$/i.test(pathname)
   ) {
+    return NextResponse.next();
+  }
+  
+  // Handle language-prefixed admin routes (/fr/admin/... or /en/admin/...)
+  const adminPathParts = pathname.split('/').filter(Boolean);
+  if (adminPathParts.length >= 2 && (adminPathParts[0] === 'fr' || adminPathParts[0] === 'en') && adminPathParts[1] === 'admin') {
+    const language = adminPathParts[0] as 'en' | 'fr';
+    // Get the admin path after /fr/admin or /en/admin
+    const adminPath = adminPathParts.length > 2 
+      ? '/admin/' + adminPathParts.slice(2).join('/')  // e.g., /admin/songs from /fr/admin/songs
+      : '/admin';  // Just /fr/admin -> /admin
+    
+    // Rewrite to internal admin route and set language cookie
+    const url = request.nextUrl.clone();
+    url.pathname = adminPath;
+    url.searchParams.set('lang', language);
+    
+    const response = NextResponse.rewrite(url);
+    response.cookies.set('language', language, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+    return response;
+  }
+  
+  // Skip middleware for admin routes (but after language prefix handling)
+  if (pathname.startsWith('/admin')) {
+    // Still set language cookie if not set, from query param or default
+    const language = request.nextUrl.searchParams.get('lang') as 'en' | 'fr' | null || 
+                     request.cookies.get('language')?.value || 
+                     'en';
+    
+    if (language === 'en' || language === 'fr') {
+      const response = NextResponse.next();
+      if (!request.cookies.get('language')) {
+        response.cookies.set('language', language, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+      }
+      return response;
+    }
+    
     return NextResponse.next();
   }
   
@@ -132,10 +168,13 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - admin (admin routes)
-     * - dashboard (dashboard routes)
+     * - Direct /admin routes (but /fr/admin and /en/admin will match)
+     * - Direct /dashboard routes (but /fr/dashboard will match)
      * - Files with extensions (css, js, images, fonts, etc.)
+     * 
+     * Note: Routes like /fr/admin and /en/admin WILL be processed
+     * because they start with /fr or /en, not /admin
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|admin|dashboard|.*\\.css|.*\\.js|.*\\.jsx|.*\\.ts|.*\\.tsx|.*\\.json|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg|.*\\.ico|.*\\.webp|.*\\.woff|.*\\.woff2|.*\\.ttf|.*\\.eot|.*\\.otf|.*\\.mp4|.*\\.webm|.*\\.pdf).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|^/admin|^/dashboard|.*\\.css|.*\\.js|.*\\.jsx|.*\\.ts|.*\\.tsx|.*\\.json|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.svg|.*\\.ico|.*\\.webp|.*\\.woff|.*\\.woff2|.*\\.ttf|.*\\.eot|.*\\.otf|.*\\.mp4|.*\\.webm|.*\\.pdf).*)',
   ],
 };

@@ -32,6 +32,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 interface Song {
   id: string;
   title: string;
+  slug?: string;
   artist?: string;
   artist_id?: string;
   genre?: string;
@@ -135,42 +136,74 @@ const SongsPage = () => {
     }
 
     try {
+      // Get the song's artist_id before deletion (for broadcasting)
+      const deletedSong = songs.find(s => s.id === songId);
+      const deletedArtistId = deletedSong?.artist_id;
+
       const response = await fetch(`/api/songs/${songId}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
-        // Get the song's artist_id before removing from state
-        const deletedSong = songs.find(s => s.id === songId);
-        const deletedArtistId = deletedSong?.artist_id;
+        const data = await response.json();
         
+        // Use artist_id from API response if available, otherwise use local data
+        const confirmedArtistId = data.artistId || deletedArtistId;
+        
+        // Remove from local state immediately
         setSongs(songs.filter(song => song.id !== songId));
+        
+        // Refresh the list to ensure we have the latest data
+        await fetchSongs(page, false);
+        
         alert(t('admin.songs.deleteSuccess'));
         
-        // Notify other pages that a song was deleted
-        if (deletedArtistId) {
-          window.dispatchEvent(new CustomEvent('songUpdated', { 
-            detail: { 
-              artistId: deletedArtistId,
-              songId: songId,
-              action: 'deleted'
-            } 
-          }));
-          
-          // Cross-tab communication
-          localStorage.setItem('songUpdated', JSON.stringify({
-            artistId: deletedArtistId,
+        // Broadcast deletion event to all pages
+        window.dispatchEvent(new CustomEvent('songDeleted', { 
+          detail: { 
+            songId: songId,
+            artistId: confirmedArtistId,
+            action: 'deleted',
+            timestamp: Date.now()
+          } 
+        }));
+        
+        // Also use songUpdated event for backward compatibility
+        window.dispatchEvent(new CustomEvent('songUpdated', { 
+          detail: { 
+            artistId: confirmedArtistId,
             songId: songId,
             action: 'deleted',
             timestamp: Date.now()
-          }));
-        }
+          } 
+        }));
+        
+        // Cross-tab communication
+        localStorage.setItem('songDeleted', JSON.stringify({
+          songId: songId,
+          artistId: confirmedArtistId,
+          action: 'deleted',
+          timestamp: Date.now()
+        }));
+        
+        localStorage.setItem('songUpdated', JSON.stringify({
+          artistId: confirmedArtistId,
+          songId: songId,
+          action: 'deleted',
+          timestamp: Date.now()
+        }));
+        
+        console.log('🗑️ Song deleted and events broadcast:', {
+          songId,
+          artistId: confirmedArtistId
+        });
       } else {
-        alert(t('admin.songs.deleteError'));
+        const errorData = await response.json().catch(() => ({}));
+        alert(errorData.details || errorData.error || t('admin.songs.deleteError'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting song:', error);
-      alert(t('admin.songs.deleteError'));
+      alert(error.message || t('admin.songs.deleteError'));
     }
   };
 
@@ -492,8 +525,10 @@ ${songData.lyrics || 'No lyrics available'}
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log('Edit button clicked for song:', song.id);
-                            router.push(`/admin/songs/${song.id}/edit`);
+                            // Generate slug from title if not available
+                            const slug = song.slug || song.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                            console.log('Edit button clicked for song:', song.id, 'slug:', slug);
+                            router.push(`/admin/songs/${slug}/edit`);
                           }}
                           title="Edit song"
                           className="hover:bg-primary hover:text-primary-foreground cursor-pointer"
