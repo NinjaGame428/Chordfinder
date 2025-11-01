@@ -36,22 +36,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Handle null artist_ids - populate artist info from text field if needed
-    if (songs) {
-      songs = songs.map((song: any) => {
-        if (!song.artists && song.artist) {
-          song.artists = {
-            id: song.artist_id || null,
-            name: song.artist,
-            bio: null,
-            image_url: null
-          };
-        }
-        return song;
-      });
-    }
+    const processedSongs = songs ? songs.map((song: any) => {
+      if (!song.artists && song.artist) {
+        song.artists = {
+          id: song.artist_id || null,
+          name: song.artist,
+          bio: null,
+          image_url: null
+        };
+      }
+      return song;
+    }) : [];
 
     const response = NextResponse.json({ 
-      songs: songs || [], 
+      songs: processedSongs, 
       pagination: {
         page,
         limit: maxLimit,
