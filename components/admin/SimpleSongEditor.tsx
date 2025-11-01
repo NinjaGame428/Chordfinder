@@ -314,9 +314,15 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songSlug, so
         return;
       }
 
-      const response = await fetch(`/api/songs/${currentSongId}`, {
+      // Add cache-busting and ensure fresh request
+      const response = await fetch(`/api/songs/${currentSongId}?t=${Date.now()}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        cache: 'no-store',
         body: JSON.stringify(payload),
       });
 
@@ -450,13 +456,15 @@ export const SimpleSongEditor: React.FC<SimpleSongEditorProps> = ({ songSlug, so
       
       // Reload song data to verify the save and get latest state (with cache-busting)
       try {
-        // Add timestamp to force fresh fetch - use ID for API calls
-        const reloadUrl = `/api/songs/${currentSongId}?t=${Date.now()}`;
+        // Add timestamp to force fresh fetch - use ID for API calls with aggressive cache-busting
+        const reloadUrl = `/api/songs/${currentSongId}?t=${Date.now()}&_nocache=true`;
         const reloadResponse = await fetch(reloadUrl, {
           cache: 'no-store',
+          method: 'GET',
           headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         });
         

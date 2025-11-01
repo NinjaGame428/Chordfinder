@@ -28,10 +28,12 @@ export async function GET(
     }
 
     const response = NextResponse.json({ song });
-    // Add headers to prevent stale caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    // Clear all caches aggressively
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
     response.headers.set('Pragma', 'no-cache');
     response.headers.set('Expires', '0');
+    response.headers.set('Surrogate-Control', 'no-store');
+    response.headers.set('Vary', '*');
     return response;
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -131,10 +133,16 @@ export async function PUT(
     }
     
     // Lyrics - critical field, always include (can be empty string or null)
-    // Use !== undefined to allow empty strings to be saved
-    if (lyrics !== undefined) {
-      // Convert empty strings to null for consistency
-      updateData.lyrics = lyrics && lyrics.trim() !== '' ? lyrics.trim() : null;
+    // Always include lyrics in update - even if empty, it's a valid value
+    if (lyrics !== undefined && lyrics !== null) {
+      // Keep as string even if empty - don't convert to null
+      updateData.lyrics = lyrics.trim();
+    } else if (lyrics === null) {
+      // Explicitly allow null
+      updateData.lyrics = null;
+    } else if (lyrics === '') {
+      // Empty string is valid
+      updateData.lyrics = '';
     }
     
     // Key Signature - optional field
@@ -317,8 +325,8 @@ export async function PUT(
       key_signature: updateData.key_signature !== undefined ? updateData.key_signature : updatedRows.key_signature,
       tempo: updateData.tempo !== undefined ? updateData.tempo : updatedRows.tempo,
       lyrics: updateData.lyrics !== undefined ? updateData.lyrics : updatedRows.lyrics,
-          updated_at: new Date().toISOString(),
-          slug: updateData.slug || updatedRows?.slug || createSlug(updateData.title || updatedRows?.title || ''),
+      updated_at: new Date().toISOString(),
+      slug: updateData.slug || updatedRows?.slug || createSlug(updateData.title || updatedRows?.title || ''),
       // Use fresh artist info
       artists: artistInfo ? {
         id: artistInfo.id,
